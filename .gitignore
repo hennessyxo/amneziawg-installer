@@ -1,0 +1,9 @@
+# Generated client/server configs — never commit secrets
+*.conf
+params
+*.key
+
+# OS / editor noise
+.DS_Store
+*.swp
+*~
