@@ -1,0 +1,41 @@
+{{define "dashboard"}}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AmneziaWG · панель</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">AmneziaWG <span>panel</span></div>
+    <nav>
+      <span class="iface">{{.Iface}}</span>
+      <form method="post" action="/logout" class="inline">
+        <button class="ghost" type="submit">Выйти</button>
+      </form>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Клиенты</h2>
+        <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
+          <input type="hidden" name="csrf" value="{{.CSRF}}">
+          <input type="text" name="name" placeholder="имя нового клиента"
+                 pattern="[A-Za-z0-9_-]{1,32}" required>
+          <button type="submit">+ Добавить</button>
+        </form>
+      </div>
+
+      <div id="created"></div>
+
+      <div id="clients" hx-get="/partials/clients" hx-trigger="load, every 2s">
+        <p class="muted">загрузка…</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>{{end}}

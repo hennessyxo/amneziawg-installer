@@ -1,0 +1,20 @@
+{{define "login"}}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AmneziaWG · вход</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth">
+  <form class="card" method="post" action="/login">
+    <h1>AmneziaWG <span>panel</span></h1>
+    <p class="sub">Управление self-hosted VPN</p>
+    {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+    <label>Пароль администратора
+      <input type="password" name="password" autocomplete="current-password" autofocus required>
+    </label>
+    <button type="submit">Войти</button>
+  </form>
+</body>
+</html>{{end}}

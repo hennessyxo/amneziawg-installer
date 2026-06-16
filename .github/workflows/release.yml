@@ -25,8 +25,12 @@ jobs:
           GOOS: linux
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '0'
-        run: go build -ldflags "-s -w" -o "awg-monitor-linux-${{ matrix.goarch }}" ./cmd/awg-monitor
+        run: |
+          go build -ldflags "-s -w" -o "awg-monitor-linux-${{ matrix.goarch }}" ./cmd/awg-monitor
+          go build -ldflags "-s -w" -o "awg-panel-linux-${{ matrix.goarch }}" ./cmd/awg-panel
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: awg-monitor-linux-${{ matrix.goarch }}
+          files: |
+            awg-monitor-linux-${{ matrix.goarch }}
+            awg-panel-linux-${{ matrix.goarch }}

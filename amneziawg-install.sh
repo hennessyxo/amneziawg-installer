@@ -26,6 +26,12 @@ readonly PARAMS_FILE="${AWG_DIR}/params"
 readonly SERVER_CONF="${AWG_DIR}/${AWG_NIC}.conf"
 readonly CLIENT_OUT_DIR="${HOME}"
 readonly MONITOR_BIN="/usr/local/bin/awg-monitor"
+readonly PANEL_BIN="/usr/local/bin/awg-panel"
+readonly PANEL_PORT="8443"
+readonly PANEL_HASH="${AWG_DIR}/panel.hash"
+readonly PANEL_CERT="${AWG_DIR}/panel-cert.pem"
+readonly PANEL_KEY="${AWG_DIR}/panel-key.pem"
+readonly PANEL_CLIENT_DIR="${AWG_DIR}/clients"
 readonly REPO_SLUG="hennessyxo/amneziawg-installer"
 
 # Colors (disabled automatically when output is not a terminal)
@@ -338,7 +344,7 @@ installAmneziaWG() {
 	newClient "${FIRST_CLIENT}"
 	echo
 	ok "Готово! Сервер AmneziaWG развёрнут."
-	echo -e "Запусти ${BOLD}sudo bash $0${NC} снова, чтобы добавлять клиентов или включить мониторинг (пункт 6)."
+	echo -e "Запусти ${BOLD}sudo bash $0${NC} снова: добавить клиентов, включить мониторинг (6) или веб-панель (7)."
 }
 
 # ---------------------------------------------------------------------------
@@ -521,6 +527,16 @@ uninstall() {
 	systemctl stop "awg-quick@${SERVER_WG_NIC}" 2>/dev/null || true
 	systemctl disable "awg-quick@${SERVER_WG_NIC}" 2>/dev/null || true
 
+	# Tear down the web panel if it was installed.
+	if [[ -f /etc/systemd/system/awg-panel.service ]]; then
+		systemctl stop awg-panel 2>/dev/null || true
+		systemctl disable awg-panel 2>/dev/null || true
+		rm -f /etc/systemd/system/awg-panel.service
+		systemctl daemon-reload 2>/dev/null || true
+		iptables -D INPUT -p tcp --dport "${PANEL_PORT}" -j ACCEPT 2>/dev/null || true
+	fi
+	rm -f "${PANEL_BIN}" "${MONITOR_BIN}"
+
 	export DEBIAN_FRONTEND=noninteractive
 	apt-get remove --purge -y -qq amneziawg amneziawg-tools amneziawg-dkms >/dev/null 2>&1 || true
 
@@ -569,56 +585,141 @@ runMonitor() {
 	"${MONITOR_BIN}" --iface "${AWG_NIC}" --conf "${SERVER_CONF}"
 }
 
-installMonitor() {
-	loadParams
-	if [[ -x "${MONITOR_BIN}" ]]; then
-		ok "awg-monitor уже установлен (${MONITOR_BIN})."
-		showMonitorUsage
-		read -rp "Запустить мониторинг сейчас? [Y/n]: " r
-		[[ "${r,,}" != "n" ]] && runMonitor
-		return 0
-	fi
-
-	local arch installed=0
+# fetchGoBinary installs a component binary (monitor|panel) to a destination,
+# preferring a prebuilt release asset and falling back to building from source.
+# $1 = component name (without the awg- prefix), $2 = destination path.
+fetchGoBinary() {
+	local comp="$1" dest="$2" arch
 	arch=$(detectArch)
 
-	# Preferred: download a prebuilt static binary (no Go needed on the server).
 	if [[ -n "${arch}" ]]; then
-		local url="https://github.com/${REPO_SLUG}/releases/latest/download/awg-monitor-linux-${arch}"
-		msg "Скачиваю awg-monitor (${arch})..."
-		if curl -fsSL "${url}" -o "${MONITOR_BIN}" 2>/dev/null && [[ -s "${MONITOR_BIN}" ]]; then
-			chmod +x "${MONITOR_BIN}"
-			installed=1
-			ok "Бинарник установлен: ${MONITOR_BIN}"
+		local url="https://github.com/${REPO_SLUG}/releases/latest/download/awg-${comp}-linux-${arch}"
+		msg "Скачиваю awg-${comp} (${arch})..."
+		if curl -fsSL "${url}" -o "${dest}" 2>/dev/null && [[ -s "${dest}" ]]; then
+			chmod +x "${dest}"
+			ok "Бинарник установлен: ${dest}"
+			return 0
 		fi
 	fi
 
-	# Fallback: build from source if the repo was cloned and Go is available.
-	if [[ "${installed}" -eq 0 ]]; then
-		local repo_dir
-		repo_dir="$(cd "$(dirname "$0")" && pwd)"
-		if [[ -d "${repo_dir}/cmd/awg-monitor" ]] && command -v go >/dev/null 2>&1; then
-			msg "Готовый бинарник недоступен — собираю из исходников..."
-			if (cd "${repo_dir}" && go build -o "${MONITOR_BIN}" ./cmd/awg-monitor) 2>/dev/null; then
-				chmod +x "${MONITOR_BIN}"
-				installed=1
-				ok "Собрано из исходников: ${MONITOR_BIN}"
-			fi
+	local repo_dir
+	repo_dir="$(cd "$(dirname "$0")" && pwd)"
+	if [[ -d "${repo_dir}/cmd/awg-${comp}" ]] && command -v go >/dev/null 2>&1; then
+		msg "Готовый бинарник недоступен — собираю awg-${comp} из исходников..."
+		if (cd "${repo_dir}" && go build -o "${dest}" "./cmd/awg-${comp}") 2>/dev/null; then
+			chmod +x "${dest}"
+			ok "Собрано из исходников: ${dest}"
+			return 0
 		fi
 	fi
 
-	if [[ "${installed}" -eq 0 ]]; then
-		err "Не удалось установить awg-monitor автоматически."
-		echo "Причина: бинарник не скачался (приватный репозиторий?) и нет Go для сборки."
-		echo "Решения:"
-		echo "  • сделать репозиторий публичным — тогда бинарник скачается одной командой;"
-		echo "  • или установить Go и собрать: go build -o ${MONITOR_BIN} ./cmd/awg-monitor"
-		return 1
-	fi
+	err "Не удалось установить awg-${comp} автоматически."
+	echo "Причина: бинарник не скачался (приватный репозиторий?) и нет Go для сборки."
+	echo "Решения:"
+	echo "  • сделать репозиторий публичным — тогда бинарник скачается одной командой;"
+	echo "  • или установить Go и собрать: go build -o ${dest} ./cmd/awg-${comp}"
+	return 1
+}
 
+installMonitor() {
+	loadParams
+	if [[ ! -x "${MONITOR_BIN}" ]]; then
+		fetchGoBinary monitor "${MONITOR_BIN}" || return 1
+	else
+		ok "awg-monitor уже установлен (${MONITOR_BIN})."
+	fi
 	showMonitorUsage
 	read -rp "Запустить мониторинг сейчас? [Y/n]: " r
 	[[ "${r,,}" != "n" ]] && runMonitor
+}
+
+# ---------------------------------------------------------------------------
+# Web panel (awg-panel — Go + htmx)
+# ---------------------------------------------------------------------------
+installPanel() {
+	loadParams
+	command -v openssl >/dev/null 2>&1 || apt-get install -y -qq openssl >/dev/null 2>&1 || true
+
+	if [[ ! -x "${PANEL_BIN}" ]]; then
+		fetchGoBinary panel "${PANEL_BIN}" || return 1
+	else
+		ok "awg-panel уже установлен (${PANEL_BIN})."
+	fi
+
+	# Admin password → bcrypt hash (plaintext never stored).
+	if [[ ! -s "${PANEL_HASH}" ]]; then
+		local pw pw2
+		while :; do
+			read -rsp "Придумай пароль администратора панели: " pw; echo
+			read -rsp "Повтори пароль: " pw2; echo
+			[[ -n "${pw}" && "${pw}" == "${pw2}" ]] && break
+			warn "Пароли пусты или не совпадают — попробуй снова."
+		done
+		umask 077
+		echo "${pw}" | "${PANEL_BIN}" hash >"${PANEL_HASH}"
+		chmod 600 "${PANEL_HASH}"
+		ok "Пароль сохранён (bcrypt-хеш): ${PANEL_HASH}"
+	fi
+
+	# Self-signed TLS certificate (browser will warn once; traffic is encrypted).
+	if [[ ! -s "${PANEL_CERT}" ]]; then
+		msg "Генерирую самоподписанный TLS-сертификат..."
+		umask 077
+		openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+			-keyout "${PANEL_KEY}" -out "${PANEL_CERT}" -days 3650 \
+			-subj "/CN=${SERVER_PUB_IP}" >/dev/null 2>&1 || {
+			err "Не удалось создать сертификат (openssl)."
+			return 1
+		}
+		chmod 600 "${PANEL_KEY}" "${PANEL_CERT}"
+		ok "Сертификат создан."
+	fi
+
+	writePanelService
+	systemctl daemon-reload
+	systemctl enable awg-panel >/dev/null 2>&1 || true
+	systemctl restart awg-panel
+	sleep 1
+	if systemctl is-active --quiet awg-panel; then
+		ok "Веб-панель запущена."
+		showPanelUsage
+	else
+		err "Панель не запустилась. Логи: journalctl -u awg-panel -n 30"
+		return 1
+	fi
+}
+
+writePanelService() {
+	cat >/etc/systemd/system/awg-panel.service <<-EOF
+		[Unit]
+		Description=AmneziaWG web panel
+		After=network-online.target awg-quick@${AWG_NIC}.service
+		Wants=network-online.target
+
+		[Service]
+		Type=simple
+		# Open the panel port idempotently before start.
+		ExecStartPre=/bin/bash -c 'iptables -C INPUT -p tcp --dport ${PANEL_PORT} -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport ${PANEL_PORT} -j ACCEPT'
+		ExecStart=${PANEL_BIN} --listen :${PANEL_PORT} --iface ${AWG_NIC} \\
+		  --conf ${SERVER_CONF} --params ${PARAMS_FILE} --client-dir ${PANEL_CLIENT_DIR} \\
+		  --password-hash-file ${PANEL_HASH} --tls-cert ${PANEL_CERT} --tls-key ${PANEL_KEY}
+		Restart=on-failure
+		RestartSec=3
+
+		[Install]
+		WantedBy=multi-user.target
+	EOF
+}
+
+showPanelUsage() {
+	echo
+	echo -e "${BOLD}Веб-панель AmneziaWG${NC}"
+	echo -e "  Адрес : ${CYAN}https://${SERVER_PUB_IP}:${PANEL_PORT}${NC}"
+	echo "  Логин : пароль, который ты задал"
+	echo "  Сертификат самоподписанный — браузер предупредит один раз, это нормально."
+	echo "  Управление службой: systemctl {status|restart|stop} awg-panel"
+	echo
+	warn "Открой порт ${PANEL_PORT}/tcp в фаерволе облака (если он есть)."
 }
 
 # ---------------------------------------------------------------------------
@@ -633,10 +734,11 @@ manageMenu() {
 	echo "  4) Показать QR-код клиента"
 	echo "  5) Статус сервера"
 	echo "  6) Мониторинг (установить / запустить awg-monitor)"
-	echo "  7) Удалить AmneziaWG полностью"
-	echo "  8) Выход"
+	echo "  7) Веб-панель (установить / запустить awg-panel)"
+	echo "  8) Удалить AmneziaWG полностью"
+	echo "  9) Выход"
 	echo
-	read -rp "Выбор [1-8]: " choice
+	read -rp "Выбор [1-9]: " choice
 	case "${choice}" in
 		1) newClient "" ;;
 		2) revokeClient ;;
@@ -644,8 +746,9 @@ manageMenu() {
 		4) showClientQR ;;
 		5) showStatus ;;
 		6) installMonitor ;;
-		7) uninstall ;;
-		8) exit 0 ;;
+		7) installPanel ;;
+		8) uninstall ;;
+		9) exit 0 ;;
 		*) err "Неверный выбор." ;;
 	esac
 }

@@ -1,0 +1,44 @@
+{{define "clients"}}
+<div class="stats">
+  <span><span class="dot on"></span> онлайн <b>{{.Online}}</b>/{{.Total}}</span>
+  <span>↓ {{.TotalRx}}</span>
+  <span>↑ {{.TotalTx}}</span>
+  <span class="muted">{{.TimeStr}}</span>
+</div>
+<div class="table-wrap">
+<table class="clients">
+  <thead>
+    <tr>
+      <th></th><th>Клиент</th><th>Endpoint</th>
+      <th class="r">↓ скорость</th><th class="r">↑ скорость</th>
+      <th class="r">RX</th><th class="r">TX</th>
+      <th class="r">handshake</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .Peers}}
+    <tr class="{{if .Online}}online{{end}}">
+      <td><span class="dot {{if .Online}}on{{else}}off{{end}}"></span></td>
+      <td class="name">{{.Name}}</td>
+      <td class="mono dim">{{.Endpoint}}</td>
+      <td class="mono r">{{.RateRx}}</td>
+      <td class="mono r">{{.RateTx}}</td>
+      <td class="mono r dim">{{.RxStr}}</td>
+      <td class="mono r dim">{{.TxStr}}</td>
+      <td class="mono r dim">{{.HandshakeAgo}}</td>
+      <td class="actions">
+        {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config" title="скачать конфиг">conf</a>{{end}}
+        <button class="danger" title="удалить"
+                hx-post="/clients/{{.Name}}/revoke"
+                hx-confirm="Удалить клиента {{.Name}}?"
+                hx-target="#clients" hx-swap="innerHTML"
+                hx-vals='{"csrf":"{{$.CSRF}}"}'>✕</button>
+      </td>
+    </tr>
+  {{else}}
+    <tr><td colspan="9" class="muted">пока нет клиентов — добавь первого выше</td></tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{end}}

@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hennessyxo/amneziawg-installer/internal/awg"
+	"github.com/hennessyxo/amneziawg-installer/internal/format"
 )
 
 const (
@@ -162,7 +163,7 @@ func (m Model) View() string {
 		title,
 		accStl.Render(m.iface),
 		onDot, online, len(m.cur.Peers),
-		HumanBytes(m.cur.TotalRx()), HumanBytes(m.cur.TotalTx()),
+		format.HumanBytes(m.cur.TotalRx()), format.HumanBytes(m.cur.TotalTx()),
 		dimStl.Render(now.Format("15:04:05")),
 	)
 	b.WriteString(stats)
@@ -208,9 +209,9 @@ func (m Model) row(p awg.Peer, now time.Time) string {
 		dot,
 		nameWidth, truncate(name, nameWidth),
 		endpntWidth, truncate(endpoint, endpntWidth),
-		HumanRate(m.rx[p.PublicKey]),
-		HumanRate(m.tx[p.PublicKey]),
-		Ago(p.LatestHandshake, now),
+		format.HumanRate(m.rx[p.PublicKey]),
+		format.HumanRate(m.tx[p.PublicKey]),
+		format.Ago(p.LatestHandshake, now),
 		spark,
 	)
 }
