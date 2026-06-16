@@ -139,6 +139,7 @@ func (s *Server) routes() {
 	mux.HandleFunc("GET /login", s.loginPage)
 	mux.HandleFunc("POST /login", s.doLogin)
 	mux.HandleFunc("POST /logout", s.doLogout)
+	mux.HandleFunc("GET /lang/{code}", s.setLang)
 	mux.HandleFunc("GET /{$}", s.requireAuth(s.dashboard))
 	mux.HandleFunc("GET /partials/clients", s.requireAuth(s.clientsPartial))
 	mux.HandleFunc("POST /clients", s.requireAuth(s.addClient))
@@ -196,14 +197,16 @@ func (s *Server) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	s.render(w, "login", map[string]any{})
+	lang := s.lang(r)
+	s.render(w, "login", map[string]any{"L": tr(lang), "Lang": lang})
 }
 
 func (s *Server) doLogin(w http.ResponseWriter, r *http.Request) {
 	pw := r.FormValue("password")
 	if !auth.CheckPassword(s.pwHash, pw) {
+		lang := s.lang(r)
 		w.WriteHeader(http.StatusUnauthorized)
-		s.render(w, "login", map[string]any{"Error": "Неверный пароль"})
+		s.render(w, "login", map[string]any{"Error": tr(lang)["login_err"], "L": tr(lang), "Lang": lang})
 		return
 	}
 	token, _ := s.sessions.Create()
@@ -228,15 +231,16 @@ func (s *Server) doLogout(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
-	s.render(w, "dashboard", map[string]any{"Iface": s.iface, "CSRF": sess.CSRF})
+	lang := s.lang(r)
+	s.render(w, "dashboard", map[string]any{"Iface": s.iface, "CSRF": sess.CSRF, "L": tr(lang), "Lang": lang})
 }
 
 func (s *Server) clientsPartial(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
-	data, err := s.buildClientsData(sess.CSRF)
+	data, err := s.buildClientsData(sess.CSRF, s.lang(r))
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
-		fmt.Fprintf(w, `<p class="err">Не удалось получить данные: %s</p>`, template.HTMLEscapeString(err.Error()))
+		fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
 		return
 	}
 	s.render(w, "clients", data)
@@ -265,7 +269,8 @@ func (s *Server) addClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.ReconcileShaper() // apply the new client's speed cap, if any
-	s.render(w, "created", map[string]any{"Name": client.Name, "Config": client.Config})
+	lang := s.lang(r)
+	s.render(w, "created", map[string]any{"Name": client.Name, "Config": client.Config, "L": tr(lang), "Lang": lang})
 }
 
 func (s *Server) revokeClient(w http.ResponseWriter, r *http.Request) {
@@ -310,7 +315,7 @@ func (s *Server) toggleClient(enable bool) http.HandlerFunc {
 // renderClients re-renders the clients table partial (used after mutations).
 func (s *Server) renderClients(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
-	data, err := s.buildClientsData(sess.CSRF)
+	data, err := s.buildClientsData(sess.CSRF, s.lang(r))
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		return
@@ -361,9 +366,12 @@ type clientsData struct {
 	Online, Total             int
 	TotalRx, TotalTx, TimeStr string
 	CSRF                      string
+	L                         map[string]string
+	Lang                      string
 }
 
-func (s *Server) buildClientsData(csrf string) (clientsData, error) {
+func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
+	L := tr(lang)
 	snap, err := s.ctrl.Snapshot()
 	if err != nil {
 		return clientsData{}, err
@@ -409,8 +417,8 @@ func (s *Server) buildClientsData(csrf string) (clientsData, error) {
 			TxStr:        format.HumanBytes(p.TxBytes),
 			HandshakeAgo: format.Ago(p.LatestHandshake, now),
 			Usage:        usageStr(rec),
-			Expires:      expiresStr(rec, now),
-			Speed:        speedStr(rec),
+			Expires:      expiresStr(rec, now, L),
+			Speed:        speedStr(rec, L),
 			Online:       p.Online(now),
 			HasConfig:    true,
 		})
@@ -427,8 +435,8 @@ func (s *Server) buildClientsData(csrf string) (clientsData, error) {
 				RxStr:     "—",
 				TxStr:     "—",
 				Usage:     usageStr(rec),
-				Expires:   expiresStr(rec, now),
-				Speed:     speedStr(rec),
+				Expires:   expiresStr(rec, now, L),
+				Speed:     speedStr(rec, L),
 				Disabled:  true,
 				HasConfig: true,
 			})
@@ -443,6 +451,8 @@ func (s *Server) buildClientsData(csrf string) (clientsData, error) {
 		TotalTx: format.HumanBytes(snap.TotalTx()),
 		TimeStr: now.Format("15:04:05"),
 		CSRF:    csrf,
+		L:       L,
+		Lang:    lang,
 	}, nil
 }
 
@@ -454,27 +464,28 @@ func usageStr(rec lifecycle.Record) string {
 	return format.HumanBytes(rec.UsedBytes) + " / " + format.HumanBytes(rec.QuotaBytes)
 }
 
-// expiresStr renders remaining time ("5д", "3ч"), "истёк", or "" when no expiry.
-func expiresStr(rec lifecycle.Record, now time.Time) string {
+// expiresStr renders remaining time ("5d", "3h"), the localized "expired", or ""
+// when there is no expiry.
+func expiresStr(rec lifecycle.Record, now time.Time, L map[string]string) string {
 	if rec.ExpiresAt == nil {
 		return ""
 	}
 	d := rec.ExpiresAt.Sub(now)
 	if d <= 0 {
-		return "истёк"
+		return L["expired"]
 	}
 	if days := int(d.Hours() / 24); days >= 1 {
-		return fmt.Sprintf("%dд", days)
+		return fmt.Sprintf("%dd", days)
 	}
-	return fmt.Sprintf("%dч", int(d.Hours()))
+	return fmt.Sprintf("%dh", int(d.Hours()))
 }
 
 // speedStr renders the bandwidth cap, or "" when unlimited.
-func speedStr(rec lifecycle.Record) string {
+func speedStr(rec lifecycle.Record, L map[string]string) string {
 	if rec.SpeedMbit <= 0 {
 		return ""
 	}
-	return fmt.Sprintf("%d Мбит/с", rec.SpeedMbit)
+	return fmt.Sprintf("%d %s", rec.SpeedMbit, L["speed_unit"])
 }
 
 // atoiNonNeg parses a non-negative integer from a form field (0 on error).

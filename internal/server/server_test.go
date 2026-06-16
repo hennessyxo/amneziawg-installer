@@ -254,6 +254,50 @@ func TestQRPNG(t *testing.T) {
 	}
 }
 
+func TestLanguageSwitch(t *testing.T) {
+	s := newTestServer(t, &fakeCtrl{snap: sampleSnapshot()})
+	cookie := login(t, s)
+
+	// Default (no lang cookie) is Russian.
+	reqRu := httptest.NewRequest("GET", "/", nil)
+	reqRu.AddCookie(cookie)
+	rrRu := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rrRu, reqRu)
+	if !strings.Contains(rrRu.Body.String(), "Клиенты") {
+		t.Error("default dashboard should be Russian (Клиенты)")
+	}
+
+	// With lang=en cookie, the dashboard renders English.
+	reqEn := httptest.NewRequest("GET", "/", nil)
+	reqEn.AddCookie(cookie)
+	reqEn.AddCookie(&http.Cookie{Name: "lang", Value: "en"})
+	rrEn := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rrEn, reqEn)
+	body := rrEn.Body.String()
+	if !strings.Contains(body, "Clients") || !strings.Contains(body, "Sign out") {
+		t.Errorf("en dashboard missing English strings:\n%s", body)
+	}
+}
+
+func TestSetLang_SetsCookie(t *testing.T) {
+	s := newTestServer(t, &fakeCtrl{})
+	req := httptest.NewRequest("GET", "/lang/en", nil)
+	rr := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303", rr.Code)
+	}
+	var found bool
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == "lang" && c.Value == "en" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("lang cookie not set to en")
+	}
+}
+
 func TestDisableEnableClient(t *testing.T) {
 	f := &fakeCtrl{snap: sampleSnapshot()}
 	s := newTestServer(t, f)

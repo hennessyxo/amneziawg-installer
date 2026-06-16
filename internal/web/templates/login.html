@@ -1,20 +1,24 @@
 {{define "login"}}<!doctype html>
-<html lang="ru">
+<html lang="{{.Lang}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AmneziaWG · вход</title>
+  <title>AmneziaWG · panel</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="auth">
   <form class="card" method="post" action="/login">
     <h1>AmneziaWG <span>panel</span></h1>
-    <p class="sub">Управление self-hosted VPN</p>
+    <p class="sub">{{.L.login_sub}}</p>
     {{if .Error}}<p class="err">{{.Error}}</p>{{end}}
-    <label>Пароль администратора
+    <label>{{.L.login_pw}}
       <input type="password" name="password" autocomplete="current-password" autofocus required>
     </label>
-    <button type="submit">Войти</button>
+    <button type="submit">{{.L.login_btn}}</button>
+    <div class="langswitch">
+      <a href="/lang/ru" class="{{if eq .Lang "ru"}}on{{end}}">RU</a>
+      <a href="/lang/en" class="{{if eq .Lang "en"}}on{{end}}">EN</a>
+    </div>
   </form>
 </body>
 </html>{{end}}

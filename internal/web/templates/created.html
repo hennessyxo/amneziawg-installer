@@ -1,13 +1,13 @@
 {{define "created"}}
 <div class="created">
   <div class="created-head">
-    <span><b>{{.Name}}</b> создан — отсканируй QR в приложении AmneziaVPN или скачай конфиг</span>
+    <span><b>{{.Name}}</b> {{.L.created_msg}}</span>
     <button class="x" type="button" onclick="this.closest('.created').remove()">×</button>
   </div>
   <div class="created-body">
-    <img class="qr" src="/clients/{{.Name}}/qr.png" alt="QR-код конфигурации" width="220" height="220">
+    <img class="qr" src="/clients/{{.Name}}/qr.png" alt="QR" width="220" height="220">
     <pre class="conf">{{.Config}}</pre>
   </div>
-  <a class="btn" href="/clients/{{.Name}}/config" download>Скачать .conf</a>
+  <a class="btn" href="/clients/{{.Name}}/config" download>{{.L.download}}</a>
 </div>
 {{end}}

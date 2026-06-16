@@ -1,9 +1,9 @@
 {{define "dashboard"}}<!doctype html>
-<html lang="ru">
+<html lang="{{.Lang}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AmneziaWG · панель</title>
+  <title>AmneziaWG · panel</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
@@ -12,8 +12,12 @@
     <div class="brand">AmneziaWG <span>panel</span></div>
     <nav>
       <span class="iface">{{.Iface}}</span>
+      <span class="langswitch">
+        <a href="/lang/ru" class="{{if eq .Lang "ru"}}on{{end}}">RU</a>
+        <a href="/lang/en" class="{{if eq .Lang "en"}}on{{end}}">EN</a>
+      </span>
       <form method="post" action="/logout" class="inline">
-        <button class="ghost" type="submit">Выйти</button>
+        <button class="ghost" type="submit">{{.L.logout}}</button>
       </form>
     </nav>
   </header>
@@ -21,22 +25,22 @@
   <main>
     <section class="panel">
       <div class="panel-head">
-        <h2>Клиенты</h2>
+        <h2>{{.L.clients}}</h2>
         <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
           <input type="hidden" name="csrf" value="{{.CSRF}}">
-          <input type="text" name="name" placeholder="имя клиента"
+          <input type="text" name="name" placeholder="{{.L.ph_name}}"
                  pattern="[A-Za-z0-9_-]{1,32}" required>
-          <input type="number" name="expires_days" min="1" placeholder="срок, дней" title="через сколько дней отключить (пусто = бессрочно); потом можно включить обратно">
-          <input type="number" name="quota_gb" min="1" step="1" placeholder="квота, ГБ" title="лимит трафика в ГБ (пусто = без лимита)">
-          <input type="number" name="speed_mbit" min="1" step="1" placeholder="скорость, Мбит/с" title="ограничение скорости в Мбит/с (пусто = без лимита)">
-          <button type="submit">+ Добавить</button>
+          <input type="number" name="expires_days" min="1" placeholder="{{.L.ph_days}}">
+          <input type="number" name="quota_gb" min="1" step="1" placeholder="{{.L.ph_quota}}">
+          <input type="number" name="speed_mbit" min="1" step="1" placeholder="{{.L.ph_speed}}">
+          <button type="submit">{{.L.add}}</button>
         </form>
       </div>
 
       <div id="created"></div>
 
       <div id="clients" hx-get="/partials/clients" hx-trigger="load, every 2s">
-        <p class="muted">загрузка…</p>
+        <p class="muted">…</p>
       </div>
     </section>
   </main>

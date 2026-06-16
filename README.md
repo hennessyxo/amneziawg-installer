@@ -1,209 +1,125 @@
 # AmneziaWG Installer
 
-> One-command installer & client manager for a self-hosted **AmneziaWG** VPN on Ubuntu/Debian.
-> Установщик и менеджер клиентов для собственного VPN на **AmneziaWG** — в одну команду.
+**English** · [Русский](README.ru.md)
+
+> One-command installer, client manager, monitor and web panel for a self-hosted
+> **AmneziaWG** VPN on Ubuntu/Debian.
 
 ![shell](https://img.shields.io/badge/shell-bash-1f425f)
+![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![platform](https://img.shields.io/badge/platform-Ubuntu%20%7C%20Debian-orange)
+![ci](https://github.com/hennessyxo/amneziawg-installer/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-AmneziaWG is a fork of **WireGuard** with built-in traffic obfuscation. Regular
+AmneziaWG is a fork of **WireGuard** with built-in traffic obfuscation. Plain
 WireGuard is fast but easy for DPI systems to fingerprint and block; AmneziaWG
-disguises the handshake and packet headers so the traffic looks like noise.
-This script removes the manual work: it installs AmneziaWG, sets up NAT and the
-firewall, generates randomized obfuscation parameters, and manages clients with
-ready-to-scan QR codes — no Linux networking knowledge required.
+disguises the handshake and packet headers so the traffic looks like noise. This
+project removes all the manual work — install, NAT/firewall, randomized
+obfuscation, client management with QR codes — no Linux knowledge required.
 
-AmneziaWG — это форк **WireGuard** со встроенной обфускацией трафика. Обычный
-WireGuard быстрый, но его легко вычисляют и блокируют по DPI; AmneziaWG
-маскирует рукопожатие и заголовки пакетов, чтобы трафик выглядел «шумом».
-Скрипт берёт всю ручную работу на себя: установка, NAT, firewall, случайные
-параметры обфускации и управление клиентами с QR-кодами — без знаний Linux.
+## ✨ What's inside
 
----
+| Component | What it does |
+|-----------|--------------|
+| `amneziawg-install.sh` | One-command install + interactive menu (add/revoke clients, QR, status) |
+| **Mobile preset** | `MTU 1280` + `Jc=3` for 4G/LTE carriers — fixes "connected but no internet" on cellular |
+| `cmd/awg-monitor` | Live terminal dashboard (Go/Bubble Tea): traffic, rates, handshake, online status |
+| `cmd/awg-panel` | Web panel (Go + htmx): auth, HTTPS, live dashboard, client management, **quotas, expiry, speed limits** |
+| `cmd/awg-deploy` | Cross-platform SSH installer — a **Windows `.exe`** (+ macOS/Linux) that sets everything up remotely |
 
-## ✨ Features / Возможности
+## ⚡ Quick start
 
-- 🚀 **Установка в одну команду** — от чистого сервера до рабочего VPN за пару минут
-- 🛡️ **Обфускация трафика** — случайные `Jc/Jmin/Jmax/S1/S2/H1–H4`, синхронные у сервера и клиента
-- 📶 **Мобильный пресет** — `MTU 1280` + `Jc=3` для 4G/LTE (Yota, МТС, Билайн, Мегафон, Tele2); лечит «подключено, но нет интернета» на сотовых
-- 📱 **QR-коды** — импорт конфига в мобильное приложение сканированием
-- 👥 **Меню управления** — добавить / удалить клиента, список, статус, QR
-- 📊 **TUI-монитор** ([`monitor/`](monitor/)) — живой терминальный дашборд: трафик, скорости, handshake, online
-- 🔁 **Hot-reload** — клиенты добавляются без разрыва текущих соединений (`awg syncconf`)
-- 🌐 **IPv4 + IPv6**, автоопределение публичного IP и сетевого интерфейса
-- ♻️ **Идемпотентность** — повторный запуск открывает меню, а не ломает установку
-
----
-
-## ⚡ Quick start / Быстрый старт
-
-На сервере (Ubuntu 22.04+/24.04 или Debian 12+), под root:
+On a server (Ubuntu 22.04+/24.04 or Debian 12+), as root:
 
 ```bash
 git clone https://github.com/hennessyxo/amneziawg-installer.git
 cd amneziawg-installer
-sudo bash amneziawg-install.sh
+sudo bash amneziawg-install.sh        # add --lang en for English UI
 ```
 
-Или одной строкой:
+The script asks a few questions (public IP, port, DNS, first client name, mobile
+preset), then prints a QR code to import into the **AmneziaVPN** app. Re-run the
+script anytime to open the management menu (clients, monitoring, web panel).
+
+### Install from Windows / over SSH
+
+Don't want to touch the server? Grab `awg-deploy` from
+[Releases](https://github.com/hennessyxo/amneziawg-installer/releases) — one
+binary (`.exe` for Windows, plus macOS/Linux):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hennessyxo/amneziawg-installer/main/amneziawg-install.sh -o awg-install.sh
-sudo bash awg-install.sh
+awg-deploy install root@203.0.113.7 --preset mobile   # installs over SSH, prints QR
+awg-deploy add-client root@203.0.113.7 laptop         # new client + QR
+awg-deploy monitor root@203.0.113.7                   # live dashboard locally
 ```
 
-> ⚠️ Перед `curl | bash` всегда читайте, что запускаете. Здесь скрипт скачивается
-> в файл, чтобы вы могли его просмотреть.
+The installer script is embedded in the binary — nothing to download on the
+server. See [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
----
-
-## 📋 Step-by-step / Пошагово
-
-1. **Арендуйте VPS** с Ubuntu/Debian (подойдёт самый дешёвый — 1 vCPU / 512 МБ).
-2. **Подключитесь по SSH:** `ssh root@ВАШ_IP`.
-3. **Запустите скрипт** (см. Quick start). Он спросит:
-   - публичный IP/домен (определяется автоматически),
-   - внешний интерфейс (определяется автоматически),
-   - UDP-порт (по умолчанию случайный),
-   - DNS для клиентов (по умолчанию Cloudflare),
-   - имя первого клиента,
-   - **мобильный пресет** — включи, если будешь пользоваться с сотовой сети.
-4. **Отсканируйте QR-код** в приложении **AmneziaWG** / **Amnezia VPN**
-   (Android, iOS, Windows, macOS, Linux) — или импортируйте `.conf` файл.
-5. **Подключайтесь.** Готово.
-
-Чтобы добавить ещё клиента — просто запустите скрипт снова:
-
-```bash
-sudo bash amneziawg-install.sh
-```
-
-Появится меню управления.
-
-### Автоматизация / без вопросов
-
-Для скриптов и удалённой установки по SSH есть неинтерактивный режим — настройки
-берутся из переменных окружения `AWG_*`:
+### Automation / non-interactive
 
 ```bash
 AWG_SERVER_IP=203.0.113.7 AWG_PORT=51820 AWG_PRESET=mobile AWG_CLIENT=phone \
   sudo -E bash amneziawg-install.sh --yes
-
-# создать ещё клиента и выйти (печатает его конфиг + QR):
-sudo bash amneziawg-install.sh --add-client laptop
+sudo bash amneziawg-install.sh --add-client laptop    # one client, then exit
 ```
 
-Поддерживаются: `AWG_SERVER_IP`, `AWG_SERVER_NIC`, `AWG_PORT`, `AWG_DNS1`,
-`AWG_DNS2`, `AWG_CLIENT`, `AWG_PRESET` (`default`|`mobile`).
+Vars: `AWG_SERVER_IP`, `AWG_SERVER_NIC`, `AWG_PORT`, `AWG_DNS1/2`, `AWG_CLIENT`,
+`AWG_PRESET` (`default|mobile`), `AWG_LANG` (`ru|en`).
 
----
+## 📊 Monitoring
 
-## 📱 Client apps / Клиентские приложения
-
-| Платформа | Приложение |
-|-----------|-----------|
-| Android / iOS | **AmneziaVPN** (Google Play / App Store) или **AmneziaWG** |
-| Windows / macOS / Linux | **AmneziaVPN** desktop |
-| CLI (другой Linux) | `amneziawg-tools` → `awg-quick up <config>` |
-
-Импортируйте сгенерированный `awg0-client-<name>.conf` или отсканируйте QR.
-
----
-
-## 🔧 What the script configures / Что настраивает скрипт
-
-| Шаг | Действие |
-|-----|----------|
-| Пакеты | Подключает Amnezia PPA, ставит `amneziawg` (DKMS-модуль + tools), `qrencode` |
-| Ядро | Включает `net.ipv4.ip_forward` и IPv6 forwarding (`/etc/sysctl.d/99-amneziawg.conf`) |
-| Интерфейс | `awg0` с адресами `10.66.66.1/24` и `fd42:42:42::1/64` |
-| Firewall/NAT | Правила `iptables`/`ip6tables` MASQUERADE и FORWARD в `PostUp/PostDown` |
-| Служба | Включает и запускает `awg-quick@awg0` (автозагрузка) |
-| Клиенты | Ключи, preshared-key, выдача IP, конфиг + QR |
-
-Все настройки сохраняются в `/etc/amnezia/amneziawg/params` (права `600`).
-
----
-
-## 🔐 Security notes / Безопасность
-
-- Приватные ключи и `params` хранятся с правами `600`, под `umask 077`.
-- Каждый клиент получает уникальный **preshared key** (дополнительный слой к ключам).
-- Параметры обфускации генерируются случайно при установке — не используйте
-  «дефолтные из интернета», иначе обфускация теряет смысл.
-- Скрипт открывает в firewall только выбранный UDP-порт.
-- Для боевого использования смените SSH на ключи и закройте лишние порты.
-
----
-
-## 📊 Monitoring / Мониторинг
-
-`awg-monitor` ([`cmd/awg-monitor`](cmd/awg-monitor)) — живой терминальный дашборд на Go:
-трафик и скорость по каждому клиенту, время последнего handshake, online-статус,
-спарклайны нагрузки. Подтягивает имена клиентов прямо из конфига установщика.
-Проще всего поставить через меню установщика (пункт 6) — оно само скачает бинарник.
+`awg-monitor` ([`cmd/awg-monitor`](cmd/awg-monitor)) — a live terminal dashboard:
+per-client traffic and rates, handshake age, online status, throughput
+sparklines. Install it from the menu (option 6) or build it:
 
 ```bash
-# вручную из исходников:
-go build -o awg-monitor ./cmd/awg-monitor
-sudo ./awg-monitor            # мониторинг awg0
-./awg-monitor --demo          # демо без сервера
+go build -o awg-monitor ./cmd/awg-monitor && sudo ./awg-monitor
 ```
 
-Подробнее — в [`docs/MONITOR.md`](docs/MONITOR.md).
+See [`docs/MONITOR.md`](docs/MONITOR.md).
 
-### Веб-панель
+## 🖥️ Web panel
 
-`awg-panel` ([`cmd/awg-panel`](cmd/awg-panel)) — веб-панель управления на Go + htmx:
-вход по паролю (bcrypt + сессии, HTTPS), живой список клиентов с трафиком и
-статусом, добавление/удаление клиентов и QR прямо в браузере. Ставится из меню
-установщика (пункт 7): скачает бинарник, спросит пароль, сгенерирует
-самоподписанный сертификат и поднимет systemd-службу на `https://<ip>:8443`.
+`awg-panel` ([`cmd/awg-panel`](cmd/awg-panel)) — a browser dashboard (Go + htmx):
+password auth (bcrypt + sessions, HTTPS), live client traffic, add/remove
+clients with QR, plus **traffic quotas, time-based expiry and per-client speed
+limits**. Install from the menu (option 7); it sets a password, generates a TLS
+cert and a systemd service on `https://<ip>:8443`. EN/RU toggle in the UI.
 
-Подробнее — в [`docs/PANEL.md`](docs/PANEL.md).
+See [`docs/PANEL.md`](docs/PANEL.md).
 
-### 🪟 Установка из Windows / по SSH
+### Client lifecycle (quotas / expiry / speed)
 
-Не хочешь заходить на сервер руками? `awg-deploy` ([`cmd/awg-deploy`](cmd/awg-deploy)) —
-один бинарник (`.exe` для Windows, плюс mac/Linux): запускаешь, указываешь
-`user@host` и пароль/ключ — он сам ставит VPN по SSH, сохраняет клиентский `.conf`
-и рисует QR в терминале. Есть режим `monitor` — живой дашборд сервера у тебя локально.
+When adding a client you can set a **traffic quota (GB)**, an **expiry (days)**
+and a **speed limit (Mbit/s)**. A background enforcer accounts traffic and:
 
-```bash
-awg-deploy install root@203.0.113.7 --preset mobile
-awg-deploy monitor root@203.0.113.7
-```
-
-Скрипт установщика встроен в бинарник — на сервер ничего качать не надо.
-Подробнее — в [`docs/DEPLOY.md`](docs/DEPLOY.md).
-
----
+- **expired** or **over quota** → the client is **disabled** (kept; re-enable any time);
+- **speed limit** → the client is throttled with `tc` (HTB on download, ingress
+  policer on upload) instead of being cut off.
 
 ## 🗺️ Roadmap
 
-- [x] Установщик + меню управления (CLI)
-- [x] Мобильные пресеты (MTU/обфускация под 4G/LTE)
-- [x] TUI-монитор на Go (с тестами и CI)
-- [x] Пункт меню «мониторинг» + готовые бинарники (GitHub Releases, без Go на сервере)
-- [x] **Веб-панель** ([`cmd/awg-panel`](cmd/awg-panel)): авторизация, HTTPS, живой статус/трафик,
-      добавить/удалить клиента, QR — ставится из меню (пункт 7)
-- [x] **Квоты трафика + срок действия**: при создании задаёшь лимит ГБ и/или срок в днях;
-      истёк срок или превышена квота → **авто-отключение** (клиент сохраняется, можно
-      включить обратно — фоновый enforcer)
-- [x] **Ограничение скорости (`tc`)** — резать клиента до X Мбит/с (HTB на отдачу
-      + ingress-police на приём); лимит задаётся при создании клиента
-- [x] **Кросс-платформенный SSH-установщик** ([`cmd/awg-deploy`](cmd/awg-deploy)):
-      `.exe` для Windows (+ mac/Linux) — ставит VPN по SSH, отдаёт конфиг+QR, режим мониторинга
-- [ ] Полный i18n (EN/RU): доки + установщик + панель
+- [x] Installer + management menu + mobile presets
+- [x] TUI monitor (Go, tested, CI)
+- [x] Web panel (auth/HTTPS/htmx)
+- [x] Quotas + time-based expiry (auto-disable, re-enable)
+- [x] Per-client speed limiting (`tc`)
+- [x] Cross-platform SSH installer (Windows `.exe`)
+- [x] EN/RU localization (docs, installer UI, web panel)
 
----
+## 🔐 Security notes
+
+- Private keys, params and the panel password hash are stored `600` under `umask 077`.
+- Each client gets a unique preshared key; obfuscation parameters are randomized per install.
+- The web panel uses bcrypt + sessions (HttpOnly cookie) + CSRF, and HTTPS; it runs
+  as root (needs `awg`) — don't expose it publicly without need (SSH tunnel / trusted network).
+- The SSH deploy tool verifies host keys via `known_hosts` (TOFU for new hosts,
+  hard-fail on a changed key).
 
 ## 🩺 Troubleshooting
 
-Частые проблемы и решения — в [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
-
-Быстрая диагностика:
+See [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md). Quick checks:
 
 ```bash
 systemctl status awg-quick@awg0
@@ -211,23 +127,13 @@ journalctl -u awg-quick@awg0 -n 50
 awg show awg0
 ```
 
----
-
 ## ⚠️ Disclaimer
 
-Проект создан для **законного** использования: приватности, доступа к собственным
-ресурсам и обучения сетевым технологиям. Соблюдайте законы своей юрисдикции.
-Автор не несёт ответственности за неправомерное использование.
-
-This project is for **lawful** use — privacy, accessing your own resources, and
-learning networking. Follow the laws of your jurisdiction.
-
----
+For **lawful** use — privacy, accessing your own resources, and learning
+networking. Follow the laws of your jurisdiction.
 
 ## 📄 License
 
-MIT © contributors. See [LICENSE](LICENSE).
-
-Логика установки и управления клиентами адаптирована из проверенного
-[`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
-и портирована на AmneziaWG с поддержкой обфускации.
+MIT © contributors. See [LICENSE](LICENSE). Install logic adapted from the
+battle-tested [`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
+and ported to AmneziaWG with obfuscation support.

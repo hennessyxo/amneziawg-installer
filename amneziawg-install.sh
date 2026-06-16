@@ -50,6 +50,69 @@ err()  { echo -e "${RED}✗${NC} $*" >&2; }
 # Runtime flags (overridable via CLI args; see parseArgs).
 NONINTERACTIVE=0
 ADD_CLIENT=""
+LANG_CODE="ru"
+
+# detectLang picks the UI language: --lang/AWG_LANG, else $LANG, else Russian.
+detectLang() {
+	local l="${AWG_LANG:-}"
+	if [[ -z "${l}" ]]; then
+		case "${LANG:-}" in en*) l="en" ;; *) l="ru" ;; esac
+	fi
+	case "${l}" in en) LANG_CODE="en" ;; *) LANG_CODE="ru" ;; esac
+}
+
+# t prints a localized UI string by key (interactive surface: menu/prompts).
+t() {
+	if [[ "${LANG_CODE}" == "en" ]]; then
+		case "$1" in
+			menu_title)   echo "AmneziaWG — management" ;;
+			m_add)        echo "Add client" ;;
+			m_del)        echo "Remove client" ;;
+			m_list)       echo "List clients" ;;
+			m_qr)         echo "Show client QR" ;;
+			m_status)     echo "Server status" ;;
+			m_monitor)    echo "Monitoring (install / run awg-monitor)" ;;
+			m_panel)      echo "Web panel (install / run awg-panel)" ;;
+			m_uninstall)  echo "Remove AmneziaWG completely" ;;
+			m_exit)       echo "Exit" ;;
+			choose)       echo "Choice" ;;
+			q_mobile)     echo "Enable the mobile preset (MTU 1280, Jc=3 for 4G/LTE)? [y/N]: " ;;
+			confirm)      echo "Continue? [Y/n]: " ;;
+			cancelled)    echo "Cancelled." ;;
+			done_title)   echo "Done! AmneziaWG server is up." ;;
+			run_again)    echo "Run the script again to add clients, enable monitoring (6) or the web panel (7)." ;;
+			run_monitor)  echo "Run monitoring now? [Y/n]: " ;;
+			mon_usage)    echo "How to use awg-monitor" ;;
+			panel_addr)   echo "Address" ;;
+			invalid)      echo "Invalid choice." ;;
+			*)            echo "$1" ;;
+		esac
+	else
+		case "$1" in
+			menu_title)   echo "AmneziaWG — управление" ;;
+			m_add)        echo "Добавить клиента" ;;
+			m_del)        echo "Удалить клиента" ;;
+			m_list)       echo "Список клиентов" ;;
+			m_qr)         echo "Показать QR-код клиента" ;;
+			m_status)     echo "Статус сервера" ;;
+			m_monitor)    echo "Мониторинг (установить / запустить awg-monitor)" ;;
+			m_panel)      echo "Веб-панель (установить / запустить awg-panel)" ;;
+			m_uninstall)  echo "Удалить AmneziaWG полностью" ;;
+			m_exit)       echo "Выход" ;;
+			choose)       echo "Выбор" ;;
+			q_mobile)     echo "Включить мобильный пресет (MTU 1280, Jc=3 для 4G/LTE)? [y/N]: " ;;
+			confirm)      echo "Продолжить? [Y/n]: " ;;
+			cancelled)    echo "Отменено." ;;
+			done_title)   echo "Готово! Сервер AmneziaWG развёрнут." ;;
+			run_again)    echo "Запусти скрипт снова: добавить клиентов, включить мониторинг (6) или веб-панель (7)." ;;
+			run_monitor)  echo "Запустить мониторинг сейчас? [Y/n]: " ;;
+			mon_usage)    echo "Как пользоваться awg-monitor" ;;
+			panel_addr)   echo "Адрес" ;;
+			invalid)      echo "Неверный выбор." ;;
+			*)            echo "$1" ;;
+		esac
+	fi
+}
 
 # ---------------------------------------------------------------------------
 # Pre-flight checks
@@ -206,10 +269,11 @@ installQuestions() {
 	FIRST_CLIENT=$(sanitizeName "${FIRST_CLIENT}")
 
 	echo
-	echo "Будешь подключаться с мобильного интернета (4G/LTE: Yota, МТС, Билайн, Мегафон, Tele2)?"
-	echo "Мобильный пресет включает MTU 1280 + щадящую обфускацию (Jc=3) — лечит"
-	echo "'подключено, но нет интернета' на сотовых сетях."
-	read -rp "Включить мобильный пресет? [y/N]: " mob
+	if [[ "${LANG_CODE}" == "ru" ]]; then
+		echo "Мобильный пресет (MTU 1280 + щадящая обфускация Jc=3) лечит"
+		echo "'подключено, но нет интернета' на сотовых сетях (Yota/МТС/Билайн/Мегафон/Tele2)."
+	fi
+	read -rp "$(t q_mobile)" mob
 	if [[ "${mob,,}" == "y" ]]; then PRESET="mobile"; else PRESET="default"; fi
 
 	# Internal VPN subnets
@@ -224,9 +288,9 @@ installQuestions() {
 	echo "    DNS      : ${CLIENT_DNS_1}, ${CLIENT_DNS_2}"
 	echo "    Пресет   : ${PRESET}$([[ "${PRESET}" == "mobile" ]] && echo ' (MTU 1280, Jc=3)')"
 	echo
-	read -rp "Продолжить? [Y/n]: " confirm
+	read -rp "$(t confirm)" confirm
 	if [[ "${confirm,,}" == "n" ]]; then
-		err "Отменено пользователем."
+		err "$(t cancelled)"
 		exit 0
 	fi
 }
@@ -363,8 +427,8 @@ installAmneziaWG() {
 	startService
 	newClient "${FIRST_CLIENT}"
 	echo
-	ok "Готово! Сервер AmneziaWG развёрнут."
-	echo -e "Запусти ${BOLD}sudo bash $0${NC} снова: добавить клиентов, включить мониторинг (6) или веб-панель (7)."
+	ok "$(t done_title)"
+	echo -e "$(t run_again)"
 }
 
 # ---------------------------------------------------------------------------
@@ -597,7 +661,7 @@ detectArch() {
 
 showMonitorUsage() {
 	echo
-	echo -e "${BOLD}Как пользоваться awg-monitor${NC}"
+	echo -e "${BOLD}$(t mon_usage)${NC}"
 	echo "  awg-monitor                 — открыть дашборд (интерфейс ${AWG_NIC})"
 	echo "  awg-monitor --interval 1s   — обновлять раз в секунду"
 	echo "  awg-monitor --demo          — демо-режим без сервера"
@@ -657,7 +721,7 @@ installMonitor() {
 		ok "awg-monitor уже установлен (${MONITOR_BIN})."
 	fi
 	showMonitorUsage
-	read -rp "Запустить мониторинг сейчас? [Y/n]: " r
+	read -rp "$(t run_monitor)" r
 	[[ "${r,,}" != "n" ]] && runMonitor
 }
 
@@ -757,18 +821,18 @@ showPanelUsage() {
 # ---------------------------------------------------------------------------
 manageMenu() {
 	echo
-	echo -e "${BOLD}AmneziaWG — управление${NC}"
-	echo "  1) Добавить клиента"
-	echo "  2) Удалить клиента"
-	echo "  3) Список клиентов"
-	echo "  4) Показать QR-код клиента"
-	echo "  5) Статус сервера"
-	echo "  6) Мониторинг (установить / запустить awg-monitor)"
-	echo "  7) Веб-панель (установить / запустить awg-panel)"
-	echo "  8) Удалить AmneziaWG полностью"
-	echo "  9) Выход"
+	echo -e "${BOLD}$(t menu_title)${NC}"
+	echo "  1) $(t m_add)"
+	echo "  2) $(t m_del)"
+	echo "  3) $(t m_list)"
+	echo "  4) $(t m_qr)"
+	echo "  5) $(t m_status)"
+	echo "  6) $(t m_monitor)"
+	echo "  7) $(t m_panel)"
+	echo "  8) $(t m_uninstall)"
+	echo "  9) $(t m_exit)"
 	echo
-	read -rp "Выбор [1-9]: " choice
+	read -rp "$(t choose) [1-9]: " choice
 	case "${choice}" in
 		1) newClient "" ;;
 		2) revokeClient ;;
@@ -779,7 +843,7 @@ manageMenu() {
 		7) installPanel ;;
 		8) uninstall ;;
 		9) exit 0 ;;
-		*) err "Неверный выбор." ;;
+		*) err "$(t invalid)" ;;
 	esac
 }
 
@@ -791,10 +855,12 @@ parseArgs() {
 		case "$1" in
 			-y | --yes) NONINTERACTIVE=1; shift ;;
 			--add-client) ADD_CLIENT="${2:-}"; shift 2 ;;
+			--lang) AWG_LANG="${2:-}"; shift 2 ;;
 			-h | --help)
-				echo "Usage: $0 [-y|--yes] [--add-client NAME]"
-				echo "  -y, --yes        неинтерактивная установка (настройки из AWG_* env)"
-				echo "  --add-client N   создать клиента N и выйти (для автоматизации/SSH)"
+				echo "Usage: $0 [-y|--yes] [--lang en|ru] [--add-client NAME]"
+				echo "  -y, --yes        non-interactive install (settings from AWG_* env)"
+				echo "  --lang en|ru     UI language (default: auto from \$LANG)"
+				echo "  --add-client N   create client N and exit (for automation/SSH)"
 				exit 0
 				;;
 			*) shift ;;
@@ -804,6 +870,7 @@ parseArgs() {
 
 main() {
 	parseArgs "$@"
+	detectLang
 	checkRoot
 	checkVirt
 	checkOS
