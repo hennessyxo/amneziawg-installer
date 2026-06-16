@@ -380,6 +380,7 @@ writeServerConfig() {
 		Address = ${SERVER_WG_IPV4}/24,${SERVER_WG_IPV6}/64
 		ListenPort = ${SERVER_PORT}
 		PrivateKey = ${SERVER_PRIV_KEY}
+		MTU = ${CLIENT_MTU}
 		Jc = ${JC}
 		Jmin = ${JMIN}
 		Jmax = ${JMAX}
