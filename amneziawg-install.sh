@@ -25,6 +25,8 @@ readonly AWG_NIC="awg0"
 readonly PARAMS_FILE="${AWG_DIR}/params"
 readonly SERVER_CONF="${AWG_DIR}/${AWG_NIC}.conf"
 readonly CLIENT_OUT_DIR="${HOME}"
+readonly MONITOR_BIN="/usr/local/bin/awg-monitor"
+readonly REPO_SLUG="hennessyxo/amneziawg-installer"
 
 # Colors (disabled automatically when output is not a terminal)
 if [[ -t 1 ]]; then
@@ -336,7 +338,7 @@ installAmneziaWG() {
 	newClient "${FIRST_CLIENT}"
 	echo
 	ok "Готово! Сервер AmneziaWG развёрнут."
-	echo -e "Запусти ${BOLD}sudo bash $0${NC} снова, чтобы добавлять/удалять клиентов."
+	echo -e "Запусти ${BOLD}sudo bash $0${NC} снова, чтобы добавлять клиентов или включить мониторинг (пункт 6)."
 }
 
 # ---------------------------------------------------------------------------
@@ -539,6 +541,87 @@ showStatus() {
 }
 
 # ---------------------------------------------------------------------------
+# Monitoring (awg-monitor — Go TUI dashboard)
+# ---------------------------------------------------------------------------
+detectArch() {
+	case "$(uname -m)" in
+		x86_64 | amd64) echo "amd64" ;;
+		aarch64 | arm64) echo "arm64" ;;
+		*) echo "" ;;
+	esac
+}
+
+showMonitorUsage() {
+	echo
+	echo -e "${BOLD}Как пользоваться awg-monitor${NC}"
+	echo "  awg-monitor                 — открыть дашборд (интерфейс ${AWG_NIC})"
+	echo "  awg-monitor --interval 1s   — обновлять раз в секунду"
+	echo "  awg-monitor --demo          — демо-режим без сервера"
+	echo "  В дашборде: [r] обновить сейчас, [q] выйти"
+	echo
+}
+
+runMonitor() {
+	if [[ ! -x "${MONITOR_BIN}" ]]; then
+		err "awg-monitor не установлен."
+		return 1
+	fi
+	"${MONITOR_BIN}" --iface "${AWG_NIC}" --conf "${SERVER_CONF}"
+}
+
+installMonitor() {
+	loadParams
+	if [[ -x "${MONITOR_BIN}" ]]; then
+		ok "awg-monitor уже установлен (${MONITOR_BIN})."
+		showMonitorUsage
+		read -rp "Запустить мониторинг сейчас? [Y/n]: " r
+		[[ "${r,,}" != "n" ]] && runMonitor
+		return 0
+	fi
+
+	local arch installed=0
+	arch=$(detectArch)
+
+	# Preferred: download a prebuilt static binary (no Go needed on the server).
+	if [[ -n "${arch}" ]]; then
+		local url="https://github.com/${REPO_SLUG}/releases/latest/download/awg-monitor-linux-${arch}"
+		msg "Скачиваю awg-monitor (${arch})..."
+		if curl -fsSL "${url}" -o "${MONITOR_BIN}" 2>/dev/null && [[ -s "${MONITOR_BIN}" ]]; then
+			chmod +x "${MONITOR_BIN}"
+			installed=1
+			ok "Бинарник установлен: ${MONITOR_BIN}"
+		fi
+	fi
+
+	# Fallback: build from source if the repo was cloned and Go is available.
+	if [[ "${installed}" -eq 0 ]]; then
+		local src_dir
+		src_dir="$(cd "$(dirname "$0")" && pwd)/monitor"
+		if [[ -d "${src_dir}" ]] && command -v go >/dev/null 2>&1; then
+			msg "Готовый бинарник недоступен — собираю из исходников (${src_dir})..."
+			if (cd "${src_dir}" && go build -o "${MONITOR_BIN}" .) 2>/dev/null; then
+				chmod +x "${MONITOR_BIN}"
+				installed=1
+				ok "Собрано из исходников: ${MONITOR_BIN}"
+			fi
+		fi
+	fi
+
+	if [[ "${installed}" -eq 0 ]]; then
+		err "Не удалось установить awg-monitor автоматически."
+		echo "Причина: бинарник не скачался (приватный репозиторий?) и нет Go для сборки."
+		echo "Решения:"
+		echo "  • сделать репозиторий публичным — тогда бинарник скачается одной командой;"
+		echo "  • или установить Go и собрать: cd monitor && go build -o ${MONITOR_BIN} ."
+		return 1
+	fi
+
+	showMonitorUsage
+	read -rp "Запустить мониторинг сейчас? [Y/n]: " r
+	[[ "${r,,}" != "n" ]] && runMonitor
+}
+
+# ---------------------------------------------------------------------------
 # Menu (shown when AmneziaWG is already installed)
 # ---------------------------------------------------------------------------
 manageMenu() {
@@ -549,18 +632,20 @@ manageMenu() {
 	echo "  3) Список клиентов"
 	echo "  4) Показать QR-код клиента"
 	echo "  5) Статус сервера"
-	echo "  6) Удалить AmneziaWG полностью"
-	echo "  7) Выход"
+	echo "  6) Мониторинг (установить / запустить awg-monitor)"
+	echo "  7) Удалить AmneziaWG полностью"
+	echo "  8) Выход"
 	echo
-	read -rp "Выбор [1-7]: " choice
+	read -rp "Выбор [1-8]: " choice
 	case "${choice}" in
 		1) newClient "" ;;
 		2) revokeClient ;;
 		3) listClients ;;
 		4) showClientQR ;;
 		5) showStatus ;;
-		6) uninstall ;;
-		7) exit 0 ;;
+		6) installMonitor ;;
+		7) uninstall ;;
+		8) exit 0 ;;
 		*) err "Неверный выбор." ;;
 	esac
 }
