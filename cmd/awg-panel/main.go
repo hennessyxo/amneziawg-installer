@@ -12,6 +12,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -22,10 +23,14 @@ import (
 
 	"github.com/hennessyxo/amneziawg-installer/internal/auth"
 	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
+	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
 	"github.com/hennessyxo/amneziawg-installer/internal/server"
 )
 
-const sessionTTL = 12 * time.Hour
+const (
+	sessionTTL      = 12 * time.Hour
+	enforceInterval = 30 * time.Second // how often quotas/expiry are reconciled
+)
 
 func main() {
 	// Subcommand: `awg-panel hash` reads a password from stdin and prints its
@@ -41,6 +46,7 @@ func main() {
 	conf := flag.String("conf", "/etc/amnezia/amneziawg/awg0.conf", "server config path")
 	params := flag.String("params", "/etc/amnezia/amneziawg/params", "installer params path")
 	clientDir := flag.String("client-dir", "/etc/amnezia/amneziawg/clients", "where panel-generated client configs are stored")
+	storePath := flag.String("store", "/etc/amnezia/amneziawg/clients.json", "lifecycle metadata store (quotas/expiry)")
 	hashFile := flag.String("password-hash-file", "/etc/amnezia/amneziawg/panel.hash", "file containing the admin bcrypt hash")
 	password := flag.String("password", "", "admin password (dev only; prefer --password-hash-file)")
 	tlsCert := flag.String("tls-cert", "", "TLS certificate (enables HTTPS)")
@@ -52,18 +58,25 @@ func main() {
 		log.Fatalf("awg-panel: %v", err)
 	}
 
+	store, err := lifecycle.Open(*storePath)
+	if err != nil {
+		log.Fatalf("awg-panel: %v", err)
+	}
+
 	ctrl := awgctl.FileController{
 		Iface:     *iface,
 		ConfPath:  *conf,
 		ParamPath: *params,
 		ClientDir: *clientDir,
+		Store:     store,
 	}
 
 	useTLS := *tlsCert != "" && *tlsKey != ""
-	srv, err := server.New(ctrl, auth.NewStore(sessionTTL), pwHash, *iface, useTLS)
+	srv, err := server.New(ctrl, auth.NewStore(sessionTTL), store, pwHash, *iface, useTLS)
 	if err != nil {
 		log.Fatalf("awg-panel: %v", err)
 	}
+	srv.StartEnforcer(context.Background(), enforceInterval)
 
 	httpSrv := &http.Server{
 		Addr:              *listen,

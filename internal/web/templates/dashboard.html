@@ -24,8 +24,10 @@
         <h2>Клиенты</h2>
         <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
           <input type="hidden" name="csrf" value="{{.CSRF}}">
-          <input type="text" name="name" placeholder="имя нового клиента"
+          <input type="text" name="name" placeholder="имя клиента"
                  pattern="[A-Za-z0-9_-]{1,32}" required>
+          <input type="number" name="expires_days" min="1" placeholder="срок, дней" title="через сколько дней удалить (пусто = бессрочно)">
+          <input type="number" name="quota_gb" min="1" step="1" placeholder="квота, ГБ" title="лимит трафика в ГБ (пусто = без лимита)">
           <button type="submit">+ Добавить</button>
         </form>
       </div>

@@ -3,11 +3,14 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +20,7 @@ import (
 	"github.com/hennessyxo/amneziawg-installer/internal/awg"
 	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
 	"github.com/hennessyxo/amneziawg-installer/internal/format"
+	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
 	"github.com/hennessyxo/amneziawg-installer/internal/web"
 )
 
@@ -26,6 +30,7 @@ const cookieName = "awgsess"
 type Server struct {
 	ctrl     awgctl.Controller
 	sessions *auth.Store
+	store    *lifecycle.Store // lifecycle metadata (may be nil in tests)
 	pwHash   string
 	iface    string
 	secure   bool // set the Secure flag on cookies (true behind HTTPS)
@@ -35,8 +40,8 @@ type Server struct {
 }
 
 // New builds a Server. It takes the Controller interface (so tests can inject a
-// fake) and returns the concrete struct.
-func New(ctrl awgctl.Controller, sessions *auth.Store, pwHash, iface string, secure bool) (*Server, error) {
+// fake) and returns the concrete struct. store may be nil (lifecycle disabled).
+func New(ctrl awgctl.Controller, sessions *auth.Store, store *lifecycle.Store, pwHash, iface string, secure bool) (*Server, error) {
 	tmpl, err := template.ParseFS(web.Templates, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing templates: %w", err)
@@ -44,6 +49,7 @@ func New(ctrl awgctl.Controller, sessions *auth.Store, pwHash, iface string, sec
 	s := &Server{
 		ctrl:     ctrl,
 		sessions: sessions,
+		store:    store,
 		pwHash:   pwHash,
 		iface:    iface,
 		secure:   secure,
@@ -52,6 +58,49 @@ func New(ctrl awgctl.Controller, sessions *auth.Store, pwHash, iface string, sec
 	}
 	s.routes()
 	return s, nil
+}
+
+// StartEnforcer runs the quota/expiry reconciliation loop until ctx is done.
+// Each tick it accounts traffic, disables over-quota clients, and deletes
+// expired ones. No-op when no lifecycle store is configured.
+func (s *Server) StartEnforcer(ctx context.Context, interval time.Duration) {
+	if s.store == nil {
+		return
+	}
+	go func() {
+		t := time.NewTicker(interval)
+		defer t.Stop()
+		for {
+			s.enforceOnce()
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+		}
+	}()
+}
+
+func (s *Server) enforceOnce() {
+	snap, err := s.ctrl.Snapshot()
+	if err != nil {
+		return
+	}
+	transfers := make(map[string]lifecycle.Transfer, len(snap.Peers))
+	for _, p := range snap.Peers {
+		transfers[p.PublicKey] = lifecycle.Transfer{Rx: p.RxBytes, Tx: p.TxBytes}
+	}
+	_ = s.store.ApplyUsage(transfers)
+
+	now := time.Now()
+	for _, rec := range s.store.List() {
+		switch lifecycle.Evaluate(rec, now) {
+		case lifecycle.ActionDelete:
+			_ = s.ctrl.RevokeClient(rec.Name)
+		case lifecycle.ActionDisable:
+			_ = s.ctrl.DisableClient(rec.Name)
+		}
+	}
 }
 
 // Handler returns the HTTP handler for the panel.
@@ -66,6 +115,8 @@ func (s *Server) routes() {
 	mux.HandleFunc("GET /partials/clients", s.requireAuth(s.clientsPartial))
 	mux.HandleFunc("POST /clients", s.requireAuth(s.addClient))
 	mux.HandleFunc("POST /clients/{name}/revoke", s.requireAuth(s.revokeClient))
+	mux.HandleFunc("POST /clients/{name}/disable", s.requireAuth(s.toggleClient(false)))
+	mux.HandleFunc("POST /clients/{name}/enable", s.requireAuth(s.toggleClient(true)))
 	mux.HandleFunc("GET /clients/{name}/qr.png", s.requireAuth(s.qrPNG))
 	mux.HandleFunc("GET /clients/{name}/config", s.requireAuth(s.downloadConfig))
 
@@ -174,7 +225,11 @@ func (s *Server) addClient(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `<div class="created"><div class="created-head">Некорректное имя клиента</div></div>`)
 		return
 	}
-	client, err := s.ctrl.AddClient(name)
+	opts := awgctl.AddOptions{
+		ExpiresIn:  daysToDuration(r.FormValue("expires_days")),
+		QuotaBytes: gbToBytes(r.FormValue("quota_gb")),
+	}
+	client, err := s.ctrl.AddClient(name, opts)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 		fmt.Fprintf(w, `<div class="created"><div class="created-head">Ошибка: %s</div></div>`, template.HTMLEscapeString(err.Error()))
@@ -194,7 +249,34 @@ func (s *Server) revokeClient(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
 		return
 	}
-	// Return the refreshed table so the row disappears immediately.
+	s.renderClients(w, r)
+}
+
+// toggleClient returns a handler that enables (true) or disables (false) a client.
+func (s *Server) toggleClient(enable bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.checkCSRF(r) {
+			http.Error(w, "bad csrf token", http.StatusForbidden)
+			return
+		}
+		name := r.PathValue("name")
+		var err error
+		if enable {
+			err = s.ctrl.EnableClient(name)
+		} else {
+			err = s.ctrl.DisableClient(name)
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
+			return
+		}
+		s.renderClients(w, r)
+	}
+}
+
+// renderClients re-renders the clients table partial (used after mutations).
+func (s *Server) renderClients(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
 	data, err := s.buildClientsData(sess.CSRF)
 	if err != nil {
@@ -238,7 +320,8 @@ type peerView struct {
 	Name, Endpoint               string
 	RateRx, RateTx, RxStr, TxStr string
 	HandshakeAgo                 string
-	Online, HasConfig            bool
+	Usage, Expires               string // lifecycle: "" when unlimited/never
+	Online, HasConfig, Disabled  bool
 }
 
 type clientsData struct {
@@ -256,6 +339,14 @@ func (s *Server) buildClientsData(csrf string) (clientsData, error) {
 	s.rates.update(snap)
 	now := snap.Time
 
+	// Lifecycle records, keyed by name, to enrich the live peers.
+	recs := map[string]lifecycle.Record{}
+	if s.store != nil {
+		for _, r := range s.store.List() {
+			recs[r.Name] = r
+		}
+	}
+
 	peers := make([]awg.Peer, len(snap.Peers))
 	copy(peers, snap.Peers)
 	sort.SliceStable(peers, func(i, j int) bool {
@@ -266,35 +357,100 @@ func (s *Server) buildClientsData(csrf string) (clientsData, error) {
 		return displayName(peers[i]) < displayName(peers[j])
 	})
 
-	views := make([]peerView, 0, len(peers))
+	views := make([]peerView, 0, len(peers)+len(recs))
+	live := map[string]bool{}
 	for _, p := range peers {
+		name := displayName(p)
+		live[name] = true
 		rx, tx := s.rates.rate(p.PublicKey)
 		endpoint := p.Endpoint
 		if endpoint == "" {
 			endpoint = "—"
 		}
+		rec := recs[name]
 		views = append(views, peerView{
-			Name:         displayName(p),
+			Name:         name,
 			Endpoint:     endpoint,
 			RateRx:       format.HumanRate(rx),
 			RateTx:       format.HumanRate(tx),
 			RxStr:        format.HumanBytes(p.RxBytes),
 			TxStr:        format.HumanBytes(p.TxBytes),
 			HandshakeAgo: format.Ago(p.LatestHandshake, now),
+			Usage:        usageStr(rec),
+			Expires:      expiresStr(rec, now),
 			Online:       p.Online(now),
 			HasConfig:    true,
 		})
 	}
 
+	// Disabled clients are absent from the live config; list them too.
+	for _, rec := range recs {
+		if rec.Disabled && !live[rec.Name] {
+			views = append(views, peerView{
+				Name:      rec.Name,
+				Endpoint:  "—",
+				RateRx:    format.HumanRate(0),
+				RateTx:    format.HumanRate(0),
+				RxStr:     "—",
+				TxStr:     "—",
+				Usage:     usageStr(rec),
+				Expires:   expiresStr(rec, now),
+				Disabled:  true,
+				HasConfig: true,
+			})
+		}
+	}
+
 	return clientsData{
 		Peers:   views,
 		Online:  snap.OnlineCount(),
-		Total:   len(snap.Peers),
+		Total:   len(views),
 		TotalRx: format.HumanBytes(snap.TotalRx()),
 		TotalTx: format.HumanBytes(snap.TotalTx()),
 		TimeStr: now.Format("15:04:05"),
 		CSRF:    csrf,
 	}, nil
+}
+
+// usageStr renders "used / quota" or "" when unlimited.
+func usageStr(rec lifecycle.Record) string {
+	if rec.QuotaBytes == 0 {
+		return ""
+	}
+	return format.HumanBytes(rec.UsedBytes) + " / " + format.HumanBytes(rec.QuotaBytes)
+}
+
+// expiresStr renders remaining time ("5д", "3ч"), "истёк", or "" when no expiry.
+func expiresStr(rec lifecycle.Record, now time.Time) string {
+	if rec.ExpiresAt == nil {
+		return ""
+	}
+	d := rec.ExpiresAt.Sub(now)
+	if d <= 0 {
+		return "истёк"
+	}
+	if days := int(d.Hours() / 24); days >= 1 {
+		return fmt.Sprintf("%dд", days)
+	}
+	return fmt.Sprintf("%dч", int(d.Hours()))
+}
+
+// daysToDuration parses a positive integer day count into a Duration (0 = none).
+func daysToDuration(s string) time.Duration {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || n <= 0 {
+		return 0
+	}
+	return time.Duration(n) * 24 * time.Hour
+}
+
+// gbToBytes parses a GB amount (float) into bytes (0 = unlimited).
+func gbToBytes(s string) uint64 {
+	g, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || g <= 0 {
+		return 0
+	}
+	return uint64(g * (1 << 30))
 }
 
 func (s *Server) render(w http.ResponseWriter, name string, data any) {

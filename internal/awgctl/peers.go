@@ -70,10 +70,10 @@ func NextOctet(conf string) (int, error) {
 	return 0, fmt.Errorf("no free addresses in %s0/24", ipBase)
 }
 
-// AddPeerBlock appends a fenced [Peer] block in the exact format the installer
+// PeerBlock renders a fenced [Peer] block in the exact format the installer
 // uses, so the CLI menu and the web panel stay interoperable.
-func AddPeerBlock(conf, name, pubKey, psk string, octet int) string {
-	block := fmt.Sprintf(`
+func PeerBlock(name, pubKey, psk string, octet int) string {
+	return fmt.Sprintf(`
 # BEGIN_PEER %s
 [Peer]
 PublicKey = %s
@@ -81,7 +81,37 @@ PresharedKey = %s
 AllowedIPs = %s%d/32,fd42:42:42::%d/128
 # END_PEER %s
 `, name, pubKey, psk, ipBase, octet, octet, name)
+}
+
+// AddPeerBlock appends a peer block to the server config.
+func AddPeerBlock(conf, name, pubKey, psk string, octet int) string {
+	return strings.TrimRight(conf, "\n") + "\n" + PeerBlock(name, pubKey, psk, octet)
+}
+
+// AppendBlock appends a pre-rendered peer block (used to re-enable a client).
+func AppendBlock(conf, block string) string {
 	return strings.TrimRight(conf, "\n") + "\n" + block
+}
+
+// FreeOctet returns the lowest free host octet, avoiding both the octets present
+// in the live config and any reserved by lifecycle records (e.g. disabled
+// clients that may be re-enabled).
+func FreeOctet(conf string, reserved map[int]bool) (int, error) {
+	used := map[int]bool{1: true} // .1 is the server
+	for _, m := range octetRe.FindAllStringSubmatch(conf, -1) {
+		if n, err := strconv.Atoi(m[1]); err == nil {
+			used[n] = true
+		}
+	}
+	for o := range reserved {
+		used[o] = true
+	}
+	for i := 2; i <= 254; i++ {
+		if !used[i] {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("no free addresses in %s0/24", ipBase)
 }
 
 // RemovePeerBlock deletes the fenced block for name. It returns the new config

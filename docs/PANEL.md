@@ -14,7 +14,10 @@ clients in the browser. Built on the same `awg` parsing core as `awg-monitor`.
 - 🔐 **Авторизация**: пароль администратора (bcrypt), сессии в HttpOnly-куках, CSRF на формах
 - 🔒 **HTTPS**: работает по TLS (самоподписанный серт ставится автоматически)
 - 📊 **Живой дашборд**: онлайн-статус, скорость ↑↓, суммарный трафик по клиентам (htmx-поллинг)
-- ➕ **Управление**: добавить / удалить клиента, скачать `.conf`, QR-код — без перезапуска VPN
+- ➕ **Управление**: добавить / удалить / отключить / включить клиента, скачать `.conf`, QR — без перезапуска VPN
+- ⏳ **Квоты и срок действия**: при создании клиента задаёшь лимит трафика (ГБ) и/или срок (дней);
+  фоновый enforcer считает трафик (с учётом сброса счётчиков при перезапуске) и сам
+  **удаляет истёкших** / **отключает превысивших квоту** клиентов
 - 📦 **Один бинарник**: HTML/CSS/htmx вшиты через `embed` — нечего деплоить отдельно
 
 ## Install / Установка
@@ -47,6 +50,7 @@ sudo ./awg-panel \
 | `--conf` | `/etc/amnezia/amneziawg/awg0.conf` | конфиг сервера |
 | `--params` | `/etc/amnezia/amneziawg/params` | параметры установщика |
 | `--client-dir` | `/etc/amnezia/amneziawg/clients` | где хранятся конфиги, созданные панелью |
+| `--store` | `/etc/amnezia/amneziawg/clients.json` | метаданные жизненного цикла (квоты/срок) |
 | `--password-hash-file` | `/etc/amnezia/amneziawg/panel.hash` | bcrypt-хеш пароля админа |
 | `--tls-cert` / `--tls-key` | — | включают HTTPS |
 
@@ -68,9 +72,13 @@ cmd/awg-panel/main.go        # flags, TLS, `hash` subcommand
 internal/
 ├── awgctl/                  # control plane (params, peer add/remove, FileController)
 ├── auth/                    # bcrypt + in-memory sessions + CSRF
-├── server/                  # routing, middleware, handlers, rate tracker
+├── lifecycle/               # quota/expiry store, usage accounting, rule engine
+├── server/                  # routing, middleware, handlers, rate tracker, enforcer
 └── web/                     # embedded templates + static (htmx, CSS)
 ```
+
+The enforcer (in `server`) reconciles every 30s: accounts traffic into the
+`lifecycle` store, then disables over-quota and deletes expired clients.
 
 Pure logic (`awgctl`, `auth`) and HTTP handlers (against a fake `Controller`) are
 unit-tested; run `go test ./...`.

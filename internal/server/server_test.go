@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -13,27 +14,40 @@ import (
 	"github.com/hennessyxo/amneziawg-installer/internal/auth"
 	"github.com/hennessyxo/amneziawg-installer/internal/awg"
 	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
+	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
 )
+
+// postForm is a small helper for authenticated form POSTs.
+func postForm(t *testing.T, s *Server, path string, form url.Values, cookie *http.Cookie) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest("POST", path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(cookie)
+	rr := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rr, req)
+	return rr
+}
 
 // fakeCtrl is an in-memory Controller for handler tests.
 type fakeCtrl struct {
 	snap      awg.Snapshot
 	added     []string
 	revoked   []string
+	disabled  []string
+	enabled   []string
 	configs   map[string]string
 	addErr    error
 	revokeErr error
 }
 
 func (f *fakeCtrl) Snapshot() (awg.Snapshot, error) { return f.snap, nil }
-func (f *fakeCtrl) ListClients() ([]string, error)  { return nil, nil }
 func (f *fakeCtrl) ClientConfig(n string) (string, error) {
 	if c, ok := f.configs[n]; ok {
 		return c, nil
 	}
 	return "", fmt.Errorf("no config for %s", n)
 }
-func (f *fakeCtrl) AddClient(n string) (awgctl.Client, error) {
+func (f *fakeCtrl) AddClient(n string, _ awgctl.AddOptions) (awgctl.Client, error) {
 	if f.addErr != nil {
 		return awgctl.Client{}, f.addErr
 	}
@@ -47,6 +61,8 @@ func (f *fakeCtrl) RevokeClient(n string) error {
 	f.revoked = append(f.revoked, n)
 	return nil
 }
+func (f *fakeCtrl) DisableClient(n string) error { f.disabled = append(f.disabled, n); return nil }
+func (f *fakeCtrl) EnableClient(n string) error  { f.enabled = append(f.enabled, n); return nil }
 
 const testPassword = "s3cret"
 
@@ -56,7 +72,7 @@ func newTestServer(t *testing.T, ctrl awgctl.Controller) *Server {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s, err := New(ctrl, auth.NewStore(time.Hour), hash, "awg0", false)
+	s, err := New(ctrl, auth.NewStore(time.Hour), nil, hash, "awg0", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,5 +251,55 @@ func TestQRPNG(t *testing.T) {
 	s.Handler().ServeHTTP(rr2, req2)
 	if rr2.Code != http.StatusNotFound {
 		t.Errorf("missing config status = %d, want 404", rr2.Code)
+	}
+}
+
+func TestDisableEnableClient(t *testing.T) {
+	f := &fakeCtrl{snap: sampleSnapshot()}
+	s := newTestServer(t, f)
+	cookie := login(t, s)
+	csrf := csrfToken(t, s, cookie)
+
+	if rr := postForm(t, s, "/clients/phone/disable", url.Values{"csrf": {csrf}}, cookie); rr.Code != http.StatusOK {
+		t.Fatalf("disable status = %d, want 200", rr.Code)
+	}
+	if len(f.disabled) != 1 || f.disabled[0] != "phone" {
+		t.Errorf("DisableClient calls = %v, want [phone]", f.disabled)
+	}
+
+	if rr := postForm(t, s, "/clients/phone/enable", url.Values{"csrf": {csrf}}, cookie); rr.Code != http.StatusOK {
+		t.Fatalf("enable status = %d, want 200", rr.Code)
+	}
+	if len(f.enabled) != 1 || f.enabled[0] != "phone" {
+		t.Errorf("EnableClient calls = %v, want [phone]", f.enabled)
+	}
+}
+
+func TestEnforceOnce_DisablesOverQuotaAndDeletesExpired(t *testing.T) {
+	store, err := lifecycle.Open(filepath.Join(t.TempDir(), "clients.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-time.Hour)
+	_ = store.Put(lifecycle.Record{Name: "expired", PubKey: "EX=", Octet: 2, ExpiresAt: &past})
+	_ = store.Put(lifecycle.Record{Name: "heavy", PubKey: "HV=", Octet: 3, QuotaBytes: 100})
+
+	// "heavy" transfers 160 bytes total → exceeds the 100-byte quota.
+	f := &fakeCtrl{snap: awg.Snapshot{Time: time.Now(), Peers: []awg.Peer{
+		{PublicKey: "HV=", RxBytes: 80, TxBytes: 80},
+	}}}
+	hash, _ := auth.HashPassword(testPassword)
+	s, err := New(f, auth.NewStore(time.Hour), store, hash, "awg0", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.enforceOnce()
+
+	if len(f.revoked) != 1 || f.revoked[0] != "expired" {
+		t.Errorf("expired client should be deleted; revoked = %v", f.revoked)
+	}
+	if len(f.disabled) != 1 || f.disabled[0] != "heavy" {
+		t.Errorf("over-quota client should be disabled; disabled = %v", f.disabled)
 	}
 }

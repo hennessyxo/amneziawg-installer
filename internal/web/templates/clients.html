@@ -11,23 +11,34 @@
     <tr>
       <th></th><th>Клиент</th><th>Endpoint</th>
       <th class="r">↓ скорость</th><th class="r">↑ скорость</th>
-      <th class="r">RX</th><th class="r">TX</th>
+      <th class="r">квота</th><th class="r">срок</th>
       <th class="r">handshake</th><th></th>
     </tr>
   </thead>
   <tbody>
   {{range .Peers}}
-    <tr class="{{if .Online}}online{{end}}">
-      <td><span class="dot {{if .Online}}on{{else}}off{{end}}"></span></td>
-      <td class="name">{{.Name}}</td>
+    <tr class="{{if .Online}}online{{end}}{{if .Disabled}} disabled{{end}}">
+      <td><span class="dot {{if .Disabled}}off{{else if .Online}}on{{else}}off{{end}}"></span></td>
+      <td class="name">{{.Name}}{{if .Disabled}} <span class="badge">отключён</span>{{end}}</td>
       <td class="mono dim">{{.Endpoint}}</td>
       <td class="mono r">{{.RateRx}}</td>
       <td class="mono r">{{.RateTx}}</td>
-      <td class="mono r dim">{{.RxStr}}</td>
-      <td class="mono r dim">{{.TxStr}}</td>
+      <td class="mono r dim">{{if .Usage}}{{.Usage}}{{else}}∞{{end}}</td>
+      <td class="mono r dim">{{if .Expires}}{{.Expires}}{{else}}—{{end}}</td>
       <td class="mono r dim">{{.HandshakeAgo}}</td>
       <td class="actions">
         {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config" title="скачать конфиг">conf</a>{{end}}
+        {{if .Disabled}}
+          <button class="link" title="включить"
+                  hx-post="/clients/{{.Name}}/enable"
+                  hx-target="#clients" hx-swap="innerHTML"
+                  hx-vals='{"csrf":"{{$.CSRF}}"}'>вкл</button>
+        {{else}}
+          <button class="link" title="отключить"
+                  hx-post="/clients/{{.Name}}/disable"
+                  hx-target="#clients" hx-swap="innerHTML"
+                  hx-vals='{"csrf":"{{$.CSRF}}"}'>выкл</button>
+        {{end}}
         <button class="danger" title="удалить"
                 hx-post="/clients/{{.Name}}/revoke"
                 hx-confirm="Удалить клиента {{.Name}}?"
