@@ -169,6 +169,16 @@ func (c FileController) EnableClient(name string) error {
 			return err
 		}
 	}
+	// Clear whatever caused the auto-disable so the enforcer doesn't immediately
+	// re-disable: drop a past expiry, and reset usage if it was over quota.
+	now := time.Now()
+	if rec.ExpiresAt != nil && now.After(*rec.ExpiresAt) {
+		rec.ExpiresAt = nil
+	}
+	if rec.QuotaBytes > 0 && rec.UsedBytes >= rec.QuotaBytes {
+		rec.UsedBytes = 0
+		rec.LastRx, rec.LastTx = 0, 0
+	}
 	rec.Disabled = false
 	_ = c.Store.Put(rec)
 	return c.syncConf()

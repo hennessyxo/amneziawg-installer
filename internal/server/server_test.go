@@ -275,7 +275,7 @@ func TestDisableEnableClient(t *testing.T) {
 	}
 }
 
-func TestEnforceOnce_DisablesOverQuotaAndDeletesExpired(t *testing.T) {
+func TestEnforceOnce_DisablesExpiredAndOverQuota(t *testing.T) {
 	store, err := lifecycle.Open(filepath.Join(t.TempDir(), "clients.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -296,10 +296,15 @@ func TestEnforceOnce_DisablesOverQuotaAndDeletesExpired(t *testing.T) {
 
 	s.enforceOnce()
 
-	if len(f.revoked) != 1 || f.revoked[0] != "expired" {
-		t.Errorf("expired client should be deleted; revoked = %v", f.revoked)
+	// Expired and over-quota clients are both DISABLED, never deleted.
+	if len(f.revoked) != 0 {
+		t.Errorf("nothing should be deleted; revoked = %v", f.revoked)
 	}
-	if len(f.disabled) != 1 || f.disabled[0] != "heavy" {
-		t.Errorf("over-quota client should be disabled; disabled = %v", f.disabled)
+	if len(f.disabled) != 2 {
+		t.Fatalf("both clients should be disabled; disabled = %v", f.disabled)
+	}
+	got := map[string]bool{f.disabled[0]: true, f.disabled[1]: true}
+	if !got["expired"] || !got["heavy"] {
+		t.Errorf("disabled = %v, want {expired, heavy}", f.disabled)
 	}
 }

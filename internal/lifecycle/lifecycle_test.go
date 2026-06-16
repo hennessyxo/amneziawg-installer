@@ -94,11 +94,11 @@ func TestEvaluate(t *testing.T) {
 	}{
 		{"unlimited not expired", Record{}, ActionNone},
 		{"not yet expired", Record{ExpiresAt: &future}, ActionNone},
-		{"expired", Record{ExpiresAt: &past}, ActionDelete},
+		{"expired is disabled, not deleted", Record{ExpiresAt: &past}, ActionDisable},
 		{"under quota", Record{QuotaBytes: 100, UsedBytes: 50}, ActionNone},
 		{"over quota", Record{QuotaBytes: 100, UsedBytes: 100}, ActionDisable},
 		{"over quota but already disabled", Record{QuotaBytes: 100, UsedBytes: 200, Disabled: true}, ActionNone},
-		{"expired beats quota", Record{ExpiresAt: &past, QuotaBytes: 100, UsedBytes: 200}, ActionDelete},
+		{"expired but already disabled", Record{ExpiresAt: &past, Disabled: true}, ActionNone},
 	}
 	for _, c := range cases {
 		if got := Evaluate(c.rec, now); got != c.want {

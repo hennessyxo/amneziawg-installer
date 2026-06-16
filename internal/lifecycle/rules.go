@@ -24,14 +24,17 @@ func (a Action) String() string {
 
 // Evaluate decides what should happen to a record at time now.
 //
-//   - An expired client is deleted (the "config for N days, then gone" case).
-//   - A client over its quota is disabled (kept, so the admin can re-enable or
-//     reset it) — deleting would throw away the config.
+// Both an expired client and an over-quota client are *disabled* (not deleted),
+// so the admin can re-enable them later. Already-disabled clients are left
+// alone, so the enforcer never acts twice on the same client.
 func Evaluate(r Record, now time.Time) Action {
-	if r.ExpiresAt != nil && now.After(*r.ExpiresAt) {
-		return ActionDelete
+	if r.Disabled {
+		return ActionNone
 	}
-	if !r.Disabled && r.QuotaBytes > 0 && r.UsedBytes >= r.QuotaBytes {
+	if r.ExpiresAt != nil && now.After(*r.ExpiresAt) {
+		return ActionDisable
+	}
+	if r.QuotaBytes > 0 && r.UsedBytes >= r.QuotaBytes {
 		return ActionDisable
 	}
 	return ActionNone
