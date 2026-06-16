@@ -96,6 +96,21 @@ func AddClientCommand(sudo, name string) string {
 	return sudo + "env AWG_PRINT_CONFIG=1 bash -s -- --add-client " + shellQuote(name)
 }
 
+// RemoveClientCommand builds the remote command to delete a client.
+func RemoveClientCommand(sudo, name string) string {
+	return sudo + "bash -s -- --remove-client " + shellQuote(name)
+}
+
+// ListClientsCommand builds the remote command to list clients.
+func ListClientsCommand(sudo string) string {
+	return sudo + "bash -s -- --list"
+}
+
+// AlreadyInstalled reports whether installer output signals a configured server.
+func AlreadyInstalled(output string) bool {
+	return strings.Contains(output, "AWG_ALREADY_INSTALLED")
+}
+
 // MonitorDumpCommand returns the command that dumps live interface state.
 func MonitorDumpCommand(sudo, iface string) string {
 	return sudo + "awg show " + shellQuote(iface) + " dump"

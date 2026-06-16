@@ -50,6 +50,8 @@ err()  { echo -e "${RED}✗${NC} $*" >&2; }
 # Runtime flags (overridable via CLI args; see parseArgs).
 NONINTERACTIVE=0
 ADD_CLIENT=""
+REMOVE_CLIENT=""
+LIST_CLIENTS=0
 LANG_CODE="ru"
 
 # detectLang picks the UI language: --lang/AWG_LANG, else $LANG, else Russian.
@@ -573,17 +575,16 @@ listClients() {
 	grep "^# BEGIN_PEER" "${SERVER_CONF}" | awk '{print "  - " $3}'
 }
 
-revokeClient() {
+# removeClientByName deletes a client non-interactively (also used by --remove-client).
+removeClientByName() {
 	loadParams
-	if ! grep -q "^# BEGIN_PEER" "${SERVER_CONF}" 2>/dev/null; then
-		warn "Нет клиентов для удаления."
-		return 0
+	local name
+	name=$(sanitizeName "${1:-}")
+	if [[ -z "${name}" ]]; then
+		err "Не указано имя клиента."
+		return 1
 	fi
-	listClients
-	echo
-	read -rp "Имя клиента для удаления: " name
-	name=$(sanitizeName "${name}")
-	if ! grep -q "^# BEGIN_PEER ${name}\$" "${SERVER_CONF}"; then
+	if ! grep -q "^# BEGIN_PEER ${name}\$" "${SERVER_CONF}" 2>/dev/null; then
 		err "Клиент '${name}' не найден."
 		return 1
 	fi
@@ -599,6 +600,18 @@ revokeClient() {
 			systemctl restart "awg-quick@${SERVER_WG_NIC}"
 	fi
 	ok "Клиент '${name}' удалён."
+}
+
+revokeClient() {
+	loadParams
+	if ! grep -q "^# BEGIN_PEER" "${SERVER_CONF}" 2>/dev/null; then
+		warn "Нет клиентов для удаления."
+		return 0
+	fi
+	listClients
+	echo
+	read -rp "Имя клиента для удаления: " name
+	removeClientByName "${name}"
 }
 
 showClientQR() {
@@ -866,12 +879,16 @@ parseArgs() {
 		case "$1" in
 			-y | --yes) NONINTERACTIVE=1; shift ;;
 			--add-client) ADD_CLIENT="${2:-}"; shift 2 ;;
+			--remove-client) REMOVE_CLIENT="${2:-}"; shift 2 ;;
+			--list) LIST_CLIENTS=1; shift ;;
 			--lang) AWG_LANG="${2:-}"; shift 2 ;;
 			-h | --help)
-				echo "Usage: $0 [-y|--yes] [--lang en|ru] [--add-client NAME]"
-				echo "  -y, --yes        non-interactive install (settings from AWG_* env)"
-				echo "  --lang en|ru     UI language (default: auto from \$LANG)"
-				echo "  --add-client N   create client N and exit (for automation/SSH)"
+				echo "Usage: $0 [-y|--yes] [--lang en|ru] [--add-client NAME] [--remove-client NAME] [--list]"
+				echo "  -y, --yes          non-interactive install (settings from AWG_* env)"
+				echo "  --lang en|ru       UI language (default: auto from \$LANG)"
+				echo "  --add-client N     create client N and exit (for automation/SSH)"
+				echo "  --remove-client N  remove client N and exit"
+				echo "  --list             list clients and exit"
 				exit 0
 				;;
 			*) shift ;;
@@ -886,7 +903,15 @@ main() {
 	checkVirt
 	checkOS
 
-	# Non-interactive client creation (used by the SSH deploy tool).
+	# Non-interactive actions (used by the SSH deploy tool).
+	if [[ "${LIST_CLIENTS}" == "1" ]]; then
+		listClients
+		exit 0
+	fi
+	if [[ -n "${REMOVE_CLIENT}" ]]; then
+		removeClientByName "${REMOVE_CLIENT}"
+		exit $?
+	fi
 	if [[ -n "${ADD_CLIENT}" ]]; then
 		newClient "${ADD_CLIENT}"
 		exit 0
@@ -894,7 +919,9 @@ main() {
 
 	if [[ -f "${PARAMS_FILE}" ]]; then
 		if [[ "${NONINTERACTIVE}" == "1" ]]; then
-			ok "AmneziaWG уже установлен — пропускаю."
+			# Stable marker so the SSH deploy tool can detect this case.
+			echo "AWG_ALREADY_INSTALLED"
+			ok "AmneziaWG уже установлен."
 			exit 0
 		fi
 		manageMenu

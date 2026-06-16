@@ -86,6 +86,24 @@ func TestAddClientCommand_QuotesName(t *testing.T) {
 	}
 }
 
+func TestRemoveAndListCommands(t *testing.T) {
+	if got := RemoveClientCommand("sudo ", "laptop"); got != "sudo bash -s -- --remove-client 'laptop'" {
+		t.Errorf("RemoveClientCommand = %q", got)
+	}
+	if got := ListClientsCommand(""); got != "bash -s -- --list" {
+		t.Errorf("ListClientsCommand = %q", got)
+	}
+}
+
+func TestAlreadyInstalled(t *testing.T) {
+	if !AlreadyInstalled("...\nAWG_ALREADY_INSTALLED\n...") {
+		t.Error("should detect the already-installed marker")
+	}
+	if AlreadyInstalled("fresh install output") {
+		t.Error("false positive on fresh output")
+	}
+}
+
 func TestShellQuote_EscapesQuotes(t *testing.T) {
 	if got := shellQuote("a'b"); got != `'a'\''b'` {
 		t.Errorf("shellQuote(a'b) = %q", got)

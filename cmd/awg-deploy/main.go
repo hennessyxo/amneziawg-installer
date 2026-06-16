@@ -47,6 +47,10 @@ func main() {
 		err = runInstall(os.Args[2:])
 	case "add-client":
 		err = runAddClient(os.Args[2:])
+	case "remove-client":
+		err = runRemoveClient(os.Args[2:])
+	case "list":
+		err = runList(os.Args[2:])
 	case "monitor":
 		err = runMonitor(os.Args[2:])
 	case "-h", "--help", "help":
@@ -66,9 +70,11 @@ func main() {
 func usage() {
 	fmt.Print(`awg-deploy — установка и управление AmneziaWG по SSH
 
-  awg-deploy install    user@host[:port] [--preset mobile] [--port 51820] [--client phone]
-  awg-deploy add-client user@host[:port] <name>
-  awg-deploy monitor    user@host[:port] [--iface awg0] [--interval 2s]
+  awg-deploy install       user@host[:port] [--preset mobile] [--port 51820] [--client phone]
+  awg-deploy add-client    user@host[:port] <name>
+  awg-deploy remove-client user@host[:port] <name>
+  awg-deploy list          user@host[:port]
+  awg-deploy monitor       user@host[:port] [--iface awg0] [--interval 2s]
 
 Аутентификация: --identity <ключ> или пароль (спросит). Общие флаги: --identity,
 --known-hosts, --accept-new.
@@ -123,7 +129,60 @@ func runInstall(args []string) error {
 	if err != nil {
 		return fmt.Errorf("установка не удалась: %w", err)
 	}
+	if deploy.AlreadyInstalled(output) {
+		fmt.Printf("\nℹ Сервер уже настроен. Дальше управляй так:\n"+
+			"  awg-deploy add-client    %s <имя>   — добавить клиента\n"+
+			"  awg-deploy list          %s         — список клиентов\n"+
+			"  awg-deploy remove-client %s <имя>   — удалить клиента\n"+
+			"  awg-deploy monitor       %s         — живой мониторинг\n",
+			t.Addr(), t.Addr(), t.Addr(), t.Addr())
+		return nil
+	}
 	return saveAndShow(output, defaultOut(*out, *client))
+}
+
+func runRemoveClient(args []string) error {
+	fs := flag.NewFlagSet("remove-client", flag.ExitOnError)
+	af := registerAuthFlags(fs)
+	_ = fs.Parse(args)
+	rest := fs.Args()
+	if len(rest) < 2 {
+		return errors.New("usage: awg-deploy remove-client user@host <name>")
+	}
+	t, err := deploy.ParseTarget(rest[0])
+	if err != nil {
+		return err
+	}
+	cl, err := connect(t, af)
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+	out, err := cl.RunScript(deploy.RemoveClientCommand(deploy.Sudo(t.User), rest[1]), amneziawg.InstallerScript, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("удаление не удалось: %w\n%s", err, out)
+	}
+	return nil
+}
+
+func runList(args []string) error {
+	fs := flag.NewFlagSet("list", flag.ExitOnError)
+	af := registerAuthFlags(fs)
+	_ = fs.Parse(args)
+	t, err := targetArg(fs)
+	if err != nil {
+		return err
+	}
+	cl, err := connect(t, af)
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+	out, err := cl.RunScript(deploy.ListClientsCommand(deploy.Sudo(t.User)), amneziawg.InstallerScript, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("не удалось получить список: %w\n%s", err, out)
+	}
+	return nil
 }
 
 func runAddClient(args []string) error {

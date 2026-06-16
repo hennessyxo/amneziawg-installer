@@ -52,9 +52,20 @@ awg-deploy install root@203.0.113.7:2222 --identity ~/.ssh/id_ed25519
 # Добавить ещё клиента (печатает его конфиг + QR):
 awg-deploy add-client root@203.0.113.7 laptop
 
+# Список клиентов:
+awg-deploy list root@203.0.113.7
+
+# Удалить клиента:
+awg-deploy remove-client root@203.0.113.7 laptop
+
 # Живой мониторинг сервера прямо из своего терминала:
 awg-deploy monitor root@203.0.113.7
 ```
+
+> Повторный `install` на уже настроенном сервере ничего не ломает — он
+> распознаёт это и подсказывает команды управления (`add-client`, `list`,
+> `remove-client`, `monitor`). Интерактивное меню есть на самом сервере:
+> `sudo bash amneziawg-install.sh`.
 
 On Windows just run the `.exe` from a terminal (PowerShell/Windows Terminal):
 
