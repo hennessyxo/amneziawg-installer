@@ -3,7 +3,7 @@
 > Web management panel for a self-hosted **AmneziaWG** VPN — Go + htmx, single binary.
 > Веб-панель управления VPN на AmneziaWG.
 
-![go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)
+![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![ui](https://img.shields.io/badge/UI-htmx-3366cc)
 
 A session-authenticated dashboard for viewing live client traffic and managing

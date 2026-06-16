@@ -3,7 +3,7 @@
 > Live terminal dashboard for a self-hosted **AmneziaWG** VPN — written in Go.
 > Живой терминальный монитор для VPN на AmneziaWG.
 
-![go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)
+![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![tui](https://img.shields.io/badge/TUI-Bubble%20Tea-ff69b4)
 
 `awg-monitor` polls `awg show <iface> dump`, resolves client names from the
@@ -36,7 +36,7 @@ Docker, web server, or Grafana stack.
 ## Install / Установка
 
 The easiest way is the installer menu (option 6), which downloads a prebuilt
-binary. To build from source (Go 1.22+) from the repo root:
+binary. To build from source (Go 1.25+) from the repo root:
 
 ```bash
 go build -o awg-monitor ./cmd/awg-monitor
