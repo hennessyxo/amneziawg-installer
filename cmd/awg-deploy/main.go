@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -296,13 +298,41 @@ func saveAndShow(installerOutput, outPath string) error {
 	if err := os.WriteFile(outPath, []byte(conf), 0o600); err != nil {
 		return err
 	}
-	fmt.Printf("\n✓ Конфиг сохранён: %s\n\nОтсканируй QR в приложении AmneziaVPN:\n\n", outPath)
-	q, err := qrcode.New(conf, qrcode.Medium)
-	if err != nil {
-		return err
+
+	// A WireGuard+obfuscation config is long, so a terminal QR ends up too large
+	// to scan reliably. Write a PNG instead (scans cleanly from the screen) and
+	// open it for the user.
+	pngPath := strings.TrimSuffix(outPath, ".conf") + ".png"
+	if err := qrcode.WriteFile(conf, qrcode.Medium, 512, pngPath); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not write QR image:", err)
+		pngPath = ""
 	}
-	fmt.Println(q.ToSmallString(false))
+
+	fmt.Printf("\n✓ Конфиг сохранён: %s\n", outPath)
+	if pngPath != "" {
+		fmt.Printf("✓ QR-картинка:     %s\n", pngPath)
+	}
+	fmt.Println("\nКак подключиться (любой способ):")
+	fmt.Printf("  • импортируй файл %s в приложение AmneziaVPN, или\n", outPath)
+	if pngPath != "" {
+		fmt.Printf("  • отсканируй телефоном картинку %s (откроется сейчас).\n", pngPath)
+		openFile(pngPath)
+	}
 	return nil
+}
+
+// openFile best-effort opens a file with the OS default app (so the QR shows up).
+func openFile(path string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", "", path)
+	default:
+		cmd = exec.Command("xdg-open", path)
+	}
+	_ = cmd.Start()
 }
 
 func putIf(m map[string]string, k, v string) {

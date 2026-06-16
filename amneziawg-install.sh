@@ -84,6 +84,9 @@ t() {
 			run_monitor)  echo "Run monitoring now? [Y/n]: " ;;
 			mon_usage)    echo "How to use awg-monitor" ;;
 			panel_addr)   echo "Address" ;;
+			p_deps)       echo "Installing dependencies..." ;;
+			p_repo)       echo "Adding the AmneziaWG repository..." ;;
+			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
 			invalid)      echo "Invalid choice." ;;
 			*)            echo "$1" ;;
 		esac
@@ -108,6 +111,9 @@ t() {
 			run_monitor)  echo "Запустить мониторинг сейчас? [Y/n]: " ;;
 			mon_usage)    echo "Как пользоваться awg-monitor" ;;
 			panel_addr)   echo "Адрес" ;;
+			p_deps)       echo "Устанавливаю зависимости..." ;;
+			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
+			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
 			invalid)      echo "Неверный выбор." ;;
 			*)            echo "$1" ;;
 		esac
@@ -296,15 +302,16 @@ installQuestions() {
 }
 
 addRepoAndInstall() {
-	msg "Устанавливаю зависимости и AmneziaWG (это может занять пару минут)..."
 	export DEBIAN_FRONTEND=noninteractive
 
+	msg "$(t p_deps)"
 	apt-get update -qq
 	apt-get install -y -qq software-properties-common python3-launchpadlib \
 		gnupg2 curl qrencode iptables "linux-headers-$(uname -r)" >/dev/null 2>&1 || {
 		warn "Не все заголовки ядра найдены; продолжаю — DKMS попробует собрать модуль."
 	}
 
+	msg "$(t p_repo)"
 	if [[ "${OS}" == "ubuntu" ]]; then
 		add-apt-repository -y ppa:amnezia/ppa >/dev/null 2>&1
 	else
@@ -316,12 +323,15 @@ addRepoAndInstall() {
 			echo "deb-src https://ppa.launchpadcontent.net/amnezia/ppa/ubuntu focal main" >>/etc/apt/sources.list
 		fi
 	fi
-
 	apt-get update -qq
-	apt-get install -y -qq amneziawg >/dev/null 2>&1 || {
+
+	# Stream the output of this step: the DKMS kernel-module build takes a few
+	# minutes, and a silent prompt looks frozen.
+	msg "$(t p_module)"
+	if ! apt-get install -y amneziawg; then
 		err "Установка пакета amneziawg не удалась. Смотри docs/TROUBLESHOOTING.md"
 		exit 1
-	}
+	fi
 
 	if ! command -v awg >/dev/null 2>&1; then
 		err "Инструмент 'awg' не найден после установки. Модуль ядра мог не собраться."
