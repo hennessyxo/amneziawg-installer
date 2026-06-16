@@ -3,6 +3,12 @@
 params
 *.key
 
+# Go build artifacts
+monitor/awg-monitor
+awg-monitor
+*.test
+*.out
+
 # OS / editor noise
 .DS_Store
 *.swp

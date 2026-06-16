@@ -104,10 +104,22 @@ generateHeaders() {
 }
 
 # Generate the full obfuscation parameter set, respecting AmneziaWG constraints.
+# Honors the chosen preset (default | mobile). Mobile networks (4G/LTE) often
+# have a lower effective MTU and are picky about junk-packet sizing, which is the
+# usual cause of "connected but no internet" on cellular — so the mobile preset
+# uses MTU=1280 (RFC 8200 minimum, passes everywhere) and Jc=3.
 generateObfuscation() {
-	JC=$(randInt 4 12)            # junk packet count
-	JMIN=8                        # min junk packet size
-	JMAX=80                       # max junk packet size
+	if [[ "${PRESET:-default}" == "mobile" ]]; then
+		JC=3                            # fixed: Jc>3 often fails first connect on cellular
+		JMIN=$(randInt 30 50)
+		JMAX=$(( JMIN + 20 + RANDOM % 61 ))   # Jmin + 20..80
+		CLIENT_MTU=1280
+	else
+		JC=$(randInt 4 12)              # junk packet count
+		JMIN=$(randInt 40 80)
+		JMAX=$(( JMIN + 80 + RANDOM % 121 ))  # Jmin + 80..200
+		CLIENT_MTU=1420                 # standard WireGuard MTU
+	fi
 	S1=$(randInt 15 150)          # init packet junk size
 	S2=$(randInt 15 150)          # response packet junk size
 	# Constraint: S1 + 56 must not equal S2
@@ -165,6 +177,13 @@ installQuestions() {
 	FIRST_CLIENT="${FIRST_CLIENT:-phone}"
 	FIRST_CLIENT=$(sanitizeName "${FIRST_CLIENT}")
 
+	echo
+	echo "Будешь подключаться с мобильного интернета (4G/LTE: Yota, МТС, Билайн, Мегафон, Tele2)?"
+	echo "Мобильный пресет включает MTU 1280 + щадящую обфускацию (Jc=3) — лечит"
+	echo "'подключено, но нет интернета' на сотовых сетях."
+	read -rp "Включить мобильный пресет? [y/N]: " mob
+	if [[ "${mob,,}" == "y" ]]; then PRESET="mobile"; else PRESET="default"; fi
+
 	# Internal VPN subnets
 	SERVER_WG_IPV4="10.66.66.1"
 	SERVER_WG_IPV6="fd42:42:42::1"
@@ -175,6 +194,7 @@ installQuestions() {
 	echo "    Интерфейс: ${AWG_NIC} (${SERVER_WG_IPV4}/24)"
 	echo "    Выход    : ${SERVER_PUB_NIC}"
 	echo "    DNS      : ${CLIENT_DNS_1}, ${CLIENT_DNS_2}"
+	echo "    Пресет   : ${PRESET}$([[ "${PRESET}" == "mobile" ]] && echo ' (MTU 1280, Jc=3)')"
 	echo
 	read -rp "Продолжить? [Y/n]: " confirm
 	if [[ "${confirm,,}" == "n" ]]; then
@@ -258,6 +278,8 @@ writeServerConfig() {
 		H2=${H2}
 		H3=${H3}
 		H4=${H4}
+		PRESET=${PRESET}
+		CLIENT_MTU=${CLIENT_MTU}
 	EOF
 
 	# Server interface config with NAT/forward rules applied on up/down.
@@ -384,6 +406,8 @@ newClient() {
 	EOF
 
 	# Build the client config (obfuscation params MUST match the server).
+	# CLIENT_MTU defaults for installs created before the mobile-preset feature.
+	local client_mtu="${CLIENT_MTU:-1420}"
 	client_file="${CLIENT_OUT_DIR}/${SERVER_WG_NIC}-client-${name}.conf"
 	umask 077
 	cat >"${client_file}" <<-EOF
@@ -391,6 +415,7 @@ newClient() {
 		PrivateKey = ${priv}
 		Address = ${client_ipv4}/32,${client_ipv6}/128
 		DNS = ${CLIENT_DNS_1},${CLIENT_DNS_2}
+		MTU = ${client_mtu}
 		Jc = ${JC}
 		Jmin = ${JMIN}
 		Jmax = ${JMAX}
