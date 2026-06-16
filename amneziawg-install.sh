@@ -595,11 +595,11 @@ installMonitor() {
 
 	# Fallback: build from source if the repo was cloned and Go is available.
 	if [[ "${installed}" -eq 0 ]]; then
-		local src_dir
-		src_dir="$(cd "$(dirname "$0")" && pwd)/monitor"
-		if [[ -d "${src_dir}" ]] && command -v go >/dev/null 2>&1; then
-			msg "Готовый бинарник недоступен — собираю из исходников (${src_dir})..."
-			if (cd "${src_dir}" && go build -o "${MONITOR_BIN}" .) 2>/dev/null; then
+		local repo_dir
+		repo_dir="$(cd "$(dirname "$0")" && pwd)"
+		if [[ -d "${repo_dir}/cmd/awg-monitor" ]] && command -v go >/dev/null 2>&1; then
+			msg "Готовый бинарник недоступен — собираю из исходников..."
+			if (cd "${repo_dir}" && go build -o "${MONITOR_BIN}" ./cmd/awg-monitor) 2>/dev/null; then
 				chmod +x "${MONITOR_BIN}"
 				installed=1
 				ok "Собрано из исходников: ${MONITOR_BIN}"
@@ -612,7 +612,7 @@ installMonitor() {
 		echo "Причина: бинарник не скачался (приватный репозиторий?) и нет Go для сборки."
 		echo "Решения:"
 		echo "  • сделать репозиторий публичным — тогда бинарник скачается одной командой;"
-		echo "  • или установить Go и собрать: cd monitor && go build -o ${MONITOR_BIN} ."
+		echo "  • или установить Go и собрать: go build -o ${MONITOR_BIN} ./cmd/awg-monitor"
 		return 1
 	fi
 

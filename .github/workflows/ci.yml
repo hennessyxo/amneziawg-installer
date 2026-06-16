@@ -17,17 +17,14 @@ jobs:
           shellcheck -S warning amneziawg-install.sh
 
   go:
-    name: Go (monitor)
+    name: Go (monitor + panel)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: monitor
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache-dependency-path: monitor/go.sum
+          cache-dependency-path: go.sum
       - name: Vet
         run: go vet ./...
       - name: Test

@@ -35,19 +35,19 @@ Docker, web server, or Grafana stack.
 
 ## Install / Установка
 
-Build from source (Go 1.22+):
+The easiest way is the installer menu (option 6), which downloads a prebuilt
+binary. To build from source (Go 1.22+) from the repo root:
 
 ```bash
-cd monitor
-go build -o awg-monitor .
+go build -o awg-monitor ./cmd/awg-monitor
 sudo ./awg-monitor                 # monitors awg0 (needs root for awg)
 ```
 
 Or cross-compile for your Linux server from any machine:
 
 ```bash
-GOOS=linux GOARCH=amd64 go build -o awg-monitor .   # x86_64
-GOOS=linux GOARCH=arm64 go build -o awg-monitor .   # ARM (Oracle/RPi)
+GOOS=linux GOARCH=amd64 go build -o awg-monitor ./cmd/awg-monitor   # x86_64
+GOOS=linux GOARCH=arm64 go build -o awg-monitor ./cmd/awg-monitor   # ARM (Oracle/RPi)
 scp awg-monitor root@server:/usr/local/bin/
 ```
 
@@ -69,16 +69,17 @@ awg-monitor --demo --once            # render one frame to stdout (for screensho
 ## Architecture / Архитектура
 
 ```
-monitor/
-├── main.go                 # flags, awg command source, demo source, --once
-└── internal/
-    ├── awg/                # dump + config parsing (the testable core)
-    │   ├── parse.go        # ParseDump: `awg show ... dump` → Snapshot
-    │   └── names.go        # ParseNames: pubkey → client name from server conf
-    └── ui/                 # Bubble Tea model + pure View(), formatters
-        ├── ui.go           # model, rate computation, rendering
-        └── format.go       # HumanBytes, HumanRate, Ago, Sparkline
+cmd/awg-monitor/main.go     # flags, awg command source, demo source, --once
+internal/
+├── awg/                    # dump + config parsing (shared, testable core)
+│   ├── parse.go            # ParseDump: `awg show ... dump` → Snapshot
+│   └── names.go            # ParseNames: pubkey → client name from server conf
+└── ui/                     # Bubble Tea model + pure View(), formatters
+    ├── ui.go               # model, rate computation, rendering
+    └── format.go           # HumanBytes, HumanRate, Ago, Sparkline
 ```
+
+`internal/awg` is shared with the web panel (`cmd/awg-panel`).
 
 The parsing layer has no terminal or process dependencies, so it is unit-tested
 directly. `View()` is a pure function of model state and is tested without a TTY.

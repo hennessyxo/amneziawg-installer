@@ -123,17 +123,19 @@ sudo bash amneziawg-install.sh
 
 ## 📊 Monitoring / Мониторинг
 
-В каталоге [`monitor/`](monitor/) — `awg-monitor`, живой терминальный дашборд на Go:
+`awg-monitor` ([`cmd/awg-monitor`](cmd/awg-monitor)) — живой терминальный дашборд на Go:
 трафик и скорость по каждому клиенту, время последнего handshake, online-статус,
 спарклайны нагрузки. Подтягивает имена клиентов прямо из конфига установщика.
+Проще всего поставить через меню установщика (пункт 6) — оно само скачает бинарник.
 
 ```bash
-cd monitor && go build -o awg-monitor .
+# вручную из исходников:
+go build -o awg-monitor ./cmd/awg-monitor
 sudo ./awg-monitor            # мониторинг awg0
 ./awg-monitor --demo          # демо без сервера
 ```
 
-Подробнее — в [`monitor/README.md`](monitor/README.md).
+Подробнее — в [`docs/MONITOR.md`](docs/MONITOR.md).
 
 ---
 

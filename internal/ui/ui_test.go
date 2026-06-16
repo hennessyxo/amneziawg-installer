@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hennessyxo/amneziawg-installer/monitor/internal/awg"
+	"github.com/hennessyxo/amneziawg-installer/internal/awg"
 )
 
 func TestView_RendersPeers(t *testing.T) {
