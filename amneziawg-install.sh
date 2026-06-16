@@ -52,6 +52,7 @@ NONINTERACTIVE=0
 ADD_CLIENT=""
 REMOVE_CLIENT=""
 LIST_CLIENTS=0
+UNINSTALL=0
 LANG_CODE="ru"
 
 # detectLang picks the UI language: --lang/AWG_LANG, else $LANG, else Russian.
@@ -631,15 +632,9 @@ showClientQR() {
 	echo -e "Путь: ${BOLD}${f}${NC}"
 }
 
-uninstall() {
+# doUninstall performs the teardown without prompting (used by --uninstall).
+doUninstall() {
 	loadParams
-	echo
-	warn "Это полностью удалит AmneziaWG, конфиги и всех клиентов."
-	read -rp "Точно удалить? Введи 'yes' для подтверждения: " confirm
-	if [[ "${confirm}" != "yes" ]]; then
-		msg "Отменено."
-		return 0
-	fi
 	systemctl stop "awg-quick@${SERVER_WG_NIC}" 2>/dev/null || true
 	systemctl disable "awg-quick@${SERVER_WG_NIC}" 2>/dev/null || true
 
@@ -660,6 +655,18 @@ uninstall() {
 	rm -f /etc/sysctl.d/99-amneziawg.conf
 	rm -f "${CLIENT_OUT_DIR}/${SERVER_WG_NIC}"-client-*.conf
 	ok "AmneziaWG удалён."
+}
+
+# uninstall is the interactive menu entry (asks for confirmation).
+uninstall() {
+	echo
+	warn "Это полностью удалит AmneziaWG, конфиги и всех клиентов."
+	read -rp "Точно удалить? Введи 'yes' для подтверждения: " confirm
+	if [[ "${confirm}" != "yes" ]]; then
+		msg "Отменено."
+		return 0
+	fi
+	doUninstall
 }
 
 showStatus() {
@@ -881,6 +888,7 @@ parseArgs() {
 			--add-client) ADD_CLIENT="${2:-}"; shift 2 ;;
 			--remove-client) REMOVE_CLIENT="${2:-}"; shift 2 ;;
 			--list) LIST_CLIENTS=1; shift ;;
+			--uninstall) UNINSTALL=1; shift ;;
 			--lang) AWG_LANG="${2:-}"; shift 2 ;;
 			-h | --help)
 				echo "Usage: $0 [-y|--yes] [--lang en|ru] [--add-client NAME] [--remove-client NAME] [--list]"
@@ -889,6 +897,7 @@ parseArgs() {
 				echo "  --add-client N     create client N and exit (for automation/SSH)"
 				echo "  --remove-client N  remove client N and exit"
 				echo "  --list             list clients and exit"
+				echo "  --uninstall        remove everything (needs AWG_CONFIRM=yes)"
 				exit 0
 				;;
 			*) shift ;;
@@ -904,6 +913,14 @@ main() {
 	checkOS
 
 	# Non-interactive actions (used by the SSH deploy tool).
+	if [[ "${UNINSTALL}" == "1" ]]; then
+		if [[ "${AWG_CONFIRM:-}" != "yes" ]]; then
+			err "Опасное действие. Для подтверждения задай AWG_CONFIRM=yes."
+			exit 1
+		fi
+		doUninstall
+		exit 0
+	fi
 	if [[ "${LIST_CLIENTS}" == "1" ]]; then
 		listClients
 		exit 0

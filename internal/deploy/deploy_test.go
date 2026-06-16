@@ -93,6 +93,9 @@ func TestRemoveAndListCommands(t *testing.T) {
 	if got := ListClientsCommand(""); got != "bash -s -- --list" {
 		t.Errorf("ListClientsCommand = %q", got)
 	}
+	if got := UninstallCommand("sudo "); got != "sudo env AWG_CONFIRM=yes bash -s -- --uninstall" {
+		t.Errorf("UninstallCommand = %q", got)
+	}
 }
 
 func TestAlreadyInstalled(t *testing.T) {

@@ -106,6 +106,12 @@ func ListClientsCommand(sudo string) string {
 	return sudo + "bash -s -- --list"
 }
 
+// UninstallCommand builds the remote command to remove everything. The
+// AWG_CONFIRM=yes guard prevents an accidental wipe.
+func UninstallCommand(sudo string) string {
+	return sudo + "env AWG_CONFIRM=yes bash -s -- --uninstall"
+}
+
 // AlreadyInstalled reports whether installer output signals a configured server.
 func AlreadyInstalled(output string) bool {
 	return strings.Contains(output, "AWG_ALREADY_INSTALLED")

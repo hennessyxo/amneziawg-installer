@@ -51,6 +51,10 @@ func main() {
 		err = runRemoveClient(os.Args[2:])
 	case "list":
 		err = runList(os.Args[2:])
+	case "menu":
+		err = runMenu(os.Args[2:])
+	case "uninstall":
+		err = runUninstall(os.Args[2:])
 	case "monitor":
 		err = runMonitor(os.Args[2:])
 	case "-h", "--help", "help":
@@ -74,7 +78,9 @@ func usage() {
   awg-deploy add-client    user@host[:port] <name>
   awg-deploy remove-client user@host[:port] <name>
   awg-deploy list          user@host[:port]
+  awg-deploy menu          user@host[:port]            # interactive menu over SSH
   awg-deploy monitor       user@host[:port] [--iface awg0] [--interval 2s]
+  awg-deploy uninstall     user@host[:port]            # remove everything (asks to confirm)
 
 Аутентификация: --identity <ключ> или пароль (спросит). Общие флаги: --identity,
 --known-hosts, --accept-new.
@@ -213,6 +219,55 @@ func runAddClient(args []string) error {
 		return fmt.Errorf("создание клиента не удалось: %w", err)
 	}
 	return saveAndShow(output, defaultOut(*out, name))
+}
+
+// runMenu uploads the installer to the server and opens its interactive menu
+// over an SSH PTY (the script isn't otherwise stored on the server).
+func runMenu(args []string) error {
+	fs := flag.NewFlagSet("menu", flag.ExitOnError)
+	af := registerAuthFlags(fs)
+	_ = fs.Parse(args)
+	t, err := targetArg(fs)
+	if err != nil {
+		return err
+	}
+	cl, err := connect(t, af)
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+
+	const remote = "/tmp/awg-install.sh"
+	if err := cl.WriteFile(remote, amneziawg.InstallerScript); err != nil {
+		return fmt.Errorf("не удалось загрузить скрипт: %w", err)
+	}
+	cmd := fmt.Sprintf("%sbash %s; rm -f %s", deploy.Sudo(t.User), remote, remote)
+	return cl.Interactive(cmd)
+}
+
+func runUninstall(args []string) error {
+	fs := flag.NewFlagSet("uninstall", flag.ExitOnError)
+	af := registerAuthFlags(fs)
+	_ = fs.Parse(args)
+	t, err := targetArg(fs)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Это ПОЛНОСТЬЮ удалит AmneziaWG, веб-панель, всех клиентов и конфиги с %s.\n", t.Addr())
+	if !promptYesNo("Точно удалить?") {
+		fmt.Println("Отменено.")
+		return nil
+	}
+	cl, err := connect(t, af)
+	if err != nil {
+		return err
+	}
+	defer cl.Close()
+	out, err := cl.RunScript(deploy.UninstallCommand(deploy.Sudo(t.User)), amneziawg.InstallerScript, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("удаление не удалось: %w\n%s", err, out)
+	}
+	return nil
 }
 
 func runMonitor(args []string) error {

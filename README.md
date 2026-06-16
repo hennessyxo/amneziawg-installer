@@ -68,8 +68,12 @@ VPN runs on. Pick **one** of the two ways to set it up.
 
 3. Manage it the same way:
    ```bash
-   awg-deploy add-client root@YOUR_SERVER_IP laptop   # new client + QR
-   awg-deploy monitor   root@YOUR_SERVER_IP           # live dashboard in your terminal
+   awg-deploy add-client    root@YOUR_SERVER_IP laptop   # new client + QR
+   awg-deploy list          root@YOUR_SERVER_IP          # list clients
+   awg-deploy remove-client root@YOUR_SERVER_IP laptop   # delete a client
+   awg-deploy menu          root@YOUR_SERVER_IP          # interactive menu over SSH
+   awg-deploy monitor       root@YOUR_SERVER_IP          # live dashboard
+   awg-deploy uninstall     root@YOUR_SERVER_IP          # remove everything (asks first)
    ```
 
 See [`docs/DEPLOY.md`](docs/DEPLOY.md) for all flags.
