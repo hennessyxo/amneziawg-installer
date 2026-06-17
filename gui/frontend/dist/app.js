@@ -17,6 +17,38 @@ function busy(on, text) {
   on ? show($("busy")) : hide($("busy"));
 }
 
+// confirmDialog shows an in-app modal and resolves true/false. Native confirm()
+// is unreliable inside the Wails webview, so we never use it.
+function confirmDialog(message, okLabel = "Удалить") {
+  return new Promise((resolve) => {
+    $("modal-text").textContent = message;
+    $("modal-ok").textContent = okLabel;
+    show($("modal"));
+    const done = (val) => {
+      hide($("modal"));
+      $("modal-ok").onclick = null;
+      $("modal-cancel").onclick = null;
+      resolve(val);
+    };
+    $("modal-ok").onclick = () => done(true);
+    $("modal-cancel").onclick = () => done(false);
+  });
+}
+
+let toastTimer = null;
+function toast(message, kind = "ok") {
+  const t = $("toast");
+  t.textContent = message;
+  t.className = "toast " + kind;
+  show(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => hide(t), 4500);
+}
+
+function errMsg(err) {
+  return typeof err === "string" ? err : (err && err.message) || String(err);
+}
+
 function showError(el, err) {
   el.textContent = typeof err === "string" ? err : (err && err.message) || String(err);
   show(el);
@@ -85,7 +117,7 @@ async function refreshStatus() {
       hide($("block-manage"));
     }
   } catch (err) {
-    alert("Не удалось проверить сервер: " + (err.message || err));
+    toast("Не удалось проверить сервер: " + errMsg(err), "err");
   } finally {
     busy(false);
   }
@@ -108,8 +140,9 @@ async function install() {
     const res = await backend().Install(req);
     await refreshStatus();
     showResult(res);
+    toast("AmneziaWG установлен", "ok");
   } catch (err) {
-    alert("Установка не удалась: " + (err.message || err));
+    toast("Установка не удалась: " + errMsg(err), "err");
   } finally {
     busy(false);
     $("btn-install").disabled = false;
@@ -157,27 +190,33 @@ async function addClient(e) {
     await refreshClients();
     showResult(res);
   } catch (err) {
-    alert("Не удалось создать клиента: " + (err.message || err));
+    toast("Не удалось создать клиента: " + errMsg(err), "err");
   } finally {
     busy(false);
   }
 }
 
 async function removeClient(name) {
-  if (!confirm(`Удалить клиента «${name}»? Его профиль перестанет работать.`)) return;
+  const ok = await confirmDialog(`Удалить клиента «${name}»? Его профиль перестанет работать.`);
+  if (!ok) return;
   busy(true, "Удаляю клиента…");
   try {
     await backend().RemoveClient(name);
     await refreshClients();
+    toast(`Клиент «${name}» удалён`, "ok");
   } catch (err) {
-    alert("Не удалось удалить клиента: " + (err.message || err));
+    toast("Не удалось удалить клиента: " + errMsg(err), "err");
   } finally {
     busy(false);
   }
 }
 
 async function uninstall() {
-  if (!confirm("Это ПОЛНОСТЬЮ удалит AmneziaWG, веб-панель, всех клиентов и конфиги с сервера. Продолжить?")) return;
+  const ok = await confirmDialog(
+    "Это ПОЛНОСТЬЮ удалит AmneziaWG, веб-панель, всех клиентов и конфиги с сервера. Продолжить?",
+    "Удалить всё"
+  );
+  if (!ok) return;
   $("log").textContent = "";
   $("log-title").textContent = "Удаление";
   show($("log-panel"));
@@ -185,8 +224,9 @@ async function uninstall() {
   try {
     await backend().Uninstall();
     await refreshStatus();
+    toast("AmneziaWG полностью удалён", "ok");
   } catch (err) {
-    alert("Не удалось удалить: " + (err.message || err));
+    toast("Не удалось удалить: " + errMsg(err), "err");
   } finally {
     busy(false);
   }
