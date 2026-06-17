@@ -150,6 +150,11 @@ awg show awg0
 For **lawful** use — privacy, accessing your own resources, and learning
 networking. Follow the laws of your jurisdiction.
 
+## ☕ Support
+
+If this project saved you time, you can support its development on
+[Boosty](https://boosty.to/hennessyxo/donate). Thanks!
+
 ## License
 
 MIT © contributors. See [LICENSE](LICENSE). Install logic adapted from the
