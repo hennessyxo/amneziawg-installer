@@ -83,19 +83,76 @@ function initAuthTabs() {
   });
 }
 
-// prefill restores the saved connection (password from the OS secret store).
+// fillForm populates the connect form from a saved Prefs/Profile object.
+function fillForm(p) {
+  if (!p) return;
+  $("host").value = p.host || "";
+  $("user").value = p.user || "root";
+  $("identity").value = p.identityPath || "";
+  selectAuth(p.authMode || "password");
+  $("remember").checked = !!p.remember;
+  $("password").value = p.password || "";
+}
+
+// prefill restores the last-used connection (password from the OS secret store)
+// and renders the saved-servers list.
 async function prefill() {
   try {
-    const p = await backend().LoadPrefs();
-    if (p.host) $("host").value = p.host;
-    if (p.user) $("user").value = p.user;
-    if (p.identityPath) $("identity").value = p.identityPath;
-    if (p.authMode) selectAuth(p.authMode);
-    $("remember").checked = !!p.remember;
-    if (p.password) $("password").value = p.password;
+    fillForm(await backend().LoadPrefs());
   } catch (_) {
     /* no saved prefs yet — ignore */
   }
+  await loadProfiles();
+}
+
+// loadProfiles renders saved servers as one-click reconnect rows.
+async function loadProfiles() {
+  let list = [];
+  try {
+    list = (await backend().ListProfiles()) || [];
+  } catch (_) {
+    return;
+  }
+  const box = $("profiles");
+  const ul = $("profiles-list");
+  ul.innerHTML = "";
+  if (list.length === 0) {
+    hide(box);
+    return;
+  }
+  list.forEach((p) => {
+    const label = (p.user || "root") + "@" + p.host;
+    const row = document.createElement("div");
+    row.className = "profile";
+
+    const pick = document.createElement("button");
+    pick.className = "pick";
+    pick.textContent = label;
+    pick.addEventListener("click", () => {
+      fillForm(p);
+      connect();
+    });
+
+    const x = document.createElement("button");
+    x.className = "x";
+    x.textContent = "×";
+    x.title = "Удалить из списка";
+    x.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const ok = await confirmDialog(`Убрать сервер «${label}» из списка? Сам сервер не изменится.`, "Убрать");
+      if (!ok) return;
+      try {
+        await backend().DeleteProfile(p.host, p.user);
+      } catch (_) {
+        /* ignore */
+      }
+      await loadProfiles();
+    });
+
+    row.append(pick, x);
+    ul.appendChild(row);
+  });
+  show(box);
 }
 
 async function connect() {
@@ -120,6 +177,7 @@ async function connect() {
     hide($("view-connect"));
     show($("view-server"));
     await refreshStatus();
+    loadProfiles();
   } catch (err) {
     showError($("connect-err"), err);
   } finally {
@@ -139,9 +197,12 @@ async function refreshStatus() {
       show($("block-manage"));
       await refreshClients();
       await refreshPanel();
+      await refreshHealth();
+      startTraffic();
     } else {
       show($("block-install"));
       hide($("block-manage"));
+      stopTraffic();
     }
   } catch (err) {
     toast("Не удалось проверить сервер: " + errMsg(err), "err");
@@ -276,6 +337,75 @@ async function uninstall() {
     toast("Не удалось удалить: " + errMsg(err), "err");
   } finally {
     busy(false);
+  }
+}
+
+// --- server health & live traffic ------------------------------------------
+
+async function refreshHealth() {
+  try {
+    const h = await backend().ServerHealth();
+    $("health-dot").className = "health-dot " + (h.running ? "up" : "down");
+    $("health-state").textContent = h.running ? "VPN работает" : "VPN остановлен";
+    $("health-clients").textContent = h.clients + " клиент(ов)";
+    $("health-uptime").textContent = h.uptime || "—";
+    $("health-version").textContent = h.version || "—";
+  } catch (_) {
+    $("health-dot").className = "health-dot";
+    $("health-state").textContent = "статус недоступен";
+  }
+}
+
+let trafficTimer = null;
+let trafficBusy = false;
+
+async function refreshTraffic() {
+  if (trafficBusy) return;
+  trafficBusy = true;
+  try {
+    const r = await backend().Traffic();
+    $("traffic-summary").textContent = `(онлайн ${r.online} из ${r.total})`;
+    const body = $("traffic-body");
+    body.innerHTML = "";
+    if (!r.peers || r.peers.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" class="traffic-empty">Пока нет данных</td></tr>';
+      return;
+    }
+    r.peers.forEach((p) => {
+      const tr = document.createElement("tr");
+      const dotTd = document.createElement("td");
+      dotTd.innerHTML = `<span class="tdot${p.online ? " on" : ""}"></span>`;
+      const name = document.createElement("td");
+      name.className = "name";
+      name.textContent = p.name;
+      const rx = document.createElement("td");
+      rx.className = "r mono";
+      rx.textContent = p.rx;
+      const tx = document.createElement("td");
+      tx.className = "r mono";
+      tx.textContent = p.tx;
+      const hs = document.createElement("td");
+      hs.className = "r dim";
+      hs.textContent = p.handshake;
+      tr.append(dotTd, name, rx, tx, hs);
+      body.appendChild(tr);
+    });
+  } catch (_) {
+    /* transient — keep last values */
+  } finally {
+    trafficBusy = false;
+  }
+}
+
+function startTraffic() {
+  refreshTraffic();
+  if (!trafficTimer) trafficTimer = setInterval(refreshTraffic, 5000);
+}
+
+function stopTraffic() {
+  if (trafficTimer) {
+    clearInterval(trafficTimer);
+    trafficTimer = null;
   }
 }
 

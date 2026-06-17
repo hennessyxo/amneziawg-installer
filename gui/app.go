@@ -115,10 +115,10 @@ func (a *App) Connect(req ConnectRequest) error {
 	return nil
 }
 
-// persistPrefs saves non-secret connection fields to disk and, when the user
-// asked to remember, the password to the OS secret store (never to disk).
+// persistPrefs saves the server as a profile (non-secret fields to disk) and,
+// when the user asked to remember, the password to the OS secret store.
 func (a *App) persistPrefs(req ConnectRequest, host, user string) {
-	_ = saveDiskPrefs(diskPrefs{
+	upsertProfile(ProfileEntry{
 		Host:         host,
 		User:         user,
 		AuthMode:     req.AuthMode,
@@ -132,24 +132,38 @@ func (a *App) persistPrefs(req ConnectRequest, host, user string) {
 	}
 }
 
-// LoadPrefs returns the saved connection fields for prefilling the form, with
-// the password pulled from the OS secret store only if "remember" was set.
+// LoadPrefs returns the last-used server for prefilling the form (password from
+// the secret store only if "remember" was set).
 func (a *App) LoadPrefs() (Prefs, error) {
-	dp, err := loadDiskPrefs()
-	if err != nil {
-		return Prefs{}, err
+	d := loadProfilesDisk()
+	for _, e := range d.Profiles {
+		if profileKey(e.User, e.Host) == d.Last {
+			return e.asPrefs(), nil
+		}
 	}
-	p := Prefs{
-		Host:         dp.Host,
-		User:         dp.User,
-		AuthMode:     dp.AuthMode,
-		IdentityPath: dp.IdentityPath,
-		Remember:     dp.Remember,
+	return Prefs{}, nil
+}
+
+// ListProfiles returns every saved server (with password pulled from the secret
+// store where remembered) so the UI can offer one-click reconnect.
+func (a *App) ListProfiles() ([]Prefs, error) {
+	d := loadProfilesDisk()
+	out := make([]Prefs, 0, len(d.Profiles))
+	for _, e := range d.Profiles {
+		out = append(out, e.asPrefs())
 	}
-	if dp.Remember && dp.AuthMode != "key" && dp.Host != "" {
-		p.Password = loadPassword(dp.User, dp.Host)
+	return out, nil
+}
+
+// DeleteProfile removes a saved server and forgets its stored password.
+func (a *App) DeleteProfile(host, user string) error {
+	host = strings.TrimSpace(host)
+	user = strings.TrimSpace(user)
+	if user == "" {
+		user = "root"
 	}
-	return p, nil
+	removeProfile(user, host)
+	return nil
 }
 
 // Disconnect closes the SSH session.

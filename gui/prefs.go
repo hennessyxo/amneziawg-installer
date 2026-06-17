@@ -13,9 +13,9 @@ import (
 // OS secret store (macOS Keychain / Windows Credential Manager / libsecret).
 const keyringService = "awg-gui-ssh"
 
-// diskPrefs holds ONLY non-secret connection fields persisted to a config file.
-// The password is deliberately absent here so it can never be written to disk.
-type diskPrefs struct {
+// ProfileEntry holds ONLY non-secret fields for one saved server. The password
+// is deliberately absent so it can never be written to disk.
+type ProfileEntry struct {
 	Host         string `json:"host"`
 	User         string `json:"user"`
 	AuthMode     string `json:"authMode"` // "password" | "key"
@@ -23,7 +23,13 @@ type diskPrefs struct {
 	Remember     bool   `json:"remember"`
 }
 
-// Prefs is what the frontend receives: the saved non-secret fields plus the
+// profilesDisk is the on-disk config: a list of saved servers + the last used.
+type profilesDisk struct {
+	Profiles []ProfileEntry `json:"profiles"`
+	Last     string         `json:"last"` // "user@host"
+}
+
+// Prefs is what the frontend receives: a profile's non-secret fields plus the
 // password pulled from the OS secret store (only when Remember is set).
 type Prefs struct {
 	Host         string `json:"host"`
@@ -48,48 +54,101 @@ func prefsPath() (string, error) {
 	return filepath.Join(dir, "config.json"), nil
 }
 
-// keyringAccount keys the stored secret per user@host.
-func keyringAccount(user, host string) string { return user + "@" + host }
+func profileKey(user, host string) string { return user + "@" + host }
 
-// loadDiskPrefs reads the non-secret config; a missing file yields zero prefs.
-func loadDiskPrefs() (diskPrefs, error) {
-	var p diskPrefs
+// loadProfilesDisk reads saved profiles; a missing file yields an empty set.
+func loadProfilesDisk() profilesDisk {
+	var d profilesDisk
 	path, err := prefsPath()
 	if err != nil {
-		return p, err
+		return d
 	}
 	b, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		return p, nil
+		return d
 	}
 	if err != nil {
-		return p, err
+		return d
 	}
-	_ = json.Unmarshal(b, &p)
-	return p, nil
+	_ = json.Unmarshal(b, &d)
+	return d
 }
 
-// saveDiskPrefs writes the non-secret config (0600, never contains a password).
-func saveDiskPrefs(p diskPrefs) error {
+// saveProfilesDisk writes the config (0600, never contains a password).
+func saveProfilesDisk(d profilesDisk) error {
 	path, err := prefsPath()
 	if err != nil {
 		return err
 	}
-	b, err := json.MarshalIndent(p, "", "  ")
+	b, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(path, b, 0o600)
 }
 
+// upsertProfile adds or updates a profile (matched by user@host) and marks it as
+// the last used.
+func upsertProfile(e ProfileEntry) {
+	d := loadProfilesDisk()
+	key := profileKey(e.User, e.Host)
+	found := false
+	for i := range d.Profiles {
+		if profileKey(d.Profiles[i].User, d.Profiles[i].Host) == key {
+			d.Profiles[i] = e
+			found = true
+			break
+		}
+	}
+	if !found {
+		d.Profiles = append(d.Profiles, e)
+	}
+	d.Last = key
+	_ = saveProfilesDisk(d)
+}
+
+// removeProfile drops a saved profile and forgets its stored password.
+func removeProfile(user, host string) {
+	d := loadProfilesDisk()
+	key := profileKey(user, host)
+	out := d.Profiles[:0]
+	for _, p := range d.Profiles {
+		if profileKey(p.User, p.Host) != key {
+			out = append(out, p)
+		}
+	}
+	d.Profiles = out
+	if d.Last == key {
+		d.Last = ""
+	}
+	_ = saveProfilesDisk(d)
+	forgetPassword(user, host)
+}
+
+// asPrefs converts a stored profile to the frontend shape, pulling the password
+// from the secret store only when Remember is set.
+func (e ProfileEntry) asPrefs() Prefs {
+	p := Prefs{
+		Host:         e.Host,
+		User:         e.User,
+		AuthMode:     e.AuthMode,
+		IdentityPath: e.IdentityPath,
+		Remember:     e.Remember,
+	}
+	if e.Remember && e.AuthMode != "key" && e.Host != "" {
+		p.Password = loadPassword(e.User, e.Host)
+	}
+	return p
+}
+
 // rememberPassword stores the password in the OS secret store.
 func rememberPassword(user, host, password string) error {
-	return keyring.Set(keyringService, keyringAccount(user, host), password)
+	return keyring.Set(keyringService, profileKey(user, host), password)
 }
 
 // loadPassword fetches a stored password; a missing entry returns "".
 func loadPassword(user, host string) string {
-	pw, err := keyring.Get(keyringService, keyringAccount(user, host))
+	pw, err := keyring.Get(keyringService, profileKey(user, host))
 	if err != nil {
 		return ""
 	}
@@ -98,5 +157,5 @@ func loadPassword(user, host string) string {
 
 // forgetPassword removes any stored password (ignoring "not found").
 func forgetPassword(user, host string) {
-	_ = keyring.Delete(keyringService, keyringAccount(user, host))
+	_ = keyring.Delete(keyringService, profileKey(user, host))
 }

@@ -27,6 +27,11 @@
           </ol>
         </details>
 
+        <div id="profiles" class="profiles hidden">
+          <div class="profiles-label">Сохранённые серверы</div>
+          <div id="profiles-list"></div>
+        </div>
+
         <div class="form">
           <label>IP-адрес сервера
             <input id="host" type="text" placeholder="123.45.67.89" autocomplete="off" />
@@ -79,6 +84,17 @@
 
         <!-- 2b. Installed → manage -->
         <div id="block-manage" class="panel hidden">
+          <div id="health" class="health">
+            <span class="health-dot" id="health-dot"></span>
+            <span id="health-state">…</span>
+            <span class="health-sep">·</span>
+            <span id="health-clients"></span>
+            <span class="health-sep">·</span>
+            <span class="dim">аптайм <span id="health-uptime">—</span></span>
+            <span class="health-sep">·</span>
+            <span class="dim mono" id="health-version">—</span>
+          </div>
+
           <div class="panel-head">
             <h2>Клиенты</h2>
             <form id="add-form" class="add">
@@ -93,6 +109,19 @@
               <tbody id="clients-body"></tbody>
             </table>
           </div>
+          <!-- live traffic mini-view -->
+          <div id="traffic-box" class="subpanel">
+            <div class="panel-head">
+              <h3>Трафик <span id="traffic-summary" class="dim"></span></h3>
+            </div>
+            <div class="table-wrap">
+              <table class="clients traffic">
+                <thead><tr><th></th><th>Клиент</th><th class="r">↓ принято</th><th class="r">↑ отдано</th><th class="r">рукопожатие</th></tr></thead>
+                <tbody id="traffic-body"></tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- web panel: advanced per-client limits (speed/days/quota) -->
           <div id="panel-box" class="subpanel">
             <h3>Лимиты и расширенное управление</h3>

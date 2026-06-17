@@ -164,6 +164,34 @@ details.howto ol { margin: 0.8rem 0 0; padding-left: 1.2rem; color: var(--muted)
 details.howto li { margin-bottom: 0.5rem; }
 details.howto b { color: var(--text); }
 
+/* ---- saved server profiles ---- */
+.profiles { margin: 0 0 1.2rem; }
+.profiles-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.5rem; }
+.profile {
+  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.5rem 0.4rem 0.8rem;
+}
+.profile .pick { flex: 1; text-align: left; background: transparent; border: none; color: var(--text); font-family: var(--mono); font-size: 0.85rem; padding: 0.3rem 0; }
+.profile .pick:hover { color: var(--accent); filter: none; }
+.profile .x { background: transparent; border: none; color: var(--muted); font-size: 1.1rem; line-height: 1; padding: 0 0.4rem; }
+.profile .x:hover { color: var(--danger); filter: none; }
+
+/* ---- server health line ---- */
+.health {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  font-size: 0.85rem; margin-bottom: 1.1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--line);
+}
+.health-dot { width: 9px; height: 9px; border-radius: 50%; background: #3a463f; }
+.health-dot.up { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.health-dot.down { background: var(--danger); }
+.health-sep { color: var(--line); }
+
+/* ---- traffic mini-view ---- */
+table.traffic td, table.traffic th { padding: 0.45rem 0.6rem; }
+table.traffic .tdot { width: 9px; height: 9px; border-radius: 50%; background: #3a463f; display: inline-block; }
+table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.traffic-empty { color: var(--muted); padding: 0.8rem 0.6rem; }
+
 details.advanced { margin: -0.2rem 0 0; }
 details.advanced summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; list-style: revert; }
 details.advanced summary:hover { color: var(--text); }
