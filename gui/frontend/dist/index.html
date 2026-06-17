@@ -9,7 +9,10 @@
   <body>
     <header class="top">
       <div class="brand">Amnezia<span>WG</span> Manager</div>
-      <div id="conn-pill" class="iface hidden"></div>
+      <nav>
+        <span id="conn-pill" class="iface hidden"></span>
+        <button id="btn-switch" class="ghost hidden">Сменить сервер</button>
+      </nav>
     </header>
 
     <main>
@@ -67,7 +70,7 @@
         <!-- 2a. Not installed → install -->
         <div id="block-install" class="panel hidden">
           <h2>AmneziaWG ещё не установлен</h2>
-          <p class="sub">Нажмите «Установить» — всё настроится автоматически (порт подберётся свободный, профиль работает и на телефоне, и на ПК). Займёт пару минут.</p>
+          <p class="sub">Нажмите «Установить» — всё настроится автоматически. Займёт пару минут.</p>
           <div class="form">
             <label>Имя первого клиента
               <input id="first-client" type="text" value="phone" autocomplete="off" />
@@ -125,13 +128,14 @@
           <!-- web panel: advanced per-client limits (speed/days/quota) -->
           <div id="panel-box" class="subpanel">
             <h3>Лимиты и расширенное управление</h3>
-            <p class="dim">Скорость, срок действия и квота трафика на клиента живут в веб-панели — у неё есть фоновый сервис, который реально применяет лимиты и отключает клиентов.</p>
+            <p class="dim">Скорость, срок действия и квота трафика на клиента настраиваются в веб-панели.</p>
 
             <div id="panel-absent" class="hidden">
               <div class="panel-install">
-                <input id="panel-pass" type="password" placeholder="пароль администратора (мин. 8 символов)" autocomplete="off" />
+                <input id="panel-pass" type="password" placeholder="пароль администратора" autocomplete="off" />
                 <button id="btn-install-panel" class="primary">Установить веб-панель</button>
               </div>
+              <p class="dim" style="margin-top:.5rem;font-size:.8rem">Пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например <span class="mono">Admin2@</span>).</p>
             </div>
 
             <div id="panel-present" class="hidden">
@@ -149,11 +153,11 @@
           </div>
         </div>
 
-        <!-- log console -->
-        <div id="log-panel" class="panel log hidden">
-          <div class="panel-head"><h2 id="log-title">Журнал</h2></div>
+        <!-- log console (collapsible, tucked away) -->
+        <details id="log-panel" class="log hidden">
+          <summary><span id="log-title">Журнал</span></summary>
           <pre id="log"></pre>
-        </div>
+        </details>
 
         <!-- client result (QR + conf) -->
         <div id="result" class="panel created hidden">
@@ -162,7 +166,12 @@
             <button class="x" id="result-close">×</button>
           </div>
           <p class="qr-note">Откройте приложение <b>AmneziaWG</b> и отсканируйте QR — или импортируйте файл .conf.</p>
-          <p class="app-links">Скачать AmneziaWG: <a href="#" id="link-ios">iOS (App Store)</a> · <a href="#" id="link-other">Android / Windows</a></p>
+          <p class="app-links">Скачать AmneziaWG:
+            <a href="#" id="link-ios">iOS</a> ·
+            <a href="#" id="link-android">Android</a> ·
+            <a href="#" id="link-macos">macOS</a> ·
+            <a href="#" id="link-windows">Windows</a>
+          </p>
           <div class="created-body">
             <div class="qr"><img id="result-qr" alt="QR" /></div>
             <pre id="result-conf" class="conf mono"></pre>
@@ -181,6 +190,18 @@
         <div class="dialog-actions">
           <button id="modal-cancel" class="ghost">Отмена</button>
           <button id="modal-ok" class="danger">Удалить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- text-input modal (e.g. rename) -->
+    <div id="prompt" class="overlay hidden">
+      <div class="dialog">
+        <p id="prompt-text"></p>
+        <input id="prompt-input" type="text" autocomplete="off" />
+        <div class="dialog-actions">
+          <button id="prompt-cancel" class="ghost">Отмена</button>
+          <button id="prompt-ok" class="primary">OK</button>
         </div>
       </div>
     </div>

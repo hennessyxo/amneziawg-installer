@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode"
 
 	amneziawg "github.com/hennessyxo/amneziawg-installer"
 	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
@@ -250,6 +251,24 @@ func (a *App) ClientConfig(name string) (ClientResult, error) {
 	return clientResultFromConf(name, strings.TrimSpace(out)+"\n"), nil
 }
 
+// RenameClient renames a client on the server.
+func (a *App) RenameClient(oldName, newName string) error {
+	cl, t, err := a.conn()
+	if err != nil {
+		return err
+	}
+	oldName = strings.TrimSpace(oldName)
+	newName = strings.TrimSpace(newName)
+	if oldName == "" || newName == "" {
+		return fmt.Errorf("укажите имя клиента")
+	}
+	out, err := cl.RunScript(deploy.RenameClientCommand(deploy.Sudo(t.User), oldName, newName), amneziawg.InstallerScript, a.logWriter("client:log"))
+	if err != nil {
+		return fmt.Errorf("переименование не удалось: %w\n%s", err, out)
+	}
+	return nil
+}
+
 // RemoveClient deletes a client from the server.
 func (a *App) RemoveClient(name string) error {
 	cl, t, err := a.conn()
@@ -313,8 +332,8 @@ func (a *App) InstallPanel(password string) (PanelResult, error) {
 	if err != nil {
 		return PanelResult{}, err
 	}
-	if len(password) < 8 {
-		return PanelResult{}, fmt.Errorf("пароль панели — минимум 8 символов")
+	if !validPanelPassword(password) {
+		return PanelResult{}, fmt.Errorf("слабый пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например Admin2@)")
 	}
 	out, err := cl.RunScript(deploy.InstallPanelCommand(deploy.Sudo(t.User), password), amneziawg.InstallerScript, a.logWriter("panel:log"))
 	if err != nil {
@@ -397,6 +416,29 @@ func buildClientResult(name, output string) (ClientResult, error) {
 		return ClientResult{}, fmt.Errorf("не нашёл конфиг клиента в выводе: %w", err)
 	}
 	return clientResultFromConf(name, conf), nil
+}
+
+// validPanelPassword enforces a non-trivial admin password (the panel is reachable
+// over the network): at least 6 chars with a lowercase letter, an uppercase letter,
+// a digit and a special character — so "123456" fails but "Admin2@" passes.
+func validPanelPassword(p string) bool {
+	if len(p) < 6 {
+		return false
+	}
+	var lower, upper, digit, special bool
+	for _, r := range p {
+		switch {
+		case unicode.IsLower(r):
+			lower = true
+		case unicode.IsUpper(r):
+			upper = true
+		case unicode.IsDigit(r):
+			digit = true
+		default:
+			special = true
+		}
+	}
+	return lower && upper && digit && special
 }
 
 // clientResultFromConf wraps a client config with a scannable QR data URI.

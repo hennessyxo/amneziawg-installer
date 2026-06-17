@@ -4,8 +4,12 @@
 const $ = (id) => document.getElementById(id);
 const backend = () => window.go.main.App;
 
-const IOS_APP_URL = "https://apps.apple.com/app/amneziawg/id6478942365";
-const OTHER_APP_URL = "https://amnezia.org/downloads";
+const APP_URLS = {
+  ios: "https://apps.apple.com/app/amneziawg/id6478942365",
+  android: "https://play.google.com/store/apps/details?id=org.amnezia.awg",
+  macos: "https://apps.apple.com/app/amneziawg/id6478942365",
+  windows: "https://github.com/amnezia-vpn/amneziawg-windows-client/releases",
+};
 
 // openExternal opens a URL in the user's real browser, not the app webview.
 function openExternal(url) {
@@ -55,6 +59,56 @@ function toast(message, kind = "ok") {
 
 function errMsg(err) {
   return typeof err === "string" ? err : (err && err.message) || String(err);
+}
+
+// openLog clears and reveals the collapsible log drawer for an operation.
+function openLog(title) {
+  $("log").textContent = "";
+  $("log-title").textContent = title;
+  const d = $("log-panel");
+  d.classList.remove("hidden");
+  d.open = true;
+}
+
+// promptDialog shows an in-app text-input modal and resolves the value (or null).
+function promptDialog(message, defaultValue = "") {
+  return new Promise((resolve) => {
+    $("prompt-text").textContent = message;
+    const input = $("prompt-input");
+    input.value = defaultValue;
+    show($("prompt"));
+    input.focus();
+    input.select();
+    const done = (val) => {
+      hide($("prompt"));
+      $("prompt-ok").onclick = null;
+      input.onkeydown = null;
+      resolve(val);
+    };
+    $("prompt-ok").onclick = () => done(input.value.trim());
+    input.onkeydown = (e) => { if (e.key === "Enter") done(input.value.trim()); };
+    window.__closePrompt = () => done(null);
+  });
+}
+
+function closePrompt() {
+  if (window.__closePrompt) window.__closePrompt();
+}
+
+// switchServer disconnects and returns to the connect screen to pick/add a server.
+async function switchServer() {
+  stopTraffic();
+  try {
+    await backend().Disconnect();
+  } catch (_) {
+    /* ignore */
+  }
+  hide($("view-server"));
+  hide($("conn-pill"));
+  hide($("btn-switch"));
+  show($("view-connect"));
+  $("password").value = "";
+  await prefill();
 }
 
 function showError(el, err) {
@@ -174,6 +228,7 @@ async function connect() {
     await backend().Connect(req);
     $("conn-pill").textContent = req.user + "@" + host;
     show($("conn-pill"));
+    show($("btn-switch"));
     hide($("view-connect"));
     show($("view-server"));
     await refreshStatus();
@@ -218,9 +273,7 @@ async function install() {
     port: $("port").value.trim(),
     client: $("first-client").value.trim() || "phone",
   };
-  $("log").textContent = "";
-  $("log-title").textContent = "Установка";
-  show($("log-panel"));
+  openLog("Установка");
   $("btn-install").disabled = true;
   busy(true, "Устанавливаю AmneziaWG… это займёт пару минут");
   try {
@@ -264,6 +317,12 @@ async function refreshClients() {
     conf.addEventListener("click", () => showClientConfig(name));
     actions.appendChild(conf);
 
+    const ren = document.createElement("button");
+    ren.className = "link";
+    ren.textContent = "переименовать";
+    ren.addEventListener("click", () => renameClient(name));
+    actions.appendChild(ren);
+
     const del = document.createElement("button");
     del.className = "link del";
     del.textContent = "удалить";
@@ -304,6 +363,21 @@ async function showClientConfig(name) {
   }
 }
 
+async function renameClient(name) {
+  const newName = await promptDialog(`Новое имя для клиента «${name}»:`, name);
+  if (!newName || newName === name) return;
+  busy(true, "Переименовываю…");
+  try {
+    await backend().RenameClient(name, newName);
+    await refreshClients();
+    toast(`Клиент переименован в «${newName}»`, "ok");
+  } catch (err) {
+    toast("Не удалось переименовать: " + errMsg(err), "err");
+  } finally {
+    busy(false);
+  }
+}
+
 async function removeClient(name) {
   const ok = await confirmDialog(`Удалить клиента «${name}»? Его профиль перестанет работать.`);
   if (!ok) return;
@@ -325,9 +399,7 @@ async function uninstall() {
     "Удалить всё"
   );
   if (!ok) return;
-  $("log").textContent = "";
-  $("log-title").textContent = "Удаление";
-  show($("log-panel"));
+  openLog("Удаление");
   busy(true, "Удаляю AmneziaWG…");
   try {
     await backend().Uninstall();
@@ -422,15 +494,17 @@ async function refreshPanel() {
   }
 }
 
+function validPanelPassword(p) {
+  return p.length >= 6 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /[0-9]/.test(p) && /[^a-zA-Z0-9]/.test(p);
+}
+
 async function installPanel() {
   const pass = $("panel-pass").value;
-  if (pass.length < 8) {
-    toast("Пароль панели — минимум 8 символов", "err");
+  if (!validPanelPassword(pass)) {
+    toast("Слабый пароль: мин. 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например Admin2@)", "err");
     return;
   }
-  $("log").textContent = "";
-  $("log-title").textContent = "Установка веб-панели";
-  show($("log-panel"));
+  openLog("Установка веб-панели");
   busy(true, "Устанавливаю веб-панель…");
   try {
     await backend().InstallPanel(pass);
@@ -503,8 +577,11 @@ window.addEventListener("DOMContentLoaded", () => {
   $("btn-remove-panel").addEventListener("click", removePanel);
   $("result-close").addEventListener("click", () => hide($("result")));
   $("result-download").addEventListener("click", downloadConf);
-  $("link-ios").addEventListener("click", (e) => { e.preventDefault(); openExternal(IOS_APP_URL); });
-  $("link-other").addEventListener("click", (e) => { e.preventDefault(); openExternal(OTHER_APP_URL); });
+  ["ios", "android", "macos", "windows"].forEach((os) => {
+    $("link-" + os).addEventListener("click", (e) => { e.preventDefault(); openExternal(APP_URLS[os]); });
+  });
+  $("btn-switch").addEventListener("click", switchServer);
+  $("prompt-cancel").addEventListener("click", () => closePrompt(null));
 
   if (window.runtime) {
     window.runtime.EventsOn("install:log", appendLog);

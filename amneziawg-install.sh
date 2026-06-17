@@ -51,6 +51,8 @@ err()  { echo -e "${RED}✗${NC} $*" >&2; }
 NONINTERACTIVE=0
 ADD_CLIENT=""
 REMOVE_CLIENT=""
+RENAME_OLD=""
+RENAME_NEW=""
 LIST_CLIENTS=0
 UNINSTALL=0
 INSTALL_PANEL=0
@@ -677,6 +679,37 @@ removeClientByName() {
 	ok "Клиент '${name}' удалён."
 }
 
+# renameClientByName renames a client in the server config and its mirrored
+# config files (used by --rename-client OLD NEW). The peer keys are unchanged, so
+# no live resync is needed — only the comment markers and file names move.
+renameClientByName() {
+	loadParams
+	local old new
+	old=$(sanitizeName "${1:-}")
+	new=$(sanitizeName "${2:-}")
+	if [[ -z "${old}" || -z "${new}" ]]; then
+		err "Нужно старое и новое имя клиента."
+		return 1
+	fi
+	if ! grep -q "^# BEGIN_PEER ${old}\$" "${SERVER_CONF}" 2>/dev/null; then
+		err "Клиент '${old}' не найден."
+		return 1
+	fi
+	if grep -q "^# BEGIN_PEER ${new}\$" "${SERVER_CONF}" 2>/dev/null; then
+		err "Клиент '${new}' уже существует."
+		return 1
+	fi
+
+	sed -i "s/^# BEGIN_PEER ${old}\$/# BEGIN_PEER ${new}/; s/^# END_PEER ${old}\$/# END_PEER ${new}/" "${SERVER_CONF}"
+	local from to
+	for dir in "${CLIENT_OUT_DIR}" "${PANEL_CLIENT_DIR}"; do
+		from="${dir}/${SERVER_WG_NIC}-client-${old}.conf"
+		to="${dir}/${SERVER_WG_NIC}-client-${new}.conf"
+		[[ -f "${from}" ]] && mv -f "${from}" "${to}" 2>/dev/null || true
+	done
+	ok "Клиент '${old}' переименован в '${new}'."
+}
+
 revokeClient() {
 	loadParams
 	if ! grep -q "^# BEGIN_PEER" "${SERVER_CONF}" 2>/dev/null; then
@@ -850,6 +883,22 @@ removePanel() {
 	ok "$(t panel_removed)"
 }
 
+# panelPasswordOK enforces a non-trivial admin password (the panel is reachable
+# over the network): at least 6 chars with lower- and upper-case letters, a digit
+# and a special character — so "123456" is rejected but e.g. "Admin2@" passes.
+panelPasswordOK() {
+	local p="$1"
+	[[ "${#p}" -ge 6 ]] || return 1
+	[[ "$p" == *[a-z]* ]] || return 1
+	[[ "$p" == *[A-Z]* ]] || return 1
+	[[ "$p" == *[0-9]* ]] || return 1
+	[[ "$p" == *[^a-zA-Z0-9]* ]] || return 1
+	return 0
+}
+
+# panel_pw_rule is the human-readable password requirement shown to the user.
+panel_pw_rule="Пароль панели: минимум 6 символов, строчные и ЗАГЛАВНЫЕ буквы, цифра и спецсимвол (например Admin2@)."
+
 installPanel() {
 	loadParams
 
@@ -876,19 +925,20 @@ installPanel() {
 		local pw pw2
 		# Non-interactive path (GUI/automation): password from env.
 		if [[ -n "${AWG_PANEL_PASSWORD:-}" ]]; then
-			if [[ "${#AWG_PANEL_PASSWORD}" -lt 8 ]]; then
-				err "Пароль панели слишком короткий (минимум 8 символов)."
+			if ! panelPasswordOK "${AWG_PANEL_PASSWORD}"; then
+				err "${panel_pw_rule}"
 				return 1
 			fi
 			pw="${AWG_PANEL_PASSWORD}"
 		else
+			echo "${panel_pw_rule}"
 			while :; do
-				read -rsp "Придумай пароль администратора панели (мин. 8 символов): " pw; echo
+				read -rsp "Придумай пароль администратора панели: " pw; echo
 				read -rsp "Повтори пароль: " pw2; echo
 				if [[ "${pw}" != "${pw2}" ]]; then
 					warn "Пароли не совпадают — попробуй снова."
-				elif [[ "${#pw}" -lt 8 ]]; then
-					warn "Слишком короткий пароль (минимум 8 символов)."
+				elif ! panelPasswordOK "${pw}"; then
+					warn "${panel_pw_rule}"
 				else
 					break
 				fi
@@ -1001,6 +1051,7 @@ parseArgs() {
 			-y | --yes) NONINTERACTIVE=1; shift ;;
 			--add-client) ADD_CLIENT="${2:-}"; shift 2 ;;
 			--remove-client) REMOVE_CLIENT="${2:-}"; shift 2 ;;
+			--rename-client) RENAME_OLD="${2:-}"; RENAME_NEW="${3:-}"; shift 3 ;;
 			--list) LIST_CLIENTS=1; shift ;;
 			--uninstall) UNINSTALL=1; shift ;;
 			--install-panel) INSTALL_PANEL=1; shift ;;
@@ -1012,6 +1063,7 @@ parseArgs() {
 				echo "  --lang en|ru       UI language (default: auto from \$LANG)"
 				echo "  --add-client N     create client N and exit (for automation/SSH)"
 				echo "  --remove-client N  remove client N and exit"
+				echo "  --rename-client OLD NEW  rename a client and exit"
 				echo "  --list             list clients and exit"
 				echo "  --uninstall        remove everything (needs AWG_CONFIRM=yes)"
 				echo "  --install-panel    install the web panel (password via AWG_PANEL_PASSWORD)"
@@ -1045,6 +1097,10 @@ main() {
 	fi
 	if [[ -n "${REMOVE_CLIENT}" ]]; then
 		removeClientByName "${REMOVE_CLIENT}"
+		exit $?
+	fi
+	if [[ -n "${RENAME_OLD}" ]]; then
+		renameClientByName "${RENAME_OLD}" "${RENAME_NEW}"
 		exit $?
 	fi
 	if [[ -n "${ADD_CLIENT}" ]]; then

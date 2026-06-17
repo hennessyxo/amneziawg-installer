@@ -101,6 +101,11 @@ func RemoveClientCommand(sudo, name string) string {
 	return sudo + "bash -s -- --remove-client " + shellQuote(name)
 }
 
+// RenameClientCommand builds the remote command to rename a client.
+func RenameClientCommand(sudo, oldName, newName string) string {
+	return sudo + "bash -s -- --rename-client " + shellQuote(oldName) + " " + shellQuote(newName)
+}
+
 // ListClientsCommand builds the remote command to list clients.
 func ListClientsCommand(sudo string) string {
 	return sudo + "bash -s -- --list"

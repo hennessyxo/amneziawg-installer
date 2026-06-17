@@ -43,6 +43,8 @@ body {
 }
 .brand { font-weight: 700; letter-spacing: -0.02em; }
 .brand span { color: var(--accent); }
+.top nav { display: flex; align-items: center; gap: 0.7rem; }
+.top nav .ghost { padding: 0.35rem 0.8rem; font-size: 0.82rem; }
 .iface {
   font-family: var(--mono); font-size: 12px; color: var(--accent);
   background: #0e1d16; border: 1px solid var(--accent-dim);
@@ -135,9 +137,18 @@ table.clients tbody tr:hover { background: var(--surface-2); }
 .panel-install input { flex: 1; min-width: 220px; }
 .panel-up { color: var(--accent); }
 
-/* ---- log ---- */
+/* ---- log (collapsible drawer) ---- */
+details.log {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 0.7rem 1rem;
+}
+details.log summary {
+  cursor: pointer; color: var(--muted); font-size: 0.85rem; font-weight: 600; list-style: revert;
+}
+details.log summary:hover { color: var(--text); }
+details.log[open] summary { margin-bottom: 0.7rem; }
 .log pre {
-  margin: 1rem 0 0; padding: 0.9rem 1rem; max-height: 280px; overflow: auto;
+  margin: 0; padding: 0.9rem 1rem; max-height: 240px; overflow: auto;
   background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
   font-family: var(--mono); font-size: 12px; color: #b9ccc3; white-space: pre-wrap;
   user-select: text;
@@ -228,6 +239,7 @@ details.advanced label { margin-top: 0.8rem; }
   box-shadow: 0 24px 60px -30px #000;
 }
 .dialog p { margin: 0 0 1.4rem; }
+.dialog input { width: 100%; margin-bottom: 1.4rem; }
 .dialog-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
 .ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 .ghost:hover { color: var(--text); border-color: var(--accent-dim); filter: none; }

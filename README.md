@@ -25,8 +25,8 @@ randomized obfuscation, client management with QR codes.
    - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365)
    - **Android / Windows / macOS / Linux** — [amnezia.org/downloads](https://amnezia.org/downloads)
 
-That's it. The server profile is tuned (MTU 1280 + light obfuscation) to work on
-both **mobile (4G/LTE)** and **broadband/PC** out of the box — nothing to choose.
+That's it. The server is tuned for reliable connections out of the box — there's
+nothing to choose.
 
 ## Install — pick one way
 
