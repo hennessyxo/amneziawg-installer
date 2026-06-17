@@ -52,13 +52,23 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - name: Build awg-deploy
+      - name: Build & package awg-deploy
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '0'
-        run: go build -ldflags "-s -w" -o "awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" ./cmd/awg-deploy
+        run: |
+          base="awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}"
+          go build -ldflags "-s -w" -o "awg-deploy${{ matrix.ext }}" ./cmd/awg-deploy
+          # Ship the raw binary AND an archive that preserves the executable bit
+          # (so macOS/Linux users don't need `chmod +x`).
+          cp "awg-deploy${{ matrix.ext }}" "${base}${{ matrix.ext }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip "${base}.zip" "awg-deploy${{ matrix.ext }}"
+          else
+            tar -czf "${base}.tar.gz" "awg-deploy${{ matrix.ext }}"
+          fi
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
+          files: awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}*

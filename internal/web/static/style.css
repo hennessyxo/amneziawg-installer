@@ -182,3 +182,4 @@ table.clients tbody tr:hover { background: var(--surface-2); }
 .edit-form input:focus { outline: none; border-color: var(--accent-dim); }
 .edit-actions { display: flex; gap: 0.5rem; }
 .edit-hint { margin: 0.6rem 0 0; font-size: 0.8rem; }
+.hint-profile { margin: 0.5rem 0 0; font-size: 0.8rem; }

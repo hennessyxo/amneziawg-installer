@@ -19,22 +19,23 @@ Grab the binary for your OS from [Releases](https://github.com/hennessyxo/amnezi
 | Your computer / Твой компьютер | File / Файл |
 |--------------------------------|-------------|
 | Windows | `awg-deploy-windows-amd64.exe` |
-| macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64` |
-| macOS — Intel | `awg-deploy-darwin-amd64` |
-| Linux — x86_64 | `awg-deploy-linux-amd64` |
-| Linux — ARM | `awg-deploy-linux-arm64` |
+| macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64.tar.gz` |
+| macOS — Intel | `awg-deploy-darwin-amd64.tar.gz` |
+| Linux — x86_64 | `awg-deploy-linux-amd64.tar.gz` |
+| Linux — ARM | `awg-deploy-linux-arm64.tar.gz` |
 
 > `darwin` = macOS. Качай под **свой** компьютер, а не под сервер — сервер
-> настраивается автоматически по SSH.
+> настраивается автоматически по SSH. Архивы сохраняют флаг «исполняемый»
+> (`chmod` не нужен); сырые бинарники тоже приложены к релизу.
 
 ### macOS: Gatekeeper
 
-Бинарник неподписанный, поэтому при первом запуске macOS его заблокирует. Сними
-карантин один раз:
+Распакуй `.tar.gz` (двойной клик или `tar -xzf …`). Бинарник неподписанный,
+поэтому сними карантин один раз:
 
 ```bash
-chmod +x ./awg-deploy-darwin-arm64
-xattr -dr com.apple.quarantine ./awg-deploy-darwin-arm64
+xattr -dr com.apple.quarantine ./awg-deploy
+./awg-deploy
 ```
 
 Либо: правый клик по файлу в Finder → **Открыть** → **Открыть**. (То же в

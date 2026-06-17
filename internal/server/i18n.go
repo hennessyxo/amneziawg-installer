@@ -47,6 +47,7 @@ var langs = map[string]map[string]string{
 		"save":         "Сохранить",
 		"cancel":       "Отмена",
 		"hint_limits":  "пусто = без лимита; срок — через сколько дней отключить",
+		"one_profile":  "Каждому устройству — свой клиент. Один конфиг на несколько устройств конфликтует.",
 	},
 	"en": {
 		"login_sub":    "Self-hosted VPN management",
@@ -85,6 +86,7 @@ var langs = map[string]map[string]string{
 		"save":         "Save",
 		"cancel":       "Cancel",
 		"hint_limits":  "empty = no limit; expiry = disable after N days",
+		"one_profile":  "Each device needs its own client. Sharing one config across devices clashes.",
 	},
 }
 

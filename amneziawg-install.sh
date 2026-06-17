@@ -103,6 +103,11 @@ t() {
 			panel_removed) echo "Web panel removed." ;;
 			mon_action_q) echo "Run monitoring (Enter) or remove it (type d)? " ;;
 			mon_removed)  echo "awg-monitor removed." ;;
+			panel_offer)  echo "Install the web panel for easy browser management? [Y/n]: " ;;
+			one_profile)  echo "One profile = one device. Make a separate client for each phone/PC, or connections will clash." ;;
+			first_conf)   echo "First client config:" ;;
+			panel_at)     echo "Web panel:" ;;
+			add_more)     echo "Add more clients from the menu or the web panel." ;;
 			p_deps)       echo "Installing dependencies..." ;;
 			p_repo)       echo "Adding the AmneziaWG repository..." ;;
 			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
@@ -135,6 +140,11 @@ t() {
 			panel_removed) echo "Веб-панель удалена." ;;
 			mon_action_q) echo "Запустить мониторинг (Enter) или удалить (введи d)? " ;;
 			mon_removed)  echo "awg-monitor удалён." ;;
+			panel_offer)  echo "Поставить веб-панель для удобного управления в браузере? [Y/n]: " ;;
+			one_profile)  echo "Один профиль — одно устройство. Для каждого телефона/ПК создавай отдельного клиента, иначе соединения конфликтуют." ;;
+			first_conf)   echo "Конфиг первого клиента:" ;;
+			panel_at)     echo "Веб-панель:" ;;
+			add_more)     echo "Добавляй клиентов в меню или в веб-панели." ;;
 			p_deps)       echo "Устанавливаю зависимости..." ;;
 			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
 			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
@@ -461,9 +471,22 @@ installAmneziaWG() {
 	writeServerConfig
 	startService
 	newClient "${FIRST_CLIENT}"
+
+	# Offer the web panel right away (interactive) so users land in a browser GUI.
+	if [[ "${NONINTERACTIVE}" != "1" ]]; then
+		echo
+		read -rp "$(t panel_offer)" p
+		[[ "${p,,}" != "n" ]] && installPanel
+	fi
+
+	# Final summary screen.
 	echo
-	ok "$(t done_title)"
-	echo -e "$(t run_again)"
+	echo -e "${BOLD}$(t done_title)${NC}"
+	echo "  • $(t first_conf) ${CLIENT_OUT_DIR}/${AWG_NIC}-client-${FIRST_CLIENT}.conf"
+	if [[ -f /etc/systemd/system/awg-panel.service ]]; then
+		echo -e "  • $(t panel_at) ${CYAN}https://${SERVER_PUB_IP}:${PANEL_PORT}${NC}"
+	fi
+	echo "  • $(t add_more)"
 }
 
 # ---------------------------------------------------------------------------
@@ -578,6 +601,8 @@ newClient() {
 	qrencode -t ANSIUTF8 <"${client_file}" || warn "qrencode недоступен — импортируй файл вручную."
 	echo
 	echo -e "Файл конфигурации: ${BOLD}${client_file}${NC}"
+	echo
+	warn "$(t one_profile)"
 
 	# For automation (the SSH deploy tool): emit the config fenced so it can be
 	# captured over SSH without guessing the file path.

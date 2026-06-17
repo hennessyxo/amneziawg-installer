@@ -40,10 +40,13 @@ VPN runs on. Pick **one** of the two ways to set it up.
    | Your computer | File to download |
    |---------------|------------------|
    | Windows | `awg-deploy-windows-amd64.exe` |
-   | macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64` |
-   | macOS — Intel | `awg-deploy-darwin-amd64` |
-   | Linux — x86_64 | `awg-deploy-linux-amd64` |
-   | Linux — ARM | `awg-deploy-linux-arm64` |
+   | macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64.tar.gz` |
+   | macOS — Intel | `awg-deploy-darwin-amd64.tar.gz` |
+   | Linux — x86_64 | `awg-deploy-linux-amd64.tar.gz` |
+   | Linux — ARM | `awg-deploy-linux-arm64.tar.gz` |
+
+   (The `.tar.gz`/`.zip` archives keep the executable bit, so there's no `chmod`.
+   Raw binaries are attached too if you prefer.)
 
 2. **Just run it with no arguments** — it asks for your server address and root
    password, connects over SSH, and runs the installer & management menu **right
@@ -56,11 +59,11 @@ VPN runs on. Pick **one** of the two ways to set it up.
    .\awg-deploy-windows-amd64.exe
    ```
 
-   **macOS / Linux:**
+   **macOS / Linux** — double-click the `.tar.gz` to extract it (or
+   `tar -xzf awg-deploy-darwin-arm64.tar.gz`), then:
    ```bash
-   chmod +x ./awg-deploy-darwin-arm64
-   xattr -dr com.apple.quarantine ./awg-deploy-darwin-arm64   # macOS only: clear Gatekeeper
-   ./awg-deploy-darwin-arm64
+   xattr -dr com.apple.quarantine ./awg-deploy   # macOS only: clear Gatekeeper
+   ./awg-deploy
    ```
 
    > macOS may say "cannot verify the developer" (the binary is unsigned). Either
