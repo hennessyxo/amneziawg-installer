@@ -7,9 +7,26 @@ on:
 permissions:
   contents: write
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Create the release once up front so the build jobs only upload assets
+      # (avoids the concurrent create/list race when many matrix jobs run).
+      - name: Ensure release exists
+        run: |
+          gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 \
+            || gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
+                 --title "${GITHUB_REF_NAME}" --notes "AmneziaWG installer ${GITHUB_REF_NAME}"
+
   server:
     name: Server binaries (linux)
+    needs: create-release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,15 +45,14 @@ jobs:
         run: |
           go build -ldflags "-s -w" -o "awg-monitor-linux-${{ matrix.goarch }}" ./cmd/awg-monitor
           go build -ldflags "-s -w" -o "awg-panel-linux-${{ matrix.goarch }}" ./cmd/awg-panel
-      - name: Attach to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            awg-monitor-linux-${{ matrix.goarch }}
-            awg-panel-linux-${{ matrix.goarch }}
+      - name: Upload
+        run: >-
+          gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
+          "awg-monitor-linux-${{ matrix.goarch }}" "awg-panel-linux-${{ matrix.goarch }}"
 
   deploy:
     name: Deploy tool (cross-platform)
+    needs: create-release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -60,15 +76,14 @@ jobs:
         run: |
           base="awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}"
           go build -ldflags "-s -w" -o "awg-deploy${{ matrix.ext }}" ./cmd/awg-deploy
-          # Ship the raw binary AND an archive that preserves the executable bit
-          # (so macOS/Linux users don't need `chmod +x`).
+          # Raw binary + an archive that preserves the executable bit (no chmod).
           cp "awg-deploy${{ matrix.ext }}" "${base}${{ matrix.ext }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             zip "${base}.zip" "awg-deploy${{ matrix.ext }}"
           else
             tar -czf "${base}.tar.gz" "awg-deploy${{ matrix.ext }}"
           fi
-      - name: Attach to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}*
+      - name: Upload
+        run: >-
+          gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
+          awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}*
