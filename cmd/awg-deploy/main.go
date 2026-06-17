@@ -214,10 +214,11 @@ func manageLoop(cl *deploy.Client, t deploy.Target) error {
 }
 
 func printAppHelp() {
-	fmt.Println("\n📱 Как подключить телефон:")
-	fmt.Println("  • перекинь файл .conf на телефон (AirDrop / облако / Telegram себе) и открой в приложении, ИЛИ")
-	fmt.Println("  • отсканируй QR-картинку (.png) — она уже открылась на экране.")
-	fmt.Println("  Приложения: AmneziaWG, AmneziaVPN или DefaultVPN (есть в РФ App Store).")
+	fmt.Println("\n📱 Как подключить телефон (надёжный способ — файл):")
+	fmt.Println("  • перекинь файл .conf на телефон (AirDrop / облако / Telegram себе)")
+	fmt.Println("    и открой его — он импортируется в AmneziaWG / AmneziaVPN / DefaultVPN.")
+	fmt.Println("  • QR-картинка (.png) — работает в отдельном приложении «AmneziaWG»")
+	fmt.Println("    (в «AmneziaVPN» по QR сырой конфиг не импортируется — там только файл).")
 }
 
 // authFlags holds the SSH auth/host-key flags shared by all subcommands.
@@ -552,8 +553,10 @@ func saveAndShow(installerOutput, outPath string) error {
 	// A WireGuard+obfuscation config is long, so a terminal QR ends up too large
 	// to scan reliably. Write a PNG instead (scans cleanly from the screen) and
 	// open it for the user.
+	// Low error-correction + a large image keeps the (long) AmneziaWG config QR
+	// sparse enough to scan from a phone.
 	pngPath := strings.TrimSuffix(outPath, ".conf") + ".png"
-	if err := qrcode.WriteFile(conf, qrcode.Medium, 512, pngPath); err != nil {
+	if err := qrcode.WriteFile(conf, qrcode.Low, 1024, pngPath); err != nil {
 		fmt.Fprintln(os.Stderr, "warning: could not write QR image:", err)
 		pngPath = ""
 	}

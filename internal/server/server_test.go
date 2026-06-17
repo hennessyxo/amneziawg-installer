@@ -35,6 +35,8 @@ type fakeCtrl struct {
 	revoked   []string
 	disabled  []string
 	enabled   []string
+	updated   []string
+	renamed   []string
 	configs   map[string]string
 	addErr    error
 	revokeErr error
@@ -63,6 +65,14 @@ func (f *fakeCtrl) RevokeClient(n string) error {
 }
 func (f *fakeCtrl) DisableClient(n string) error { f.disabled = append(f.disabled, n); return nil }
 func (f *fakeCtrl) EnableClient(n string) error  { f.enabled = append(f.enabled, n); return nil }
+func (f *fakeCtrl) UpdateClient(n string, _ awgctl.UpdateOptions) error {
+	f.updated = append(f.updated, n)
+	return nil
+}
+func (f *fakeCtrl) RenameClient(o, n string) error {
+	f.renamed = append(f.renamed, o+"->"+n)
+	return nil
+}
 
 const testPassword = "s3cret"
 
@@ -225,6 +235,68 @@ func TestRevokeClient(t *testing.T) {
 	}
 	if len(f.revoked) != 1 || f.revoked[0] != "phone" {
 		t.Errorf("RevokeClient calls = %v, want [phone]", f.revoked)
+	}
+}
+
+func TestEditForm_Renders(t *testing.T) {
+	s := newTestServer(t, &fakeCtrl{snap: sampleSnapshot()})
+	cookie := login(t, s)
+	req := httptest.NewRequest("GET", "/clients/phone/edit", nil)
+	req.AddCookie(cookie)
+	rr := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	body := rr.Body.String()
+	if !strings.Contains(body, `name="speed_mbit"`) || !strings.Contains(body, `value="phone"`) {
+		t.Errorf("edit form missing fields/prefill:\n%s", body)
+	}
+}
+
+func TestUpdateClient_RenameAndLimits(t *testing.T) {
+	f := &fakeCtrl{snap: sampleSnapshot()}
+	s := newTestServer(t, f)
+	cookie := login(t, s)
+	csrf := csrfToken(t, s, cookie)
+
+	form := url.Values{
+		"csrf": {csrf}, "name": {"newphone"},
+		"speed_mbit": {"10"}, "quota_gb": {"5"}, "expires_days": {"3"},
+	}
+	rr := postForm(t, s, "/clients/phone/update", form, cookie)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	if len(f.renamed) != 1 || f.renamed[0] != "phone->newphone" {
+		t.Errorf("rename calls = %v, want [phone->newphone]", f.renamed)
+	}
+	if len(f.updated) != 1 || f.updated[0] != "newphone" {
+		t.Errorf("update calls = %v, want [newphone]", f.updated)
+	}
+}
+
+func TestLogin_LockoutAfterFailures(t *testing.T) {
+	s := newTestServer(t, &fakeCtrl{})
+	bad := url.Values{"password": {"nope"}}
+	// 5 failures are allowed (each 401), the 6th attempt is locked (429).
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest("POST", "/login", strings.NewReader(bad.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.RemoteAddr = "198.51.100.9:5000"
+		rr := httptest.NewRecorder()
+		s.Handler().ServeHTTP(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: status = %d, want 401", i+1, rr.Code)
+		}
+	}
+	req := httptest.NewRequest("POST", "/login", strings.NewReader(bad.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.RemoteAddr = "198.51.100.9:5000"
+	rr := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rr, req)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Errorf("6th attempt: status = %d, want 429", rr.Code)
 	}
 }
 

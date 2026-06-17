@@ -93,6 +93,28 @@ func TestRemovePeer_NotFound(t *testing.T) {
 	}
 }
 
+func TestRenamePeer(t *testing.T) {
+	conf := AddPeerBlock(baseConf, "laptop", "LT=", "PSK2=", 3)
+	renamed := RenamePeer(conf, "laptop", "work-laptop")
+	if HasPeer(renamed, "laptop") {
+		t.Error("old name should be gone")
+	}
+	if !HasPeer(renamed, "work-laptop") {
+		t.Error("new name should be present")
+	}
+	// The original peer and the renamed peer's keys are untouched.
+	if !HasPeer(renamed, "phone") {
+		t.Error("phone should be unaffected")
+	}
+	if !strings.Contains(renamed, "PublicKey = LT=") {
+		t.Error("rename must not touch the peer's keys")
+	}
+	// A name that is a substring of another must not be partially matched.
+	if got := RenamePeer("# BEGIN_PEER phone2\n", "phone", "x"); got != "# BEGIN_PEER phone2\n" {
+		t.Errorf("partial name match: %q", got)
+	}
+}
+
 func TestRenderClientConfig(t *testing.T) {
 	p := Params{
 		ServerPubIP: "203.0.113.7", ServerPort: "51820", ServerPubKey: "SRVPUB=",

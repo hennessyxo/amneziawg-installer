@@ -171,3 +171,14 @@ table.clients tbody tr:hover { background: var(--surface-2); }
   display: inline-block; text-decoration: none; background: var(--accent);
   color: #04130d; font-weight: 600; padding: 0.5rem 1rem; border-radius: 8px;
 }
+
+/* edit form */
+.edit-form { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: end; margin-top: 0.8rem; }
+.edit-form label { display: grid; gap: 0.3rem; font-size: 0.78rem; color: var(--muted); }
+.edit-form input {
+  padding: 0.45rem 0.6rem; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 13px; width: 130px;
+}
+.edit-form input:focus { outline: none; border-color: var(--accent-dim); }
+.edit-actions { display: flex; gap: 0.5rem; }
+.edit-hint { margin: 0.6rem 0 0; font-size: 0.8rem; }

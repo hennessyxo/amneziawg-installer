@@ -140,6 +140,13 @@ func RemovePeerBlock(conf, name string) (string, bool) {
 	return cleaned, removed
 }
 
+// RenamePeer changes a peer's name in the fenced markers (BEGIN_PEER/END_PEER),
+// leaving the rest of the block untouched.
+func RenamePeer(conf, oldName, newName string) string {
+	re := regexp.MustCompile(`(?m)^(# (?:BEGIN|END)_PEER )` + regexp.QuoteMeta(oldName) + `$`)
+	return re.ReplaceAllString(conf, "${1}"+newName)
+}
+
 // RenderClientConfig builds a client .conf. Obfuscation parameters MUST match
 // the server, so they are copied verbatim from Params.
 func RenderClientConfig(p Params, privKey, psk string, octet int) string {

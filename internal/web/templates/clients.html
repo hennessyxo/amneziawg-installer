@@ -29,6 +29,7 @@
       <td class="mono r dim">{{.HandshakeAgo}}</td>
       <td class="actions">
         {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config">{{$.L.conf}}</a>{{end}}
+        <button class="link" hx-get="/clients/{{.Name}}/edit" hx-target="#created" hx-swap="innerHTML">{{$.L.edit}}</button>
         {{if .Disabled}}
           <button class="link" hx-post="/clients/{{.Name}}/enable"
                   hx-target="#clients" hx-swap="innerHTML"

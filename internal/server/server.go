@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -36,6 +37,7 @@ type Server struct {
 	ctrl     awgctl.Controller
 	sessions *auth.Store
 	store    *lifecycle.Store // lifecycle metadata (may be nil in tests)
+	limiter  *auth.Limiter    // login brute-force protection
 	pwHash   string
 	iface    string
 	secure   bool // set the Secure flag on cookies (true behind HTTPS)
@@ -55,6 +57,7 @@ func New(ctrl awgctl.Controller, sessions *auth.Store, store *lifecycle.Store, p
 		ctrl:     ctrl,
 		sessions: sessions,
 		store:    store,
+		limiter:  auth.NewLimiter(5, 10*time.Minute, 15*time.Minute),
 		pwHash:   pwHash,
 		iface:    iface,
 		secure:   secure,
@@ -144,6 +147,8 @@ func (s *Server) routes() {
 	mux.HandleFunc("GET /partials/clients", s.requireAuth(s.clientsPartial))
 	mux.HandleFunc("POST /clients", s.requireAuth(s.addClient))
 	mux.HandleFunc("POST /clients/{name}/revoke", s.requireAuth(s.revokeClient))
+	mux.HandleFunc("GET /clients/{name}/edit", s.requireAuth(s.editForm))
+	mux.HandleFunc("POST /clients/{name}/update", s.requireAuth(s.updateClient))
 	mux.HandleFunc("POST /clients/{name}/disable", s.requireAuth(s.toggleClient(false)))
 	mux.HandleFunc("POST /clients/{name}/enable", s.requireAuth(s.toggleClient(true)))
 	mux.HandleFunc("GET /clients/{name}/qr.png", s.requireAuth(s.qrPNG))
@@ -202,13 +207,27 @@ func (s *Server) loginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) doLogin(w http.ResponseWriter, r *http.Request) {
+	lang := s.lang(r)
+	ip := clientIP(r)
+
+	if locked, until := s.limiter.Locked(ip); locked {
+		w.WriteHeader(http.StatusTooManyRequests)
+		mins := int(time.Until(until).Minutes()) + 1
+		s.render(w, "login", map[string]any{
+			"Error": fmt.Sprintf("%s (~%d мин)", tr(lang)["login_locked"], mins),
+			"L":     tr(lang), "Lang": lang,
+		})
+		return
+	}
+
 	pw := r.FormValue("password")
 	if !auth.CheckPassword(s.pwHash, pw) {
-		lang := s.lang(r)
+		s.limiter.Fail(ip)
 		w.WriteHeader(http.StatusUnauthorized)
 		s.render(w, "login", map[string]any{"Error": tr(lang)["login_err"], "L": tr(lang), "Lang": lang})
 		return
 	}
+	s.limiter.Reset(ip)
 	token, _ := s.sessions.Create()
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
@@ -323,13 +342,70 @@ func (s *Server) renderClients(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "clients", data)
 }
 
+// editForm renders the inline edit form prefilled with the client's current limits.
+func (s *Server) editForm(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	sess, _ := s.session(r)
+	lang := s.lang(r)
+	data := map[string]any{
+		"Name": name, "CSRF": sess.CSRF, "L": tr(lang), "Lang": lang,
+		"Days": "", "QuotaGB": "", "SpeedMbit": "",
+	}
+	if s.store != nil {
+		if rec, ok := s.store.Get(name); ok {
+			if rec.QuotaBytes > 0 {
+				data["QuotaGB"] = strconv.FormatUint(rec.QuotaBytes/(1<<30), 10)
+			}
+			if rec.SpeedMbit > 0 {
+				data["SpeedMbit"] = strconv.Itoa(rec.SpeedMbit)
+			}
+			if rec.ExpiresAt != nil {
+				if d := int(time.Until(*rec.ExpiresAt).Hours() / 24); d > 0 {
+					data["Days"] = strconv.Itoa(d)
+				}
+			}
+		}
+	}
+	s.render(w, "edit", data)
+}
+
+// updateClient applies a rename (if changed) and new limits to an existing client.
+func (s *Server) updateClient(w http.ResponseWriter, r *http.Request) {
+	if !s.checkCSRF(r) {
+		http.Error(w, "bad csrf token", http.StatusForbidden)
+		return
+	}
+	current := r.PathValue("name")
+	effective := current
+	if newName, ok := awgctl.SanitizeName(r.FormValue("name")); ok && newName != current {
+		if err := s.ctrl.RenameClient(current, newName); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
+			return
+		}
+		effective = newName
+	}
+	opts := awgctl.UpdateOptions{
+		ExpiresIn:  daysToDuration(r.FormValue("expires_days")),
+		QuotaBytes: gbToBytes(r.FormValue("quota_gb")),
+		SpeedMbit:  atoiNonNeg(r.FormValue("speed_mbit")),
+	}
+	if err := s.ctrl.UpdateClient(effective, opts); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
+		return
+	}
+	s.ReconcileShaper()
+	s.renderClients(w, r)
+}
+
 func (s *Server) qrPNG(w http.ResponseWriter, r *http.Request) {
 	cfg, err := s.ctrl.ClientConfig(r.PathValue("name"))
 	if err != nil {
 		http.Error(w, "config unavailable", http.StatusNotFound)
 		return
 	}
-	png, err := qrcode.Encode(cfg, qrcode.Medium, 256)
+	png, err := qrcode.Encode(cfg, qrcode.Low, 512)
 	if err != nil {
 		http.Error(w, "qr error", http.StatusInternalServerError)
 		return
@@ -520,6 +596,15 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 	if err := s.tmpl.ExecuteTemplate(w, name, data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
+}
+
+// clientIP extracts the source IP (without port) from the request.
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
 
 func displayName(p awg.Peer) string {

@@ -1,0 +1,29 @@
+{{define "edit"}}
+<div class="created">
+  <div class="created-head">
+    <span><b>{{.L.edit_title}}:</b> {{.Name}}</span>
+    <button class="x" type="button" onclick="this.closest('.created').remove()">×</button>
+  </div>
+  <form class="edit-form" hx-post="/clients/{{.Name}}/update" hx-target="#clients" hx-swap="innerHTML"
+        hx-on::after-request="this.closest('.created').remove()">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <label>{{.L.new_name}}
+      <input type="text" name="name" value="{{.Name}}" pattern="[A-Za-z0-9_-]{1,32}" required>
+    </label>
+    <label>{{.L.ph_speed}}
+      <input type="number" name="speed_mbit" min="1" value="{{.SpeedMbit}}">
+    </label>
+    <label>{{.L.ph_quota}}
+      <input type="number" name="quota_gb" min="1" value="{{.QuotaGB}}">
+    </label>
+    <label>{{.L.ph_days}}
+      <input type="number" name="expires_days" min="1" value="{{.Days}}">
+    </label>
+    <div class="edit-actions">
+      <button type="submit">{{.L.save}}</button>
+      <button type="button" class="ghost" onclick="this.closest('.created').remove()">{{.L.cancel}}</button>
+    </div>
+  </form>
+  <p class="muted edit-hint">{{.L.hint_limits}}</p>
+</div>
+{{end}}

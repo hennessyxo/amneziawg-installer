@@ -25,11 +25,20 @@ type AddOptions struct {
 	SpeedMbit  int           // bandwidth cap in Mbit/s (0 = unlimited)
 }
 
+// UpdateOptions carries the new lifecycle limits for an existing client.
+type UpdateOptions struct {
+	ExpiresIn  time.Duration // 0 = no expiry
+	QuotaBytes uint64        // 0 = unlimited
+	SpeedMbit  int           // 0 = unlimited
+}
+
 // Controller is the panel's view of the running AmneziaWG server. It is an
 // interface so HTTP handlers can be tested against a fake.
 type Controller interface {
 	Snapshot() (awg.Snapshot, error)
 	AddClient(name string, opts AddOptions) (Client, error)
+	UpdateClient(name string, opts UpdateOptions) error
+	RenameClient(oldName, newName string) error
 	RevokeClient(name string) error
 	DisableClient(name string) error
 	EnableClient(name string) error
@@ -182,6 +191,61 @@ func (c FileController) EnableClient(name string) error {
 	}
 	rec.Disabled = false
 	_ = c.Store.Put(rec)
+	return c.syncConf()
+}
+
+// UpdateClient changes an existing client's lifecycle limits (speed/quota/expiry).
+func (c FileController) UpdateClient(name string, opts UpdateOptions) error {
+	if c.Store == nil {
+		return fmt.Errorf("no lifecycle store configured")
+	}
+	rec, ok := c.Store.Get(name)
+	if !ok {
+		return fmt.Errorf("client %q not found", name)
+	}
+	rec.QuotaBytes = opts.QuotaBytes
+	rec.SpeedMbit = opts.SpeedMbit
+	if opts.ExpiresIn > 0 {
+		exp := time.Now().Add(opts.ExpiresIn)
+		rec.ExpiresAt = &exp
+	} else {
+		rec.ExpiresAt = nil
+	}
+	return c.Store.Put(rec)
+}
+
+// RenameClient renames a client across the server config, its config file, and
+// the lifecycle store.
+func (c FileController) RenameClient(oldName, newName string) error {
+	confBytes, err := os.ReadFile(c.ConfPath)
+	if err != nil {
+		return err
+	}
+	conf := string(confBytes)
+	if HasPeer(conf, newName) {
+		return fmt.Errorf("client %q already exists", newName)
+	}
+	if c.Store != nil {
+		if _, exists := c.Store.Get(newName); exists {
+			return fmt.Errorf("client %q already exists", newName)
+		}
+	}
+
+	if newConf := RenamePeer(conf, oldName, newName); newConf != conf {
+		if err := os.WriteFile(c.ConfPath, []byte(newConf), 0o600); err != nil {
+			return err
+		}
+	}
+	_ = os.Rename(c.clientFile(oldName), c.clientFile(newName))
+
+	if c.Store != nil {
+		if rec, ok := c.Store.Get(oldName); ok {
+			rec.Name = newName
+			rec.PeerBlock = RenamePeer(rec.PeerBlock, oldName, newName)
+			_ = c.Store.Delete(oldName)
+			_ = c.Store.Put(rec)
+		}
+	}
 	return c.syncConf()
 }
 

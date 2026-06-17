@@ -775,10 +775,15 @@ installPanel() {
 	if [[ ! -s "${PANEL_HASH}" ]]; then
 		local pw pw2
 		while :; do
-			read -rsp "Придумай пароль администратора панели: " pw; echo
+			read -rsp "Придумай пароль администратора панели (мин. 8 символов): " pw; echo
 			read -rsp "Повтори пароль: " pw2; echo
-			[[ -n "${pw}" && "${pw}" == "${pw2}" ]] && break
-			warn "Пароли пусты или не совпадают — попробуй снова."
+			if [[ "${pw}" != "${pw2}" ]]; then
+				warn "Пароли не совпадают — попробуй снова."
+			elif [[ "${#pw}" -lt 8 ]]; then
+				warn "Слишком короткий пароль (минимум 8 символов)."
+			else
+				break
+			fi
 		done
 		umask 077
 		echo "${pw}" | "${PANEL_BIN}" hash >"${PANEL_HASH}"
