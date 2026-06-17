@@ -87,31 +87,27 @@ func saveProfilesDisk(d profilesDisk) error {
 	return os.WriteFile(path, b, 0o600)
 }
 
-// upsertProfile adds or updates a profile (matched by user@host) and marks it as
-// the last used.
-func upsertProfile(e ProfileEntry) {
-	d := loadProfilesDisk()
+// upsertEntry adds or updates a profile (matched by user@host) in d and marks it
+// as the last used. Pure (no IO) so it can be unit-tested.
+func upsertEntry(d profilesDisk, e ProfileEntry) profilesDisk {
 	key := profileKey(e.User, e.Host)
-	found := false
 	for i := range d.Profiles {
 		if profileKey(d.Profiles[i].User, d.Profiles[i].Host) == key {
 			d.Profiles[i] = e
-			found = true
-			break
+			d.Last = key
+			return d
 		}
 	}
-	if !found {
-		d.Profiles = append(d.Profiles, e)
-	}
+	d.Profiles = append(d.Profiles, e)
 	d.Last = key
-	_ = saveProfilesDisk(d)
+	return d
 }
 
-// removeProfile drops a saved profile and forgets its stored password.
-func removeProfile(user, host string) {
-	d := loadProfilesDisk()
+// removeEntry drops the user@host profile from d (and clears Last if it pointed
+// there). Pure (no IO).
+func removeEntry(d profilesDisk, user, host string) profilesDisk {
 	key := profileKey(user, host)
-	out := d.Profiles[:0]
+	out := make([]ProfileEntry, 0, len(d.Profiles))
 	for _, p := range d.Profiles {
 		if profileKey(p.User, p.Host) != key {
 			out = append(out, p)
@@ -121,7 +117,18 @@ func removeProfile(user, host string) {
 	if d.Last == key {
 		d.Last = ""
 	}
-	_ = saveProfilesDisk(d)
+	return d
+}
+
+// upsertProfile adds or updates a profile (matched by user@host) and marks it as
+// the last used.
+func upsertProfile(e ProfileEntry) {
+	_ = saveProfilesDisk(upsertEntry(loadProfilesDisk(), e))
+}
+
+// removeProfile drops a saved profile and forgets its stored password.
+func removeProfile(user, host string) {
+	_ = saveProfilesDisk(removeEntry(loadProfilesDisk(), user, host))
 	forgetPassword(user, host)
 }
 
