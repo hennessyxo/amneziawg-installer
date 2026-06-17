@@ -140,6 +140,38 @@ func RemovePeerBlock(conf, name string) (string, bool) {
 	return cleaned, removed
 }
 
+// ServerClient is a peer parsed straight from the server config (used to adopt
+// clients created outside the panel into the lifecycle store).
+type ServerClient struct {
+	Name   string
+	PubKey string
+	Octet  int
+	Block  string // the full fenced block, for re-enable
+}
+
+var (
+	clientBlockRe = regexp.MustCompile(`(?s)# BEGIN_PEER (\S+)\n(.*?)# END_PEER \S+`)
+	pubKeyRe      = regexp.MustCompile(`(?m)^PublicKey\s*=\s*(\S+)`)
+)
+
+// ParseServerClients extracts every fenced peer from the server config.
+func ParseServerClients(conf string) []ServerClient {
+	var out []ServerClient
+	for _, m := range clientBlockRe.FindAllStringSubmatch(conf, -1) {
+		sc := ServerClient{Name: m[1], Block: m[0] + "\n"}
+		if pk := pubKeyRe.FindStringSubmatch(m[2]); pk != nil {
+			sc.PubKey = pk[1]
+		}
+		if oc := octetRe.FindStringSubmatch(m[2]); oc != nil {
+			if n, err := strconv.Atoi(oc[1]); err == nil {
+				sc.Octet = n
+			}
+		}
+		out = append(out, sc)
+	}
+	return out
+}
+
 // RenamePeer changes a peer's name in the fenced markers (BEGIN_PEER/END_PEER),
 // leaving the rest of the block untouched.
 func RenamePeer(conf, oldName, newName string) string {

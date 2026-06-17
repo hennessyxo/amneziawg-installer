@@ -64,6 +64,17 @@ detectLang() {
 	case "${l}" in en) LANG_CODE="en" ;; *) LANG_CODE="ru" ;; esac
 }
 
+# chooseLang asks the language interactively (so it's not at the mercy of the
+# server's $LANG, which arrives inconsistently over SSH).
+chooseLang() {
+	echo
+	echo "Выбери язык / Choose language:"
+	echo "  1) Русский"
+	echo "  2) English"
+	read -rp "[1]: " l
+	case "${l}" in 2) LANG_CODE="en" ;; *) LANG_CODE="ru" ;; esac
+}
+
 # t prints a localized UI string by key (interactive surface: menu/prompts).
 t() {
 	if [[ "${LANG_CODE}" == "en" ]]; then
@@ -88,6 +99,10 @@ t() {
 			mon_usage)    echo "How to use awg-monitor" ;;
 			panel_addr)   echo "Address" ;;
 			press_enter)  echo "Press Enter to return to the menu... " ;;
+			panel_inst_q) echo "The web panel is already installed. Remove it? [y/N]: " ;;
+			panel_removed) echo "Web panel removed." ;;
+			mon_action_q) echo "Run monitoring (Enter) or remove it (type d)? " ;;
+			mon_removed)  echo "awg-monitor removed." ;;
 			p_deps)       echo "Installing dependencies..." ;;
 			p_repo)       echo "Adding the AmneziaWG repository..." ;;
 			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
@@ -116,6 +131,10 @@ t() {
 			mon_usage)    echo "Как пользоваться awg-monitor" ;;
 			panel_addr)   echo "Адрес" ;;
 			press_enter)  echo "Нажми Enter, чтобы вернуться в меню... " ;;
+			panel_inst_q) echo "Веб-панель уже установлена. Удалить её? [y/N]: " ;;
+			panel_removed) echo "Веб-панель удалена." ;;
+			mon_action_q) echo "Запустить мониторинг (Enter) или удалить (введи d)? " ;;
+			mon_removed)  echo "awg-monitor удалён." ;;
 			p_deps)       echo "Устанавливаю зависимости..." ;;
 			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
 			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
@@ -542,6 +561,10 @@ newClient() {
 		PersistentKeepalive = 25
 	EOF
 
+	# Mirror the config into the panel's client dir so the web panel can serve
+	# the download/QR even for clients created from the CLI / installer.
+	mkdir -p "${PANEL_CLIENT_DIR}" 2>/dev/null && cp "${client_file}" "${PANEL_CLIENT_DIR}/" 2>/dev/null || true
+
 	# Apply live without dropping existing connections.
 	if systemctl is-active --quiet "awg-quick@${SERVER_WG_NIC}"; then
 		awg syncconf "${SERVER_WG_NIC}" <(awg-quick strip "${SERVER_WG_NIC}") 2>/dev/null || \
@@ -597,6 +620,7 @@ removeClientByName() {
 	# Drop a leftover blank line if present.
 	sed -i '/^$/N;/^\n$/D' "${SERVER_CONF}"
 	rm -f "${CLIENT_OUT_DIR}/${SERVER_WG_NIC}-client-${name}.conf"
+	rm -f "${PANEL_CLIENT_DIR}/${SERVER_WG_NIC}-client-${name}.conf"
 
 	if systemctl is-active --quiet "awg-quick@${SERVER_WG_NIC}"; then
 		awg syncconf "${SERVER_WG_NIC}" <(awg-quick strip "${SERVER_WG_NIC}") 2>/dev/null || \
@@ -748,11 +772,18 @@ fetchGoBinary() {
 
 installMonitor() {
 	loadParams
-	if [[ ! -x "${MONITOR_BIN}" ]]; then
-		fetchGoBinary monitor "${MONITOR_BIN}" || return 1
-	else
-		ok "awg-monitor уже установлен (${MONITOR_BIN})."
+	if [[ -x "${MONITOR_BIN}" ]]; then
+		showMonitorUsage
+		read -rp "$(t mon_action_q)" r
+		if [[ "${r,,}" == "d" ]]; then
+			rm -f "${MONITOR_BIN}"
+			ok "$(t mon_removed)"
+			return 0
+		fi
+		runMonitor
+		return 0
 	fi
+	fetchGoBinary monitor "${MONITOR_BIN}" || return 1
 	showMonitorUsage
 	read -rp "$(t run_monitor)" r
 	[[ "${r,,}" != "n" ]] && runMonitor
@@ -761,17 +792,32 @@ installMonitor() {
 # ---------------------------------------------------------------------------
 # Web panel (awg-panel — Go + htmx)
 # ---------------------------------------------------------------------------
+removePanel() {
+	systemctl stop awg-panel 2>/dev/null || true
+	systemctl disable awg-panel 2>/dev/null || true
+	rm -f /etc/systemd/system/awg-panel.service
+	systemctl daemon-reload 2>/dev/null || true
+	iptables -D INPUT -p tcp --dport "${PANEL_PORT}" -j ACCEPT 2>/dev/null || true
+	rm -f "${PANEL_BIN}" "${PANEL_HASH}" "${PANEL_CERT}" "${PANEL_KEY}"
+	ok "$(t panel_removed)"
+}
+
 installPanel() {
 	loadParams
+
+	# Already installed → show how to reach it and offer removal.
+	if [[ -f /etc/systemd/system/awg-panel.service ]]; then
+		showPanelUsage
+		read -rp "$(t panel_inst_q)" r
+		[[ "${r,,}" == "y" ]] && removePanel
+		return 0
+	fi
+
 	command -v openssl >/dev/null 2>&1 || apt-get install -y -qq openssl >/dev/null 2>&1 || true
 	# tc (iproute2) is needed for per-client speed limits; usually already present.
 	command -v tc >/dev/null 2>&1 || apt-get install -y -qq iproute2 >/dev/null 2>&1 || true
 
-	if [[ ! -x "${PANEL_BIN}" ]]; then
-		fetchGoBinary panel "${PANEL_BIN}" || return 1
-	else
-		ok "awg-panel уже установлен (${PANEL_BIN})."
-	fi
+	fetchGoBinary panel "${PANEL_BIN}" || return 1
 
 	# Admin password → bcrypt hash (plaintext never stored).
 	if [[ ! -s "${PANEL_HASH}" ]]; then
@@ -939,6 +985,12 @@ main() {
 	if [[ -n "${ADD_CLIENT}" ]]; then
 		newClient "${ADD_CLIENT}"
 		exit 0
+	fi
+
+	# Interactive sessions: let the user pick the language (unless forced via
+	# --lang/AWG_LANG), so it doesn't flip based on the server's $LANG.
+	if [[ "${NONINTERACTIVE}" != "1" && -z "${AWG_LANG:-}" ]]; then
+		chooseLang
 	fi
 
 	# Fresh server → install (interactive prompts, or non-interactive via AWG_* env).

@@ -30,16 +30,17 @@ func postForm(t *testing.T, s *Server, path string, form url.Values, cookie *htt
 
 // fakeCtrl is an in-memory Controller for handler tests.
 type fakeCtrl struct {
-	snap      awg.Snapshot
-	added     []string
-	revoked   []string
-	disabled  []string
-	enabled   []string
-	updated   []string
-	renamed   []string
-	configs   map[string]string
-	addErr    error
-	revokeErr error
+	snap          awg.Snapshot
+	added         []string
+	revoked       []string
+	disabled      []string
+	enabled       []string
+	updated       []string
+	renamed       []string
+	serverClients []awgctl.ServerClient
+	configs       map[string]string
+	addErr        error
+	revokeErr     error
 }
 
 func (f *fakeCtrl) Snapshot() (awg.Snapshot, error) { return f.snap, nil }
@@ -73,6 +74,7 @@ func (f *fakeCtrl) RenameClient(o, n string) error {
 	f.renamed = append(f.renamed, o+"->"+n)
 	return nil
 }
+func (f *fakeCtrl) ServerClients() ([]awgctl.ServerClient, error) { return f.serverClients, nil }
 
 const testPassword = "s3cret"
 
@@ -388,6 +390,35 @@ func TestDisableEnableClient(t *testing.T) {
 	}
 	if len(f.enabled) != 1 || f.enabled[0] != "phone" {
 		t.Errorf("EnableClient calls = %v, want [phone]", f.enabled)
+	}
+}
+
+func TestAdoptOrphans(t *testing.T) {
+	store, err := lifecycle.Open(filepath.Join(t.TempDir(), "clients.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeCtrl{serverClients: []awgctl.ServerClient{
+		{Name: "phone", PubKey: "PH=", Octet: 2, Block: "# BEGIN_PEER phone\n# END_PEER phone\n"},
+	}}
+	hash, _ := auth.HashPassword(testPassword)
+	s, err := New(f, auth.NewStore(time.Hour), store, hash, "awg0", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.adoptOrphans()
+	rec, ok := store.Get("phone")
+	if !ok {
+		t.Fatal("install-time client should be adopted into the store")
+	}
+	if rec.PubKey != "PH=" || rec.Octet != 2 {
+		t.Errorf("adopted record wrong: %+v", rec)
+	}
+	// Idempotent: a second pass doesn't duplicate or overwrite with empty data.
+	s.adoptOrphans()
+	if len(store.List()) != 1 {
+		t.Errorf("adoptOrphans not idempotent: %d records", len(store.List()))
 	}
 }
 

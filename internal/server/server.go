@@ -446,8 +446,30 @@ type clientsData struct {
 	Lang                      string
 }
 
+// adoptOrphans registers clients that exist in the server config but not yet in
+// the lifecycle store (created via the installer/CLI), so the panel can manage
+// them too. Idempotent.
+func (s *Server) adoptOrphans() {
+	if s.store == nil {
+		return
+	}
+	clients, err := s.ctrl.ServerClients()
+	if err != nil {
+		return
+	}
+	for _, sc := range clients {
+		if _, ok := s.store.Get(sc.Name); !ok {
+			_ = s.store.Put(lifecycle.Record{
+				Name: sc.Name, PubKey: sc.PubKey, Octet: sc.Octet,
+				PeerBlock: sc.Block, CreatedAt: time.Now(),
+			})
+		}
+	}
+}
+
 func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
 	L := tr(lang)
+	s.adoptOrphans()
 	snap, err := s.ctrl.Snapshot()
 	if err != nil {
 		return clientsData{}, err

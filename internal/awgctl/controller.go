@@ -43,6 +43,7 @@ type Controller interface {
 	DisableClient(name string) error
 	EnableClient(name string) error
 	ClientConfig(name string) (string, error)
+	ServerClients() ([]ServerClient, error)
 }
 
 // FileController is the production Controller: it shells out to `awg`, edits the
@@ -247,6 +248,15 @@ func (c FileController) RenameClient(oldName, newName string) error {
 		}
 	}
 	return c.syncConf()
+}
+
+// ServerClients parses the peers currently in the server config.
+func (c FileController) ServerClients() ([]ServerClient, error) {
+	data, err := os.ReadFile(c.ConfPath)
+	if err != nil {
+		return nil, err
+	}
+	return ParseServerClients(string(data)), nil
 }
 
 func (c FileController) ClientConfig(name string) (string, error) {

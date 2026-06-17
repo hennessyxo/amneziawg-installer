@@ -93,6 +93,27 @@ func TestRemovePeer_NotFound(t *testing.T) {
 	}
 }
 
+func TestParseServerClients(t *testing.T) {
+	conf := AddPeerBlock(baseConf, "laptop", "LT=", "PSK2=", 7)
+	clients := ParseServerClients(conf)
+	if len(clients) != 2 {
+		t.Fatalf("got %d clients, want 2", len(clients))
+	}
+	byName := map[string]ServerClient{}
+	for _, c := range clients {
+		byName[c.Name] = c
+	}
+	if p := byName["phone"]; p.PubKey != "PH=" || p.Octet != 2 {
+		t.Errorf("phone parsed wrong: %+v", p)
+	}
+	if l := byName["laptop"]; l.PubKey != "LT=" || l.Octet != 7 {
+		t.Errorf("laptop parsed wrong: %+v", l)
+	}
+	if !strings.Contains(byName["laptop"].Block, "# BEGIN_PEER laptop") {
+		t.Error("block should include the fenced markers")
+	}
+}
+
 func TestRenamePeer(t *testing.T) {
 	conf := AddPeerBlock(baseConf, "laptop", "LT=", "PSK2=", 3)
 	renamed := RenamePeer(conf, "laptop", "work-laptop")
