@@ -20,9 +20,23 @@ jobs:
       # (avoids the concurrent create/list race when many matrix jobs run).
       - name: Ensure release exists
         run: |
+          notes=$(cat <<'EOF'
+          ## Что скачать
+
+          **🖱️ Приложение (проще всего):**
+          - **macOS** — `awg-gui-macos.zip`
+          - **Windows** — `awg-gui-windows-amd64.exe`
+
+          **⌨️ Командная строка (для продвинутых):** `awg-deploy-…` для вашей ОС
+          (`.tar.gz` для mac/Linux, `.exe` для Windows).
+
+          Остальные файлы (`awg-monitor-…`, `awg-panel-…`) — служебные: их сам
+          скачивает установщик на сервер, вручную качать не нужно.
+          EOF
+          )
           gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1 \
             || gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
-                 --title "${GITHUB_REF_NAME}" --notes "AmneziaWG installer ${GITHUB_REF_NAME}"
+                 --title "${GITHUB_REF_NAME}" --notes "${notes}"
 
   server:
     name: Server binaries (linux)
@@ -76,17 +90,19 @@ jobs:
         run: |
           base="awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}"
           go build -ldflags "-s -w" -o "awg-deploy${{ matrix.ext }}" ./cmd/awg-deploy
-          # Raw binary + an archive that preserves the executable bit (no chmod).
-          cp "awg-deploy${{ matrix.ext }}" "${base}${{ matrix.ext }}"
+          # Ship ONE file per platform: a Windows .exe (double-click), or a .tar.gz
+          # that preserves the executable bit (no chmod) on mac/linux.
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip "${base}.zip" "awg-deploy${{ matrix.ext }}"
+            cp "awg-deploy.exe" "${base}.exe"
+            echo "ASSET=${base}.exe" >>"$GITHUB_ENV"
           else
-            tar -czf "${base}.tar.gz" "awg-deploy${{ matrix.ext }}"
+            tar -czf "${base}.tar.gz" "awg-deploy"
+            echo "ASSET=${base}.tar.gz" >>"$GITHUB_ENV"
           fi
       - name: Upload
         run: >-
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
-          awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}*
+          "${ASSET}"
 
   gui:
     name: Desktop GUI
@@ -116,12 +132,11 @@ jobs:
         run: |
           cd build/bin
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            # .app is a bundle (a directory) — zip it so the release asset is a single file.
+            # .app is a bundle (a directory) — zip it so the release asset is one file.
             zip -ry "${{ matrix.out }}.zip" awg-gui.app
             gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber "${{ matrix.out }}.zip"
           else
+            # Windows: a single double-clickable .exe.
             cp awg-gui.exe "${{ matrix.out }}.exe"
-            7z a "${{ matrix.out }}.zip" "${{ matrix.out }}.exe" >/dev/null
-            gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber \
-              "${{ matrix.out }}.exe" "${{ matrix.out }}.zip"
+            gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber "${{ matrix.out }}.exe"
           fi
