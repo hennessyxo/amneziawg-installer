@@ -45,10 +45,11 @@ VPN runs on. Pick **one** of the two ways to set it up.
    | Linux — x86_64 | `awg-deploy-linux-amd64` |
    | Linux — ARM | `awg-deploy-linux-arm64` |
 
-2. **Just run it with no arguments** — a guided wizard asks for your server
-   address and password, checks whether AmneziaWG is installed (offers to install
-   it), saves the first client config + QR, and then shows a management menu
-   (add / remove / list clients, monitoring, full server menu, uninstall):
+2. **Just run it with no arguments** — it asks for your server address and root
+   password, connects over SSH, and runs the installer & management menu **right
+   on the server**: install (if needed), then add / remove / rename clients,
+   monitoring, web panel, uninstall — every action happens server-side, you just
+   answer the prompts:
 
    **Windows** — double-click the `.exe`, or in PowerShell:
    ```powershell

@@ -87,6 +87,7 @@ t() {
 			run_monitor)  echo "Run monitoring now? [Y/n]: " ;;
 			mon_usage)    echo "How to use awg-monitor" ;;
 			panel_addr)   echo "Address" ;;
+			press_enter)  echo "Press Enter to return to the menu... " ;;
 			p_deps)       echo "Installing dependencies..." ;;
 			p_repo)       echo "Adding the AmneziaWG repository..." ;;
 			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
@@ -114,6 +115,7 @@ t() {
 			run_monitor)  echo "Запустить мониторинг сейчас? [Y/n]: " ;;
 			mon_usage)    echo "Как пользоваться awg-monitor" ;;
 			panel_addr)   echo "Адрес" ;;
+			press_enter)  echo "Нажми Enter, чтобы вернуться в меню... " ;;
 			p_deps)       echo "Устанавливаю зависимости..." ;;
 			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
 			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
@@ -939,16 +941,24 @@ main() {
 		exit 0
 	fi
 
-	if [[ -f "${PARAMS_FILE}" ]]; then
-		if [[ "${NONINTERACTIVE}" == "1" ]]; then
-			# Stable marker so the SSH deploy tool can detect this case.
-			echo "AWG_ALREADY_INSTALLED"
-			ok "AmneziaWG уже установлен."
-			exit 0
-		fi
-		manageMenu
-	else
+	# Fresh server → install (interactive prompts, or non-interactive via AWG_* env).
+	if [[ ! -f "${PARAMS_FILE}" ]]; then
 		installAmneziaWG
+	elif [[ "${NONINTERACTIVE}" == "1" ]]; then
+		# Already installed and called non-interactively: emit a stable marker.
+		echo "AWG_ALREADY_INSTALLED"
+		ok "AmneziaWG уже установлен."
+		exit 0
+	fi
+
+	# Interactive sessions stay in the management menu until the user exits
+	# (menu option 9 calls `exit`, which ends the script and this loop).
+	if [[ "${NONINTERACTIVE}" != "1" ]]; then
+		while :; do
+			manageMenu
+			echo
+			read -rp "$(t press_enter)" _ || exit 0
+		done
 	fi
 }
 

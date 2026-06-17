@@ -94,11 +94,12 @@ func usage() {
 `)
 }
 
-// runWizard is the friendly all-in-one flow: ask for the server, connect,
-// install if needed, then loop a management menu — no flags to remember.
+// runWizard is the friendly default flow: ask for the server and password, then
+// connect and run the installer/menu directly ON the server (everything happens
+// server-side; this tool is just the SSH launcher).
 func runWizard() error {
-	fmt.Println("=== AmneziaWG — мастер ===")
-	fmt.Println("Поставит и настроит VPN на твоём сервере по SSH.")
+	fmt.Println("=== AmneziaWG ===")
+	fmt.Println("Подключусь к твоему серверу по SSH и запущу установку и меню прямо на нём.")
 	fmt.Println()
 
 	raw := promptLine("IP-адрес сервера (или user@IP; по умолчанию пользователь root): ")
@@ -116,109 +117,18 @@ func runWizard() error {
 		return err
 	}
 	defer cl.Close()
-
-	sudo := deploy.Sudo(t.User)
-	chk, _ := cl.Run(deploy.CheckInstalledCommand(sudo))
-	if !deploy.IsInstalled(chk) {
-		fmt.Println("\nAmneziaWG на сервере ещё не установлен.")
-		if !promptYesNo("Установить сейчас?") {
-			return nil
-		}
-		env := map[string]string{"AWG_CLIENT": "phone", "AWG_PRESET": "default"}
-		if promptYesNo("Будешь пользоваться с мобильного интернета (4G/LTE)?") {
-			env["AWG_PRESET"] = "mobile"
-		}
-		fmt.Println("\n→ Устанавливаю (обычно 2–5 минут, дождись)...")
-		fmt.Println()
-		out, err := cl.RunScript(deploy.InstallCommand(sudo, env), amneziawg.InstallerScript, os.Stdout)
-		if err != nil {
-			return fmt.Errorf("установка не удалась: %w", err)
-		}
-		if err := saveAndShow(out, "phone.conf"); err != nil {
-			return err
-		}
-		printAppHelp()
-	} else {
-		fmt.Println("\n✓ AmneziaWG уже установлен на сервере.")
-	}
-	return manageLoop(cl, t)
+	return serverMenu(cl, t)
 }
 
-// manageLoop is the interactive management menu (loops until the user exits).
-func manageLoop(cl *deploy.Client, t deploy.Target) error {
-	sudo := deploy.Sudo(t.User)
-	for {
-		fmt.Println("\n========== Меню ==========")
-		fmt.Println("  1) Добавить клиента")
-		fmt.Println("  2) Список клиентов")
-		fmt.Println("  3) Удалить клиента")
-		fmt.Println("  4) Мониторинг (живой дашборд)")
-		fmt.Println("  5) Полное меню сервера (веб-панель и пр.)")
-		fmt.Println("  6) Удалить AmneziaWG с сервера")
-		fmt.Println("  7) Выход")
-		switch promptLine("Выбор: ") {
-		case "1":
-			name := promptLine("Имя нового клиента: ")
-			if name == "" {
-				continue
-			}
-			out, err := cl.RunScript(deploy.AddClientCommand(sudo, name), amneziawg.InstallerScript, os.Stdout)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "ошибка:", err)
-				continue
-			}
-			if err := saveAndShow(out, name+".conf"); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				continue
-			}
-			printAppHelp()
-		case "2":
-			if _, err := cl.RunScript(deploy.ListClientsCommand(sudo), amneziawg.InstallerScript, os.Stdout); err != nil {
-				fmt.Fprintln(os.Stderr, "ошибка:", err)
-			}
-		case "3":
-			name := promptLine("Имя клиента для удаления: ")
-			if name == "" {
-				continue
-			}
-			if _, err := cl.RunScript(deploy.RemoveClientCommand(sudo, name), amneziawg.InstallerScript, os.Stdout); err != nil {
-				fmt.Fprintln(os.Stderr, "ошибка:", err)
-			}
-		case "4":
-			if err := monitorWith(cl, t, "awg0", 2*time.Second); err != nil {
-				fmt.Fprintln(os.Stderr, "монитор:", err)
-			}
-		case "5":
-			const remote = "/tmp/awg-install.sh"
-			if err := cl.WriteFile(remote, amneziawg.InstallerScript); err != nil {
-				fmt.Fprintln(os.Stderr, "ошибка:", err)
-				continue
-			}
-			if err := cl.Interactive(fmt.Sprintf("%sbash %s; rm -f %s", sudo, remote, remote)); err != nil {
-				fmt.Fprintln(os.Stderr, "меню:", err)
-			}
-		case "6":
-			if promptYesNo("Точно удалить ВСЁ (AmneziaWG, панель, клиентов)?") {
-				if _, err := cl.RunScript(deploy.UninstallCommand(sudo), amneziawg.InstallerScript, os.Stdout); err != nil {
-					fmt.Fprintln(os.Stderr, "ошибка:", err)
-				}
-				return nil
-			}
-		case "7", "":
-			fmt.Println("Готово. Пока!")
-			return nil
-		default:
-			fmt.Println("Не понял выбор — попробуй ещё раз.")
-		}
+// serverMenu uploads the installer to the server and runs it interactively over
+// an SSH PTY — install (if needed) and the management menu all run server-side.
+func serverMenu(cl *deploy.Client, t deploy.Target) error {
+	const remote = "/tmp/awg-install.sh"
+	if err := cl.WriteFile(remote, amneziawg.InstallerScript); err != nil {
+		return fmt.Errorf("не удалось загрузить скрипт на сервер: %w", err)
 	}
-}
-
-func printAppHelp() {
-	fmt.Println("\n📱 Как подключить телефон (надёжный способ — файл):")
-	fmt.Println("  • перекинь файл .conf на телефон (AirDrop / облако / Telegram себе)")
-	fmt.Println("    и открой его — он импортируется в AmneziaWG / AmneziaVPN / DefaultVPN.")
-	fmt.Println("  • QR-картинка (.png) — работает в отдельном приложении «AmneziaWG»")
-	fmt.Println("    (в «AmneziaVPN» по QR сырой конфиг не импортируется — там только файл).")
+	fmt.Println("→ Подключаюсь к серверу...")
+	return cl.Interactive(fmt.Sprintf("%sbash %s; rm -f %s", deploy.Sudo(t.User), remote, remote))
 }
 
 // authFlags holds the SSH auth/host-key flags shared by all subcommands.
@@ -370,13 +280,7 @@ func runMenu(args []string) error {
 		return err
 	}
 	defer cl.Close()
-
-	const remote = "/tmp/awg-install.sh"
-	if err := cl.WriteFile(remote, amneziawg.InstallerScript); err != nil {
-		return fmt.Errorf("не удалось загрузить скрипт: %w", err)
-	}
-	cmd := fmt.Sprintf("%sbash %s; rm -f %s", deploy.Sudo(t.User), remote, remote)
-	return cl.Interactive(cmd)
+	return serverMenu(cl, t)
 }
 
 func runUninstall(args []string) error {
