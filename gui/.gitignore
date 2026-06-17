@@ -1,0 +1,7 @@
+# Wails build artifacts
+/build/bin/
+# stray `go build` output (binary named after the module dir)
+/gui
+# Generated JS/TS bindings (the app uses the injected runtime globals instead)
+/frontend/wailsjs/
+node_modules/

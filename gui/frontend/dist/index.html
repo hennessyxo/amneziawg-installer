@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AmneziaWG Manager</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">Amnezia<span>WG</span> Manager</div>
+      <div id="conn-pill" class="iface hidden"></div>
+    </header>
+
+    <main>
+      <!-- 1. Connect -->
+      <section id="view-connect" class="panel">
+        <h2>Подключение к серверу</h2>
+        <p class="sub">Введите данные вашего Linux-сервера. Приложение подключится по SSH и всё сделает само.</p>
+
+        <div class="form">
+          <label>IP-адрес сервера
+            <input id="host" type="text" placeholder="123.45.67.89" autocomplete="off" />
+          </label>
+          <label>Пользователь
+            <input id="user" type="text" value="root" autocomplete="off" />
+          </label>
+
+          <div class="auth-tabs">
+            <button type="button" class="tab on" data-auth="password">Пароль</button>
+            <button type="button" class="tab" data-auth="key">SSH-ключ</button>
+          </div>
+
+          <label id="field-password">Пароль
+            <input id="password" type="password" autocomplete="off" />
+          </label>
+          <label id="field-key" class="hidden">Путь к приватному ключу
+            <input id="identity" type="text" placeholder="~/.ssh/id_ed25519" autocomplete="off" />
+          </label>
+
+          <button id="btn-connect" class="primary">Подключиться</button>
+          <p id="connect-err" class="err hidden"></p>
+        </div>
+      </section>
+
+      <!-- 2. Server (install or manage) -->
+      <section id="view-server" class="hidden">
+        <!-- 2a. Not installed → install -->
+        <div id="block-install" class="panel hidden">
+          <h2>AmneziaWG ещё не установлен</h2>
+          <p class="sub">Настройте параметры и нажмите «Установить». Это займёт пару минут.</p>
+          <div class="form">
+            <label>Режим
+              <select id="preset">
+                <option value="default">Обычный</option>
+                <option value="mobile">Мобильный (для 4G/LTE)</option>
+              </select>
+            </label>
+            <label>UDP-порт (необязательно)
+              <input id="port" type="text" placeholder="случайный" autocomplete="off" />
+            </label>
+            <label>Имя первого клиента
+              <input id="first-client" type="text" value="phone" autocomplete="off" />
+            </label>
+            <button id="btn-install" class="primary">Установить</button>
+          </div>
+        </div>
+
+        <!-- 2b. Installed → manage -->
+        <div id="block-manage" class="panel hidden">
+          <div class="panel-head">
+            <h2>Клиенты</h2>
+            <form id="add-form" class="add">
+              <input id="new-client" type="text" placeholder="имя нового клиента" autocomplete="off" />
+              <button class="primary" type="submit">Добавить</button>
+            </form>
+          </div>
+          <p class="hint-profile dim">Один профиль = одно устройство. Для каждого устройства создавайте свой профиль, иначе будет конфликт.</p>
+          <div class="table-wrap">
+            <table class="clients">
+              <thead><tr><th>Имя</th><th class="r">Действия</th></tr></thead>
+              <tbody id="clients-body"></tbody>
+            </table>
+          </div>
+          <div class="manage-footer">
+            <button id="btn-uninstall" class="danger">Удалить AmneziaWG полностью</button>
+          </div>
+        </div>
+
+        <!-- log console -->
+        <div id="log-panel" class="panel log hidden">
+          <div class="panel-head"><h2 id="log-title">Журнал</h2></div>
+          <pre id="log"></pre>
+        </div>
+
+        <!-- client result (QR + conf) -->
+        <div id="result" class="panel created hidden">
+          <div class="created-head">
+            <h2>Клиент <span id="result-name"></span> готов</h2>
+            <button class="x" id="result-close">×</button>
+          </div>
+          <p class="qr-note">QR-код понимает ТОЛЬКО приложение AmneziaWG. Для AmneziaVPN / других — импортируйте файл .conf.</p>
+          <div class="created-body">
+            <div class="qr"><img id="result-qr" alt="QR" /></div>
+            <pre id="result-conf" class="conf mono"></pre>
+          </div>
+          <button id="result-download" class="btn">Скачать .conf</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="busy" class="overlay hidden"><div class="spinner"></div><div id="busy-text">Подождите…</div></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

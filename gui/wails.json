@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "awg-gui",
+  "outputfilename": "awg-gui",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "author": {
+    "name": "hennessyxo"
+  },
+  "info": {
+    "productName": "AmneziaWG Manager",
+    "comments": "Install and manage a self-hosted AmneziaWG VPN over SSH"
+  }
+}

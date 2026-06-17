@@ -1,0 +1,58 @@
+name: GUI
+
+# The desktop GUI lives in its own module (gui/) with the heavy Wails/WebKit
+# dependency, so it builds on its own macOS + Windows runners — separate from the
+# headless Linux CI that covers the installer, monitor and panel.
+
+on:
+  push:
+    branches: [main, gui]
+    paths:
+      - "gui/**"
+      - ".github/workflows/gui.yml"
+  pull_request:
+    paths:
+      - "gui/**"
+      - ".github/workflows/gui.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin/universal
+            artifact: awg-gui-macos
+          - os: windows-latest
+            platform: windows/amd64
+            artifact: awg-gui-windows
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: gui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: gui/go.mod
+          cache-dependency-path: gui/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
+
+      - name: Build
+        run: wails build -platform ${{ matrix.platform }} -clean
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: gui/build/bin/*
+          if-no-files-found: error
