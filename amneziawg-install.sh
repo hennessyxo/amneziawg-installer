@@ -105,6 +105,7 @@ t() {
 			mon_removed)  echo "awg-monitor removed." ;;
 			panel_offer)  echo "Install the web panel for easy browser management? [Y/n]: " ;;
 			one_profile)  echo "One profile = one device. Make a separate client for each phone/PC, or connections will clash." ;;
+			qr_note)      echo "The QR scans only in the AmneziaWG app. In AmneziaVPN — open the .conf file instead." ;;
 			first_conf)   echo "First client config:" ;;
 			panel_at)     echo "Web panel:" ;;
 			add_more)     echo "Add more clients from the menu or the web panel." ;;
@@ -142,6 +143,7 @@ t() {
 			mon_removed)  echo "awg-monitor удалён." ;;
 			panel_offer)  echo "Поставить веб-панель для удобного управления в браузере? [Y/n]: " ;;
 			one_profile)  echo "Один профиль — одно устройство. Для каждого телефона/ПК создавай отдельного клиента, иначе соединения конфликтуют." ;;
+			qr_note)      echo "QR сканируется только приложением AmneziaWG. В AmneziaVPN — открой файл .conf." ;;
 			first_conf)   echo "Конфиг первого клиента:" ;;
 			panel_at)     echo "Веб-панель:" ;;
 			add_more)     echo "Добавляй клиентов в меню или в веб-панели." ;;
@@ -600,6 +602,7 @@ newClient() {
 	echo
 	qrencode -t ANSIUTF8 <"${client_file}" || warn "qrencode недоступен — импортируй файл вручную."
 	echo
+	warn "$(t qr_note)"
 	echo -e "Файл конфигурации: ${BOLD}${client_file}${NC}"
 	echo
 	warn "$(t one_profile)"

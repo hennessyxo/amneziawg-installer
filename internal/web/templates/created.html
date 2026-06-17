@@ -8,6 +8,7 @@
     <img class="qr" src="/clients/{{.Name}}/qr.png" alt="QR" width="220" height="220">
     <pre class="conf">{{.Config}}</pre>
   </div>
+  <p class="muted qr-note">⚠ {{.L.qr_note}}</p>
   <a class="btn" href="/clients/{{.Name}}/config" download>{{.L.download}}</a>
 </div>
 {{end}}

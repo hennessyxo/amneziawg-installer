@@ -199,6 +199,10 @@ func TestAddClient_WithCSRF(t *testing.T) {
 	if !strings.Contains(rr.Body.String(), "CONFIG-laptop2") {
 		t.Error("response missing generated config")
 	}
+	// The created fragment must warn that the QR only works in the AmneziaWG app.
+	if !strings.Contains(rr.Body.String(), "AmneziaWG") {
+		t.Error("created fragment should mention the AmneziaWG-only QR note")
+	}
 }
 
 func TestAddClient_BadCSRF(t *testing.T) {

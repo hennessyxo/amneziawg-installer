@@ -469,10 +469,10 @@ func saveAndShow(installerOutput, outPath string) error {
 	if pngPath != "" {
 		fmt.Printf("✓ QR-картинка:     %s\n", pngPath)
 	}
-	fmt.Println("\nКак подключиться (любой способ):")
-	fmt.Printf("  • импортируй файл %s в приложение AmneziaVPN, или\n", outPath)
+	fmt.Println("\nКак подключиться:")
+	fmt.Printf("  • импортируй файл %s в AmneziaWG / AmneziaVPN / DefaultVPN (работает везде), или\n", outPath)
 	if pngPath != "" {
-		fmt.Printf("  • отсканируй телефоном картинку %s (откроется сейчас).\n", pngPath)
+		fmt.Printf("  • отсканируй картинку %s — но QR понимает ТОЛЬКО приложение AmneziaWG.\n", pngPath)
 		openFile(pngPath)
 	}
 	return nil
