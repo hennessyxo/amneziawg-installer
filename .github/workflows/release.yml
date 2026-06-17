@@ -87,3 +87,41 @@ jobs:
         run: >-
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
           awg-deploy-${{ matrix.goos }}-${{ matrix.goarch }}*
+
+  gui:
+    name: Desktop GUI
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, platform: darwin/universal, out: awg-gui-macos }
+          - { os: windows-latest, platform: windows/amd64, out: awg-gui-windows-amd64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: gui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: gui/go.mod
+          cache-dependency-path: gui/go.sum
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
+      - name: Build
+        run: wails build -platform ${{ matrix.platform }} -clean
+      - name: Package & upload
+        run: |
+          cd build/bin
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            # .app is a bundle (a directory) — zip it so the release asset is a single file.
+            zip -ry "${{ matrix.out }}.zip" awg-gui.app
+            gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber "${{ matrix.out }}.zip"
+          else
+            cp awg-gui.exe "${{ matrix.out }}.exe"
+            7z a "${{ matrix.out }}.zip" "${{ matrix.out }}.exe" >/dev/null
+            gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber \
+              "${{ matrix.out }}.exe" "${{ matrix.out }}.zip"
+          fi
