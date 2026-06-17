@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hennessyxo/amneziawg-installer/internal/deploy"
@@ -109,3 +110,8 @@ func ensureFile(path string) error {
 }
 
 func encodeBase64(b []byte) string { return base64.StdEncoding.EncodeToString(b) }
+
+// shellQuote single-quotes a value for safe use in a remote shell command.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}

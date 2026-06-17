@@ -170,11 +170,20 @@ async function refreshClients() {
     const actTd = document.createElement("td");
     actTd.className = "r";
     actTd.innerHTML = '<div class="row-actions"></div>';
+    const actions = actTd.querySelector(".row-actions");
+
+    const conf = document.createElement("button");
+    conf.className = "link";
+    conf.textContent = "конфиг / QR";
+    conf.addEventListener("click", () => showClientConfig(name));
+    actions.appendChild(conf);
+
     const del = document.createElement("button");
     del.className = "link del";
     del.textContent = "удалить";
     del.addEventListener("click", () => removeClient(name));
-    actTd.querySelector(".row-actions").appendChild(del);
+    actions.appendChild(del);
+
     tr.append(nameTd, actTd);
     body.appendChild(tr);
   });
@@ -192,6 +201,18 @@ async function addClient(e) {
     showResult(res);
   } catch (err) {
     toast("Не удалось создать клиента: " + errMsg(err), "err");
+  } finally {
+    busy(false);
+  }
+}
+
+async function showClientConfig(name) {
+  busy(true, "Загружаю конфиг…");
+  try {
+    const res = await backend().ClientConfig(name);
+    showResult(res);
+  } catch (err) {
+    toast("Не удалось получить конфиг: " + errMsg(err), "err");
   } finally {
     busy(false);
   }

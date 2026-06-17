@@ -18,6 +18,9 @@ import (
 // constant in the installer (awg0).
 const serverConf = "/etc/amnezia/amneziawg/awg0.conf"
 
+// clientConfDir is where the installer mirrors each client's .conf (PANEL_CLIENT_DIR).
+const clientConfDir = "/etc/amnezia/amneziawg/clients"
+
 // App is the Wails-bound backend. Its exported methods are callable from the
 // frontend as window.go.main.App.*.
 type App struct {
@@ -176,6 +179,26 @@ func (a *App) AddClient(name string) (ClientResult, error) {
 	return buildClientResult(name, out)
 }
 
+// ClientConfig reads an existing client's mirrored .conf from the server and
+// returns it with a QR — so the config/QR is available any time, not just at
+// creation. The installer mirrors each client into clientConfDir.
+func (a *App) ClientConfig(name string) (ClientResult, error) {
+	cl, t, err := a.conn()
+	if err != nil {
+		return ClientResult{}, err
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ClientResult{}, fmt.Errorf("укажите имя клиента")
+	}
+	path := fmt.Sprintf("%s/awg0-client-%s.conf", clientConfDir, name)
+	out, err := cl.Run(deploy.Sudo(t.User) + "cat " + shellQuote(path))
+	if err != nil || strings.TrimSpace(out) == "" {
+		return ClientResult{}, fmt.Errorf("конфиг клиента не найден на сервере (возможно, он создан вне установщика)")
+	}
+	return clientResultFromConf(name, strings.TrimSpace(out)+"\n"), nil
+}
+
 // RemoveClient deletes a client from the server.
 func (a *App) RemoveClient(name string) error {
 	cl, t, err := a.conn()
@@ -322,11 +345,15 @@ func buildClientResult(name, output string) (ClientResult, error) {
 	if err != nil {
 		return ClientResult{}, fmt.Errorf("не нашёл конфиг клиента в выводе: %w", err)
 	}
+	return clientResultFromConf(name, conf), nil
+}
+
+// clientResultFromConf wraps a client config with a scannable QR data URI.
+// Low EC + a large image keeps the long AmneziaWG config QR scannable.
+func clientResultFromConf(name, conf string) ClientResult {
 	res := ClientResult{Name: name, Conf: conf}
-	// Low EC + a large image keeps the long AmneziaWG config QR scannable.
-	png, err := qrcode.Encode(conf, qrcode.Low, 512)
-	if err == nil {
+	if png, err := qrcode.Encode(conf, qrcode.Low, 512); err == nil {
 		res.QR = "data:image/png;base64," + encodeBase64(png)
 	}
-	return res, nil
+	return res
 }
