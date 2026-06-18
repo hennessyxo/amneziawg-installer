@@ -52,11 +52,11 @@ func (a *App) ServerHealth() (HealthResult, error) {
 	if err != nil {
 		return HealthResult{}, fmt.Errorf("проверка статуса не удалась: %w", err)
 	}
-	return parseHealth(out), nil
+	return parseHealth(out, a.lang), nil
 }
 
 // parseHealth turns the KEY=value lines from ServerHealth into a HealthResult.
-func parseHealth(out string) HealthResult {
+func parseHealth(out, lang string) HealthResult {
 	h := HealthResult{Version: "—"}
 	for _, line := range strings.Split(out, "\n") {
 		k, v, ok := strings.Cut(strings.TrimSpace(line), "=")
@@ -72,7 +72,7 @@ func parseHealth(out string) HealthResult {
 			}
 		case "UPTIME":
 			if secs, err := strconv.Atoi(v); err == nil {
-				h.Uptime = formatUptime(secs)
+				h.Uptime = formatUptime(secs, lang)
 			}
 		case "CLIENTS":
 			h.Clients, _ = strconv.Atoi(v)
@@ -115,20 +115,30 @@ func (a *App) Traffic() (TrafficResult, error) {
 			Online:    p.Online(now),
 			Rx:        format.HumanBytes(p.RxBytes),
 			Tx:        format.HumanBytes(p.TxBytes),
-			Handshake: formatHandshake(p.LatestHandshake, now),
+			Handshake: formatHandshake(p.LatestHandshake, now, a.lang),
 		})
 	}
 	return res, nil
 }
 
-// formatUptime renders seconds as "N дн N ч" / "N ч N мин" / "N мин".
-func formatUptime(secs int) string {
+// formatUptime renders seconds as a localized "Nd Nh" / "Nh Nm" / "Nm".
+func formatUptime(secs int, lang string) string {
 	if secs <= 0 {
 		return "—"
 	}
 	d := secs / 86400
 	h := (secs % 86400) / 3600
 	m := (secs % 3600) / 60
+	if lang == "en" {
+		switch {
+		case d > 0:
+			return fmt.Sprintf("%dd %dh", d, h)
+		case h > 0:
+			return fmt.Sprintf("%dh %dm", h, m)
+		default:
+			return fmt.Sprintf("%dm", m)
+		}
+	}
 	switch {
 	case d > 0:
 		return fmt.Sprintf("%d дн %d ч", d, h)
@@ -139,12 +149,24 @@ func formatUptime(secs int) string {
 	}
 }
 
-// formatHandshake renders the time since the last handshake.
-func formatHandshake(t, now time.Time) string {
+// formatHandshake renders the localized time since the last handshake.
+func formatHandshake(t, now time.Time, lang string) string {
 	if t.IsZero() {
 		return "—"
 	}
 	d := now.Sub(t)
+	if lang == "en" {
+		switch {
+		case d < time.Minute:
+			return "just now"
+		case d < time.Hour:
+			return fmt.Sprintf("%dm ago", int(d.Minutes()))
+		case d < 24*time.Hour:
+			return fmt.Sprintf("%dh ago", int(d.Hours()))
+		default:
+			return fmt.Sprintf("%dd ago", int(d.Hours()/24))
+		}
+	}
 	switch {
 	case d < time.Minute:
 		return "только что"

@@ -18,6 +18,7 @@ const keyringService = "awg-gui-ssh"
 type ProfileEntry struct {
 	Host         string `json:"host"`
 	User         string `json:"user"`
+	Label        string `json:"label"`    // optional friendly name (e.g. "VDSina DE")
 	AuthMode     string `json:"authMode"` // "password" | "key"
 	IdentityPath string `json:"identityPath"`
 	Remember     bool   `json:"remember"`
@@ -34,6 +35,7 @@ type profilesDisk struct {
 type Prefs struct {
 	Host         string `json:"host"`
 	User         string `json:"user"`
+	Label        string `json:"label"`
 	AuthMode     string `json:"authMode"`
 	IdentityPath string `json:"identityPath"`
 	Remember     bool   `json:"remember"`
@@ -138,6 +140,7 @@ func (e ProfileEntry) asPrefs() Prefs {
 	p := Prefs{
 		Host:         e.Host,
 		User:         e.User,
+		Label:        e.Label,
 		AuthMode:     e.AuthMode,
 		IdentityPath: e.IdentityPath,
 		Remember:     e.Remember,

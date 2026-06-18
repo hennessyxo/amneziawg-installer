@@ -10,7 +10,7 @@ func TestParseHealthActive(t *testing.T) {
 	out := "ACTIVE=active\nVER=amneziawg-tools v1.0\nUPTIME=90061\nCLIENTS=3\n"
 
 	// Act
-	h := parseHealth(out)
+	h := parseHealth(out, "ru")
 
 	// Assert
 	if !h.Running {
@@ -28,7 +28,7 @@ func TestParseHealthActive(t *testing.T) {
 }
 
 func TestParseHealthInactiveKeepsDefaults(t *testing.T) {
-	h := parseHealth("ACTIVE=inactive\nVER=\nUPTIME=0\nCLIENTS=0\n")
+	h := parseHealth("ACTIVE=inactive\nVER=\nUPTIME=0\nCLIENTS=0\n", "ru")
 	if h.Running {
 		t.Errorf("Running = true, want false")
 	}
@@ -43,17 +43,21 @@ func TestParseHealthInactiveKeepsDefaults(t *testing.T) {
 func TestFormatUptime(t *testing.T) {
 	cases := []struct {
 		secs int
+		lang string
 		want string
 	}{
-		{0, "—"},
-		{-5, "—"},
-		{90, "1 мин"},
-		{3700, "1 ч 1 мин"},
-		{90061, "1 дн 1 ч"},
+		{0, "ru", "—"},
+		{-5, "ru", "—"},
+		{90, "ru", "1 мин"},
+		{3700, "ru", "1 ч 1 мин"},
+		{90061, "ru", "1 дн 1 ч"},
+		{90061, "en", "1d 1h"},
+		{3700, "en", "1h 1m"},
+		{90, "en", "1m"},
 	}
 	for _, c := range cases {
-		if got := formatUptime(c.secs); got != c.want {
-			t.Errorf("formatUptime(%d) = %q, want %q", c.secs, got, c.want)
+		if got := formatUptime(c.secs, c.lang); got != c.want {
+			t.Errorf("formatUptime(%d, %q) = %q, want %q", c.secs, c.lang, got, c.want)
 		}
 	}
 }
@@ -63,18 +67,22 @@ func TestFormatHandshake(t *testing.T) {
 	cases := []struct {
 		name string
 		when time.Time
+		lang string
 		want string
 	}{
-		{"never", time.Time{}, "—"},
-		{"just now", now.Add(-30 * time.Second), "только что"},
-		{"minutes", now.Add(-5 * time.Minute), "5 мин назад"},
-		{"hours", now.Add(-2 * time.Hour), "2 ч назад"},
-		{"days", now.Add(-72 * time.Hour), "3 дн назад"},
+		{"never", time.Time{}, "ru", "—"},
+		{"just now ru", now.Add(-30 * time.Second), "ru", "только что"},
+		{"minutes ru", now.Add(-5 * time.Minute), "ru", "5 мин назад"},
+		{"hours ru", now.Add(-2 * time.Hour), "ru", "2 ч назад"},
+		{"days ru", now.Add(-72 * time.Hour), "ru", "3 дн назад"},
+		{"just now en", now.Add(-30 * time.Second), "en", "just now"},
+		{"minutes en", now.Add(-5 * time.Minute), "en", "5m ago"},
+		{"days en", now.Add(-72 * time.Hour), "en", "3d ago"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got := formatHandshake(c.when, now); got != c.want {
-				t.Errorf("formatHandshake(%v) = %q, want %q", c.when, got, c.want)
+			if got := formatHandshake(c.when, now, c.lang); got != c.want {
+				t.Errorf("formatHandshake(%v, %q) = %q, want %q", c.when, c.lang, got, c.want)
 			}
 		})
 	}

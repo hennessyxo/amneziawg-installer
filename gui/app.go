@@ -33,10 +33,20 @@ type App struct {
 	client   *deploy.Client
 	target   deploy.Target
 	keepStop chan struct{} // closes to stop the keepalive loop
+	lang     string        // "ru" | "en" — for server-formatted strings
 }
 
 // NewApp constructs the backend in its disconnected state.
-func NewApp() *App { return &App{} }
+func NewApp() *App { return &App{lang: "ru"} }
+
+// SetLang sets the language used for backend-formatted strings (uptime/handshake).
+func (a *App) SetLang(lang string) {
+	if lang == "en" {
+		a.lang = "en"
+	} else {
+		a.lang = "ru"
+	}
+}
 
 func (a *App) startup(ctx context.Context) { a.ctx = ctx }
 func (a *App) shutdown(_ context.Context)  { a.closeClient() }
@@ -81,6 +91,7 @@ func (a *App) keepAliveLoop(stop chan struct{}) {
 type ConnectRequest struct {
 	Host         string `json:"host"`
 	User         string `json:"user"`
+	Label        string `json:"label"` // optional friendly name
 	Password     string `json:"password"`
 	IdentityPath string `json:"identityPath"`
 	AuthMode     string `json:"authMode"` // "password" | "key"
@@ -153,6 +164,7 @@ func (a *App) persistPrefs(req ConnectRequest, host, user string) {
 	upsertProfile(ProfileEntry{
 		Host:         host,
 		User:         user,
+		Label:        strings.TrimSpace(req.Label),
 		AuthMode:     req.AuthMode,
 		IdentityPath: strings.TrimSpace(req.IdentityPath),
 		Remember:     req.Remember,
