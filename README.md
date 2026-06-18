@@ -20,7 +20,9 @@ randomized obfuscation, client management with QR codes.
 
 1. **A cheap VPS** running **Ubuntu 22.04+/24.04 or Debian 12+** (any hosting
    provider). You'll need its **IP address**, a **user** (usually `root`) and the
-   **password**.
+   **password**. No server yet? You can rent one at
+   [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) or
+   [HSHP](https://hshp.host/?from=144227) _(referral links — they help support the project)_.
 2. **The AmneziaWG app** on your phone/PC to connect:
    - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365)
    - **Android / Windows / macOS / Linux** — [amnezia.org/downloads](https://amnezia.org/downloads)

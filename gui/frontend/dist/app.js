@@ -11,6 +11,11 @@ const APP_URLS = {
   windows: "https://github.com/amnezia-vpn/amneziawg-windows-client/releases",
 };
 
+const RENT_URLS = {
+  vdsina: "https://www.vdsina.com/?partner=7yhz21p6dkml",
+  hshp: "https://hshp.host/?from=144227",
+};
+
 // openExternal opens a URL in the user's real browser, not the app webview.
 function openExternal(url) {
   if (window.runtime && window.runtime.BrowserOpenURL) window.runtime.BrowserOpenURL(url);
@@ -595,6 +600,8 @@ window.addEventListener("DOMContentLoaded", () => {
   ["ios", "android", "macos", "windows"].forEach((os) => {
     $("link-" + os).addEventListener("click", (e) => { e.preventDefault(); openExternal(APP_URLS[os]); });
   });
+  $("rent-vdsina").addEventListener("click", (e) => { e.preventDefault(); openExternal(RENT_URLS.vdsina); });
+  $("rent-hshp").addEventListener("click", (e) => { e.preventDefault(); openExternal(RENT_URLS.hshp); });
   $("btn-switch").addEventListener("click", switchServer);
   $("prompt-cancel").addEventListener("click", () => closePrompt(null));
 

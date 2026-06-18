@@ -20,6 +20,9 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
 
 1. **Дешёвый VPS** с **Ubuntu 22.04+/24.04 или Debian 12+** (любой хостинг).
    Понадобятся его **IP-адрес**, **пользователь** (обычно `root`) и **пароль**.
+   Нет сервера? Можно арендовать на
+   [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) или
+   [HSHP](https://hshp.host/?from=144227) _(партнёрские ссылки — поддерживают проект)_.
 2. **Приложение AmneziaWG** на телефоне/ПК для подключения:
    - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365)
    - **Android / Windows / macOS / Linux** — [amnezia.org/downloads](https://amnezia.org/downloads)
