@@ -1,7 +1,8 @@
 # awg-panel
 
+[English](PANEL.md) · [Русский](PANEL.ru.md)
+
 > Web management panel for a self-hosted **AmneziaWG** VPN — Go + htmx, single binary.
-> Веб-панель управления VPN на AmneziaWG.
 
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![ui](https://img.shields.io/badge/UI-htmx-3366cc)
@@ -11,36 +12,36 @@ clients in the browser. Built on the same `awg` parsing core as `awg-monitor`.
 
 ## Features
 
-- 🔐 **Авторизация**: пароль администратора (bcrypt), сессии в HttpOnly-куках, CSRF на формах
-- 🔒 **HTTPS**: работает по TLS (самоподписанный серт ставится автоматически)
-- 📊 **Живой дашборд**: онлайн-статус, скорость ↑↓, суммарный трафик по клиентам (htmx-поллинг)
-- ➕ **Управление**: добавить / удалить / отключить / включить / **переименовать** клиента, скачать `.conf`, QR
-- ✏️ **Редактирование на лету**: у существующего клиента можно изменить скорость, квоту и срок
-  (кнопка «изм.») — без пересоздания
-- ⏳ **Квоты и срок действия**: при создании клиента задаёшь лимит трафика (ГБ) и/или срок (дней);
-  фоновый enforcer считает трафик (с учётом сброса счётчиков при перезапуске) и сам
-  **отключает** истёкших и превысивших квоту клиентов — они сохраняются и их можно
-  **включить обратно** (при включении истёкший срок снимается, переполненная квота обнуляется)
-- 🐢 **Ограничение скорости**: задаёшь лимит в Мбит/с — фоновый шейпер на `tc`
-  режет отдачу (HTB-класс на IP клиента) и приём (ingress-police), вместо отключения
-- 📦 **Один бинарник**: HTML/CSS/htmx вшиты через `embed` — нечего деплоить отдельно
+- 🔐 **Auth**: admin password (bcrypt), sessions in HttpOnly cookies, CSRF on forms.
+- 🔒 **HTTPS**: runs over TLS (a self-signed cert is generated automatically).
+- 📊 **Live dashboard**: online status, ↑↓ rates, total traffic per client (htmx polling).
+- ➕ **Management**: add / remove / disable / enable / **rename** a client, download `.conf`, QR.
+- ✏️ **Edit on the fly**: change an existing client's speed, quota and expiry (the "edit"
+  button) — no need to recreate it.
+- ⏳ **Quotas & expiry**: when creating a client you set a traffic limit (GB) and/or an
+  expiry (days); a background enforcer accounts traffic (reset-aware) and automatically
+  **disables** expired and over-quota clients — they are kept and can be **re-enabled**
+  (enabling clears a past expiry and resets an exceeded quota).
+- 🐢 **Speed limit**: set a cap in Mbit/s — a background `tc` shaper throttles upload
+  (an HTB class on the client IP) and download (ingress policing) instead of cutting off.
+- 📦 **Single binary**: HTML/CSS/htmx are embedded — nothing to deploy separately.
 
-## Install / Установка
+## Install
 
-Через меню установщика (рекомендуется):
+Via the installer menu (recommended):
 
 ```bash
-sudo bash amneziawg-install.sh   # → пункт 7 «Веб-панель»
+sudo bash amneziawg-install.sh   # → option 7 "Web panel"
 ```
 
-Установщик скачает бинарник, спросит пароль администратора, сгенерирует
-самоподписанный TLS-сертификат и поднимет systemd-службу на `https://<ip>:8443`.
+The installer downloads the binary, asks for an admin password, generates a
+self-signed TLS certificate, and starts a systemd service on `https://<ip>:8443`.
 
-Вручную из исходников:
+Manually, from source:
 
 ```bash
 go build -o awg-panel ./cmd/awg-panel
-echo 'мой-пароль' | ./awg-panel hash > /etc/amnezia/amneziawg/panel.hash
+echo 'my-password' | ./awg-panel hash > /etc/amnezia/amneziawg/panel.hash
 sudo ./awg-panel \
   --password-hash-file /etc/amnezia/amneziawg/panel.hash \
   --tls-cert cert.pem --tls-key key.pem
@@ -48,35 +49,36 @@ sudo ./awg-panel \
 
 ## Flags
 
-| Flag | Default | Назначение |
-|------|---------|-----------|
-| `--listen` | `:8443` | адрес прослушивания |
-| `--iface` | `awg0` | интерфейс AmneziaWG |
-| `--conf` | `/etc/amnezia/amneziawg/awg0.conf` | конфиг сервера |
-| `--params` | `/etc/amnezia/amneziawg/params` | параметры установщика |
-| `--client-dir` | `/etc/amnezia/amneziawg/clients` | где хранятся конфиги, созданные панелью |
-| `--store` | `/etc/amnezia/amneziawg/clients.json` | метаданные жизненного цикла (квоты/срок) |
-| `--password-hash-file` | `/etc/amnezia/amneziawg/panel.hash` | bcrypt-хеш пароля админа |
-| `--tls-cert` / `--tls-key` | — | включают HTTPS |
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--listen` | `:8443` | listen address |
+| `--iface` | `awg0` | AmneziaWG interface |
+| `--conf` | `/etc/amnezia/amneziawg/awg0.conf` | server config |
+| `--params` | `/etc/amnezia/amneziawg/params` | installer parameters |
+| `--client-dir` | `/etc/amnezia/amneziawg/clients` | where panel-created configs live |
+| `--store` | `/etc/amnezia/amneziawg/clients.json` | lifecycle metadata (quotas/expiry) |
+| `--password-hash-file` | `/etc/amnezia/amneziawg/panel.hash` | bcrypt hash of the admin password |
+| `--tls-cert` / `--tls-key` | — | enable HTTPS |
 
-`awg-panel hash` читает пароль из stdin и печатает bcrypt-хеш (plaintext нигде не хранится).
+`awg-panel hash` reads a password from stdin and prints a bcrypt hash (the plaintext is never stored).
 
 ## Security notes
 
-- Панель запускается под root (нужно для `awg`/`awg-quick`).
-- **Защита от подбора пароля:** после 5 неверных попыток вход с этого IP блокируется
-  на 15 минут. Пароль — bcrypt, минимум 8 символов (проверяется установщиком).
-- Куки `HttpOnly` + `SameSite=Lax`, флаг `Secure` ставится при HTTPS.
-- На формах — CSRF-токен, привязанный к сессии.
-- **Максимальная безопасность (если параноишь):** не открывай порт `8443` наружу, а
-  ходи в панель через SSH-туннель:
+- The panel runs as root (needed for `awg`/`awg-quick`).
+- **Brute-force protection:** after 5 failed attempts, logins from that IP are
+  locked out for 15 minutes. The password is bcrypt and must satisfy a complexity
+  rule (lower- and upper-case, a digit and a special character), enforced by the installer.
+- Cookies are `HttpOnly` + `SameSite=Lax`; the `Secure` flag is set under HTTPS.
+- Forms carry a session-bound CSRF token.
+- **Maximum security (if you're paranoid):** don't open port `8443` to the
+  internet — reach the panel over an SSH tunnel instead:
   ```bash
-  ssh -L 8443:localhost:8443 root@SERVER   # затем открой https://localhost:8443
+  ssh -L 8443:localhost:8443 root@SERVER   # then open https://localhost:8443
   ```
-  Тогда панель недоступна из интернета вообще, даже зная пароль.
-- Клиенты, созданные при установке или через CLI, **подхватываются панелью**
-  автоматически (можно менять лимиты, отключать, переименовывать). Их `.conf`
-  зеркалируется в каталог панели, так что скачивание/QR тоже работают.
+  The panel is then unreachable from the internet at all, even with the password.
+- Clients created during install or via the CLI are **adopted by the panel**
+  automatically (you can change limits, disable, rename). Their `.conf` is mirrored
+  into the panel directory, so download/QR work for them too.
 
 ## Architecture
 
@@ -91,7 +93,7 @@ internal/
 └── web/                     # embedded templates + static (htmx, CSS)
 ```
 
-The enforcer (in `server`) reconciles every 30s: accounts traffic into the
+The enforcer (in `server`) reconciles every 30s: it accounts traffic into the
 `lifecycle` store, then disables over-quota and expired clients. Bandwidth caps
 are re-applied via `shaper` on every change and at startup.
 

@@ -1,63 +1,64 @@
-# Troubleshooting / Решение проблем
+# Troubleshooting
 
-## Служба не запускается (`awg-quick@awg0` failed)
+[English](TROUBLESHOOTING.md) · [Русский](TROUBLESHOOTING.ru.md)
+
+## The service won't start (`awg-quick@awg0` failed)
 
 ```bash
 journalctl -u awg-quick@awg0 -n 50
 ```
 
-- **`Cannot find device "awg0"` / модуль не загружен** — модуль ядра не собрался.
-  Проверьте, что установлены заголовки ядра, и пересоберите DKMS:
+- **`Cannot find device "awg0"` / module not loaded** — the kernel module didn't
+  build. Make sure the kernel headers are installed and rebuild DKMS:
   ```bash
   apt-get install -y linux-headers-$(uname -r)
   dkms autoinstall
   modprobe amneziawg
   ```
-  Если ядро нестандартное (некоторые VPS), заголовки могут не совпадать —
-  обновите ядро (`apt full-upgrade && reboot`) и запустите установку заново.
+  If the kernel is non-standard (some VPSs), the headers may not match — update the
+  kernel (`apt full-upgrade && reboot`) and run the install again.
 
-- **`RTNETLINK answers: Address already in use`** — порт занят. Запустите скрипт,
-  удалите установку (пункт меню 6) и поставьте заново, выбрав другой порт.
+- **`RTNETLINK answers: Address already in use`** — the port is taken. Run the
+  script, uninstall (menu option 8), and reinstall choosing a different port.
 
-## Клиент подключается, но нет интернета
+## The client connects but there's no internet
 
-1. Проверьте forwarding:
+1. Check forwarding:
    ```bash
-   sysctl net.ipv4.ip_forward   # должно быть = 1
+   sysctl net.ipv4.ip_forward   # should be = 1
    ```
-2. Проверьте, что MASQUERADE-правило на правильном интерфейсе:
+2. Check that the MASQUERADE rule is on the right interface:
    ```bash
    iptables -t nat -L POSTROUTING -n -v
    ```
-   Интерфейс в правиле должен совпадать с `ip route show default`.
-3. На стороне облачного провайдера откройте выбранный **UDP-порт**
-   в Security Group / Firewall панели (AWS, Hetzner, Oracle и т.д.).
+   The interface in the rule must match `ip route show default`.
+3. On the cloud provider side, open the chosen **UDP port** in the
+   Security Group / Firewall panel (AWS, Hetzner, Oracle, etc.).
 
-## Подключение рвётся / DPI всё равно блокирует
+## The connection drops / DPI still blocks it
 
-- Параметры обфускации **должны совпадать** у сервера и клиента
-  (кроме `Jc/Jmin/Jmax`). Скрипт это гарантирует — не редактируйте вручную.
-- Попробуйте другой UDP-порт (например, 443 редко режут, но он может быть занят).
-- Некоторые провайдеры режут весь UDP — тогда нужен TCP-обёртка (вне рамок скрипта).
+- The obfuscation parameters **must match** between server and client (except
+  `Jc/Jmin/Jmax`). The script guarantees this — don't edit them by hand.
+- Try a different UDP port (e.g. 443 is rarely throttled, but may be taken).
+- Some providers throttle all UDP — then a TCP wrapper is needed (out of scope for this script).
 
-## `apt` не находит пакет `amneziawg`
+## `apt` can't find the `amneziawg` package
 
-- **Ubuntu:** убедитесь, что PPA добавился:
+- **Ubuntu:** make sure the PPA was added:
   ```bash
   add-apt-repository ppa:amnezia/ppa && apt update
   ```
-- **Debian:** PPA собирается под ядра Ubuntu. Если DKMS не собирается под ваше
-  ядро Debian, рассмотрите userspace-вариант `amneziawg-go` (вручную) или
-  используйте Ubuntu.
+- **Debian:** the PPA targets Ubuntu kernels. If DKMS won't build against your
+  Debian kernel, consider the userspace `amneziawg-go` (manual) or use Ubuntu.
 
-## Как посмотреть активные подключения
+## How to see active connections
 
 ```bash
 awg show awg0
 ```
 
-Строка `latest handshake` у пира показывает, подключён ли клиент.
+A peer's `latest handshake` line shows whether that client is connected.
 
-## Полное удаление
+## Full removal
 
-Запустите скрипт → пункт меню **6** (удалит пакеты, конфиги и клиентов).
+Run the script → menu option **8** (removes the packages, configs and clients).

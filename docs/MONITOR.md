@@ -1,7 +1,8 @@
 # awg-monitor
 
+[English](MONITOR.md) · [Русский](MONITOR.ru.md)
+
 > Live terminal dashboard for a self-hosted **AmneziaWG** VPN — written in Go.
-> Живой терминальный монитор для VPN на AmneziaWG.
 
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![tui](https://img.shields.io/badge/TUI-Bubble%20Tea-ff69b4)
@@ -10,10 +11,6 @@
 server config produced by [`amneziawg-install.sh`](../amneziawg-install.sh), and
 renders per-client traffic, throughput rates, handshake age, online status, and
 inline throughput sparklines — refreshing live in the terminal.
-
-`awg-monitor` опрашивает `awg show <iface> dump`, подтягивает имена клиентов из
-конфига сервера и показывает по каждому клиенту: трафик, скорость ↑↓, время
-последнего handshake, статус online и спарклайн нагрузки — в реальном времени.
 
 ```
   AmneziaWG Monitor   iface awg0   ● online 4/5   ↓ 6.9 GB  ↑ 1.6 GB   15:41:46
@@ -27,13 +24,13 @@ inline throughput sparklines — refreshing live in the terminal.
    refresh 2s · [r] refresh now · [q] quit
 ```
 
-## Why / Зачем
+## Why
 
 The most popular AmneziaWG installers are **headless by design** — no metrics, no
 dashboard. This fills that gap with a zero-dependency single binary that needs no
 Docker, web server, or Grafana stack.
 
-## Install / Установка
+## Install
 
 The easiest way is the installer menu (option 6), which downloads a prebuilt
 binary. To build from source (Go 1.25+) from the repo root:
@@ -51,7 +48,7 @@ GOOS=linux GOARCH=arm64 go build -o awg-monitor ./cmd/awg-monitor   # ARM (Oracl
 scp awg-monitor root@server:/usr/local/bin/
 ```
 
-## Usage / Использование
+## Usage
 
 ```bash
 awg-monitor                          # monitor awg0
@@ -66,7 +63,7 @@ awg-monitor --demo --once            # render one frame to stdout (for screensho
 | `q` / `Esc` / `Ctrl+C` | quit |
 | `r` | refresh now |
 
-## Architecture / Архитектура
+## Architecture
 
 ```
 cmd/awg-monitor/main.go     # flags, awg command source, demo source, --once

@@ -75,7 +75,7 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
    awg-deploy uninstall     root@IP_СЕРВЕРА
    ```
 
-Подробнее — [`docs/DEPLOY.md`](docs/DEPLOY.md).
+Подробнее — [`docs/DEPLOY.ru.md`](docs/DEPLOY.ru.md).
 
 ### 3. Прямо на сервере 🐧
 
@@ -122,11 +122,11 @@ sudo bash amneziawg-install.sh --add-client laptop
 
 - **`awg-monitor`** — живая панель в терминале (трафик, скорости, рукопожатие,
   онлайн). Пункт меню 6 или сборка: `go build -o awg-monitor ./cmd/awg-monitor`.
-  См. [`docs/MONITOR.md`](docs/MONITOR.md).
+  См. [`docs/MONITOR.ru.md`](docs/MONITOR.ru.md).
 - **`awg-panel`** — панель в браузере (Go + htmx): вход (bcrypt + HTTPS), живой
   трафик, управление клиентами и **квоты трафика, срок действия и лимит скорости
   на клиента**, которые применяет фоновый сервис. Пункт меню 7 (или кнопка
-  «Установить веб-панель» в приложении). См. [`docs/PANEL.md`](docs/PANEL.md).
+  «Установить веб-панель» в приложении). См. [`docs/PANEL.ru.md`](docs/PANEL.ru.md).
 
 ## Безопасность
 
@@ -137,7 +137,7 @@ sudo bash amneziawg-install.sh --add-client laptop
 
 ## Диагностика
 
-См. [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md). Быстрые проверки:
+См. [`docs/TROUBLESHOOTING.ru.md`](docs/TROUBLESHOOTING.ru.md). Быстрые проверки:
 
 ```bash
 systemctl status awg-quick@awg0
