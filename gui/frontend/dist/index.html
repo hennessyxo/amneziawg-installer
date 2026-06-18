@@ -47,13 +47,13 @@
         </div>
 
         <div class="form">
-          <label data-i18n="lbl_host">IP-адрес сервера
+          <label><span data-i18n="lbl_host">IP-адрес сервера</span>
             <input id="host" type="text" placeholder="123.45.67.89" autocomplete="off" />
           </label>
-          <label data-i18n="lbl_user">Пользователь
+          <label><span data-i18n="lbl_user">Пользователь</span>
             <input id="user" type="text" value="root" autocomplete="off" />
           </label>
-          <label data-i18n="lbl_label">Название (необязательно)
+          <label><span data-i18n="lbl_label">Название (необязательно)</span>
             <input id="srv-label" type="text" data-i18n-ph="ph_label" placeholder="напр. VDSina, Германия" autocomplete="off" />
           </label>
 
@@ -62,10 +62,10 @@
             <button type="button" class="tab" data-auth="key" data-i18n="auth_key">SSH-ключ</button>
           </div>
 
-          <label id="field-password" data-i18n="lbl_password">Пароль
+          <label id="field-password"><span data-i18n="lbl_password">Пароль</span>
             <input id="password" type="password" autocomplete="off" />
           </label>
-          <label id="field-key" class="hidden" data-i18n="lbl_key">Путь к приватному ключу
+          <label id="field-key" class="hidden"><span data-i18n="lbl_key">Путь к приватному ключу</span>
             <input id="identity" type="text" placeholder="~/.ssh/id_ed25519" autocomplete="off" />
           </label>
 
@@ -86,12 +86,12 @@
           <h2 data-i18n="install_title">AmneziaWG ещё не установлен</h2>
           <p class="sub" data-i18n="install_sub">Нажмите «Установить» — всё настроится автоматически. Займёт пару минут.</p>
           <div class="form">
-            <label data-i18n="lbl_first_client">Имя первого клиента
+            <label><span data-i18n="lbl_first_client">Имя первого клиента</span>
               <input id="first-client" type="text" value="phone" autocomplete="off" />
             </label>
             <details class="advanced">
               <summary data-i18n="advanced">Дополнительно</summary>
-              <label data-i18n="lbl_port">UDP-порт (необязательно — оставьте пустым для автоподбора)
+              <label><span data-i18n="lbl_port">UDP-порт (необязательно — оставьте пустым для автоподбора)</span>
                 <input id="port" type="text" data-i18n-ph="ph_port" placeholder="авто" autocomplete="off" />
               </label>
             </details>
