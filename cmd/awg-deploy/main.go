@@ -81,7 +81,7 @@ func main() {
 func usage() {
 	fmt.Print(`awg-deploy — установка и управление AmneziaWG по SSH
 
-  awg-deploy install       user@host[:port] [--preset mobile] [--port 51820] [--client phone]
+  awg-deploy install       user@host[:port] [--client phone]   # port auto-picked, universal profile
   awg-deploy add-client    user@host[:port] <name>
   awg-deploy remove-client user@host[:port] <name>
   awg-deploy list          user@host[:port]
