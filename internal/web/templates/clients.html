@@ -1,11 +1,24 @@
 {{define "clients"}}
 <div hx-get="/partials/clients?sort={{.Sort}}" hx-trigger="every 2s" hx-target="#clients" hx-swap="innerHTML">
-<div class="stats">
-  <span><span class="dot on"></span> {{.L.online}} <b>{{.Online}}</b>/{{.Total}}</span>
-  <span>↓ {{.TotalRx}}</span>
-  <span>↑ {{.TotalTx}}</span>
-  <span class="muted">{{.TimeStr}}</span>
+<div class="stat-row">
+  <div class="stat">
+    <div class="stat-label">{{.L.online}}</div>
+    <div class="stat-value"><span class="dot on"></span> {{.Online}}/{{.Total}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.stat_dn}}</div>
+    <div class="stat-value">{{.TotalRx}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.stat_up}}</div>
+    <div class="stat-value">{{.TotalTx}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.stat_updated}}</div>
+    <div class="stat-value sm mono">{{.TimeStr}}</div>
+  </div>
 </div>
+<div class="table-card">
 <div class="table-wrap">
 <table class="clients">
   <thead>
@@ -61,6 +74,7 @@
   {{end}}
   </tbody>
 </table>
+</div>
 </div>
 </div>
 {{end}}

@@ -58,6 +58,9 @@ const I18N = {
     th_actions: "Действия",
     btn_uninstall: "Удалить AmneziaWG полностью",
     uptime_label: "аптайм",
+    stat_status: "Статус",
+    stat_clients: "Клиентов",
+    stat_uptime: "Аптайм",
     traffic: "Трафик",
     th_client: "Клиент",
     th_rx: "↓ принято",
@@ -179,6 +182,9 @@ const I18N = {
     th_actions: "Actions",
     btn_uninstall: "Remove AmneziaWG completely",
     uptime_label: "uptime",
+    stat_status: "Status",
+    stat_clients: "Clients",
+    stat_uptime: "Uptime",
     traffic: "Traffic",
     th_client: "Client",
     th_rx: "↓ received",
@@ -422,12 +428,12 @@ function initAuthTabs() {
 const MANAGE_TABS = ["clients", "monitor", "advanced"];
 
 function selectTab(name) {
-  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   MANAGE_TABS.forEach((tab) => $("tab-" + tab).classList.toggle("hidden", tab !== name));
 }
 
 function initTabs() {
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
+  document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.addEventListener("click", () => selectTab(btn.dataset.tab));
   });
 }
@@ -725,7 +731,7 @@ async function refreshHealth() {
     const h = await backend().ServerHealth();
     $("health-dot").className = "health-dot " + (h.running ? "up" : "down");
     $("health-state").textContent = h.running ? t("vpn_running") : t("vpn_stopped");
-    $("health-clients").textContent = t("clients_count", { n: h.clients });
+    $("health-clients").textContent = h.clients;
     $("health-uptime").textContent = h.uptime || "—";
     $("health-version").textContent = h.version || "—";
   } catch (_) {

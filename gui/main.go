@@ -21,13 +21,15 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "AmneziaWG Manager",
-		Width:  980,
-		Height: 720,
+		Title:     "AmneziaWG Manager",
+		Width:     1080,
+		Height:    740,
+		MinWidth:  900,
+		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 11, G: 15, B: 13, A: 1},
+		BackgroundColour: &options.RGBA{R: 14, G: 17, B: 22, A: 1},
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
 		Bind: []interface{}{

@@ -9,7 +9,7 @@
   <body>
     <header class="top">
       <div class="brand">Amnezia<span>WG</span> Manager</div>
-      <nav>
+      <nav class="top-right">
         <span class="langswitch">
           <a href="#" data-lang="ru">RU</a>
           <a href="#" data-lang="en">EN</a>
@@ -19,9 +19,9 @@
       </nav>
     </header>
 
-    <main>
-      <!-- 1. Connect -->
-      <section id="view-connect" class="panel">
+    <!-- 1. Connect (centered) -->
+    <main id="view-connect" class="centered">
+      <section class="card connect-card">
         <h2 data-i18n="connect_title">Подключение к серверу</h2>
         <p class="sub" data-i18n="connect_sub">Введите данные вашего Linux-сервера. Приложение подключится по SSH и всё сделает само.</p>
 
@@ -34,13 +34,6 @@
           </ol>
         </details>
 
-        <p class="rent-hint dim">
-          <span data-i18n="rent_lead">Нет своего сервера? Можно арендовать VPS:</span>
-          <a href="#" id="rent-vdsina">VDSina</a> ·
-          <a href="#" id="rent-hshp">HSHP</a>
-          <span class="rent-note" data-i18n="rent_note">(партнёрские ссылки — поддерживают проект)</span>
-        </p>
-
         <div id="profiles" class="profiles hidden">
           <div class="profiles-label" data-i18n="saved_servers">Сохранённые серверы</div>
           <div id="profiles-list"></div>
@@ -50,12 +43,14 @@
           <label><span data-i18n="lbl_host">IP-адрес сервера</span>
             <input id="host" type="text" placeholder="123.45.67.89" autocomplete="off" />
           </label>
-          <label><span data-i18n="lbl_user">Пользователь</span>
-            <input id="user" type="text" value="root" autocomplete="off" />
-          </label>
-          <label><span data-i18n="lbl_label">Название (необязательно)</span>
-            <input id="srv-label" type="text" data-i18n-ph="ph_label" placeholder="напр. VDSina, Германия" autocomplete="off" />
-          </label>
+          <div class="form-row">
+            <label><span data-i18n="lbl_user">Пользователь</span>
+              <input id="user" type="text" value="root" autocomplete="off" />
+            </label>
+            <label><span data-i18n="lbl_label">Название (необязательно)</span>
+              <input id="srv-label" type="text" data-i18n-ph="ph_label" placeholder="напр. VDSina, Германия" autocomplete="off" />
+            </label>
+          </div>
 
           <div class="auth-tabs">
             <button type="button" class="tab on" data-auth="password" data-i18n="auth_password">Пароль</button>
@@ -74,15 +69,24 @@
             <span data-i18n="remember_pw">Запомнить пароль (хранится в системном хранилище, не в файле)</span>
           </label>
 
-          <button id="btn-connect" class="primary" data-i18n="btn_connect">Подключиться</button>
+          <button id="btn-connect" class="primary block" data-i18n="btn_connect">Подключиться</button>
           <p id="connect-err" class="err hidden"></p>
         </div>
-      </section>
 
-      <!-- 2. Server (install or manage) -->
-      <section id="view-server" class="hidden">
-        <!-- 2a. Not installed → install -->
-        <div id="block-install" class="panel hidden">
+        <p class="rent-hint dim">
+          <span data-i18n="rent_lead">Нет своего сервера? Можно арендовать VPS:</span>
+          <a href="#" id="rent-vdsina">VDSina</a> ·
+          <a href="#" id="rent-hshp">HSHP</a>
+          <span class="rent-note" data-i18n="rent_note">(партнёрские ссылки — поддерживают проект)</span>
+        </p>
+      </section>
+    </main>
+
+    <!-- 2. Server -->
+    <div id="view-server" class="hidden">
+      <!-- 2a. Not installed → centered install card -->
+      <main id="block-install" class="centered hidden">
+        <section class="card">
           <h2 data-i18n="install_title">AmneziaWG ещё не установлен</h2>
           <p class="sub" data-i18n="install_sub">Нажмите «Установить» — всё настроится автоматически. Займёт пару минут.</p>
           <div class="form">
@@ -95,118 +99,135 @@
                 <input id="port" type="text" data-i18n-ph="ph_port" placeholder="авто" autocomplete="off" />
               </label>
             </details>
-            <button id="btn-install" class="primary" data-i18n="btn_install">Установить</button>
+            <button id="btn-install" class="primary block" data-i18n="btn_install">Установить</button>
           </div>
-        </div>
+        </section>
+      </main>
 
-        <!-- 2b. Installed → manage -->
-        <div id="block-manage" class="panel hidden">
-          <div class="tabs">
-            <button class="tab-btn on" data-tab="clients" data-i18n="tab_clients">Клиенты</button>
-            <button class="tab-btn" data-tab="monitor" data-i18n="tab_monitor">Мониторинг</button>
-            <button class="tab-btn" data-tab="advanced" data-i18n="tab_panel">Веб-панель</button>
-          </div>
+      <!-- 2b. Installed → app shell (sidebar + content) -->
+      <div id="block-manage" class="shell hidden">
+        <aside class="sidebar">
+          <nav>
+            <button class="nav-item on" data-tab="clients"><span class="ni">👤</span><span data-i18n="tab_clients">Клиенты</span></button>
+            <button class="nav-item" data-tab="monitor"><span class="ni">📊</span><span data-i18n="tab_monitor">Мониторинг</span></button>
+            <button class="nav-item" data-tab="advanced"><span class="ni">🌐</span><span data-i18n="tab_panel">Веб-панель</span></button>
+          </nav>
+        </aside>
 
+        <main class="content">
           <!-- TAB: clients -->
-          <div id="tab-clients" class="tab-pane">
-            <div class="panel-head">
-              <h2 data-i18n="clients_title">Клиенты</h2>
+          <section id="tab-clients" class="tab-pane">
+            <div class="section-head">
+              <h1 data-i18n="clients_title">Клиенты</h1>
               <form id="add-form" class="add">
                 <input id="new-client" type="text" data-i18n-ph="ph_new_client" placeholder="имя нового клиента" autocomplete="off" />
                 <button class="primary" type="submit" data-i18n="btn_add">Добавить</button>
               </form>
             </div>
             <p class="hint-profile dim" data-i18n="hint_profile">Один профиль = одно устройство. Для каждого устройства создавайте свой профиль, иначе будет конфликт.</p>
-            <div class="table-wrap">
-              <table class="clients">
-                <thead><tr><th data-i18n="th_name">Имя</th><th class="r" data-i18n="th_actions">Действия</th></tr></thead>
-                <tbody id="clients-body"></tbody>
-              </table>
+            <div class="card flush">
+              <div class="table-wrap">
+                <table class="clients">
+                  <thead><tr><th data-i18n="th_name">Имя</th><th class="r" data-i18n="th_actions">Действия</th></tr></thead>
+                  <tbody id="clients-body"></tbody>
+                </table>
+              </div>
             </div>
             <div class="manage-footer">
               <button id="btn-uninstall" class="danger" data-i18n="btn_uninstall">Удалить AmneziaWG полностью</button>
             </div>
-          </div>
+          </section>
 
           <!-- TAB: monitoring -->
-          <div id="tab-monitor" class="tab-pane hidden">
-            <div id="health" class="health">
-              <span class="health-dot" id="health-dot"></span>
-              <span id="health-state">…</span>
-              <span class="health-sep">·</span>
-              <span id="health-clients"></span>
-              <span class="health-sep">·</span>
-              <span class="dim"><span data-i18n="uptime_label">аптайм</span> <span id="health-uptime">—</span></span>
-              <span class="health-sep">·</span>
-              <span class="dim mono" id="health-version">—</span>
-            </div>
-            <div class="panel-head">
-              <h2><span data-i18n="traffic">Трафик</span> <span id="traffic-summary" class="dim"></span></h2>
-            </div>
-            <div class="table-wrap">
-              <table class="clients traffic">
-                <thead><tr><th></th><th data-i18n="th_client">Клиент</th><th class="r" data-i18n="th_rx">↓ принято</th><th class="r" data-i18n="th_tx">↑ отдано</th><th class="r" data-i18n="th_handshake">рукопожатие</th></tr></thead>
-                <tbody id="traffic-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- TAB: web panel (speed/days/quota) -->
-          <div id="tab-advanced" class="tab-pane hidden">
-            <h2 data-i18n="panel_title">Лимиты на клиента</h2>
-            <p class="dim" data-i18n="panel_desc">Ограничение скорости, срок действия и квота трафика на каждого клиента настраиваются в веб-панели — у неё для этого есть постоянно работающая на сервере служба. Из приложения это включить нельзя: оно не запущено круглосуточно.</p>
-
-            <div id="panel-absent" class="hidden">
-              <div class="panel-install">
-                <input id="panel-pass" type="password" data-i18n-ph="ph_panel_pass" placeholder="пароль администратора" autocomplete="off" />
-                <button id="btn-install-panel" class="primary" data-i18n="btn_install_panel">Установить веб-панель</button>
+          <section id="tab-monitor" class="tab-pane hidden">
+            <div class="section-head"><h1 data-i18n="tab_monitor">Мониторинг</h1></div>
+            <div class="stat-row">
+              <div class="stat">
+                <div class="stat-label" data-i18n="stat_status">Статус</div>
+                <div class="stat-value"><span class="health-dot" id="health-dot"></span> <span id="health-state">…</span></div>
               </div>
-              <p class="dim" style="margin-top:.5rem;font-size:.8rem" data-i18n-html="panel_pw_rule">Пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например <span class="mono">Admin2@</span>).</p>
-            </div>
-
-            <div id="panel-present" class="hidden">
-              <p class="panel-up"><span data-i18n="panel_up">✓ Веб-панель работает:</span> <span id="panel-url" class="mono"></span></p>
-              <div class="row-actions" style="justify-content:flex-start">
-                <button id="btn-open-panel" class="primary" data-i18n="btn_open_panel">Открыть в браузере</button>
-                <button id="btn-remove-panel" class="link del" data-i18n="btn_remove_panel">удалить панель</button>
+              <div class="stat">
+                <div class="stat-label" data-i18n="stat_clients">Клиентов</div>
+                <div class="stat-value" id="health-clients">—</div>
               </div>
-              <p class="dim" style="margin-top:.6rem" data-i18n="panel_cert_note">Браузер один раз предупредит про самоподписанный сертификат — это нормально, трафик шифруется.</p>
+              <div class="stat">
+                <div class="stat-label" data-i18n="stat_uptime">Аптайм</div>
+                <div class="stat-value" id="health-uptime">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">AmneziaWG</div>
+                <div class="stat-value mono sm" id="health-version">—</div>
+              </div>
             </div>
-          </div>
-        </div>
+            <div class="section-head"><h2><span data-i18n="traffic">Трафик</span> <span id="traffic-summary" class="dim"></span></h2></div>
+            <div class="card flush">
+              <div class="table-wrap">
+                <table class="clients traffic">
+                  <thead><tr><th></th><th data-i18n="th_client">Клиент</th><th class="r" data-i18n="th_rx">↓ принято</th><th class="r" data-i18n="th_tx">↑ отдано</th><th class="r" data-i18n="th_handshake">рукопожатие</th></tr></thead>
+                  <tbody id="traffic-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
 
-        <!-- log console (collapsible, tucked away) -->
-        <details id="log-panel" class="log hidden">
-          <summary><span id="log-title">Журнал</span></summary>
-          <pre id="log"></pre>
-        </details>
+          <!-- TAB: web panel -->
+          <section id="tab-advanced" class="tab-pane hidden">
+            <div class="section-head"><h1 data-i18n="panel_title">Лимиты на клиента</h1></div>
+            <div class="card">
+              <p class="dim" data-i18n="panel_desc">Ограничение скорости, срок действия и квота трафика на каждого клиента настраиваются в веб-панели — у неё для этого есть постоянно работающая на сервере служба. Из приложения это включить нельзя: оно не запущено круглосуточно.</p>
 
-        <!-- client result (QR + conf) -->
-        <div id="result" class="panel created hidden">
-          <div class="created-head">
-            <h2><span data-i18n="client_ready_prefix">Клиент</span> <span id="result-name"></span> <span data-i18n="client_ready_suffix">готов</span></h2>
-            <button class="x" id="result-close">×</button>
+              <div id="panel-absent" class="hidden">
+                <div class="panel-install">
+                  <input id="panel-pass" type="password" data-i18n-ph="ph_panel_pass" placeholder="пароль администратора" autocomplete="off" />
+                  <button id="btn-install-panel" class="primary" data-i18n="btn_install_panel">Установить веб-панель</button>
+                </div>
+                <p class="dim" style="margin-top:.5rem;font-size:.8rem" data-i18n-html="panel_pw_rule">Пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например <span class="mono">Admin2@</span>).</p>
+              </div>
+
+              <div id="panel-present" class="hidden">
+                <p class="panel-up"><span data-i18n="panel_up">✓ Веб-панель работает:</span> <span id="panel-url" class="mono"></span></p>
+                <div class="row-actions" style="justify-content:flex-start">
+                  <button id="btn-open-panel" class="primary" data-i18n="btn_open_panel">Открыть в браузере</button>
+                  <button id="btn-remove-panel" class="link del" data-i18n="btn_remove_panel">удалить панель</button>
+                </div>
+                <p class="dim" style="margin-top:.6rem" data-i18n="panel_cert_note">Браузер один раз предупредит про самоподписанный сертификат — это нормально, трафик шифруется.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- log console (collapsible) -->
+          <details id="log-panel" class="log hidden">
+            <summary><span id="log-title">Журнал</span></summary>
+            <pre id="log"></pre>
+          </details>
+
+          <!-- client result (QR + conf) -->
+          <div id="result" class="card created hidden">
+            <div class="created-head">
+              <h2><span data-i18n="client_ready_prefix">Клиент</span> <span id="result-name"></span> <span data-i18n="client_ready_suffix">готов</span></h2>
+              <button class="x" id="result-close">×</button>
+            </div>
+            <p class="qr-note" data-i18n-html="qr_note">Откройте приложение <b>AmneziaWG</b> и отсканируйте QR — или импортируйте файл .conf.</p>
+            <p class="app-links">
+              <span data-i18n="download_awg">Скачать AmneziaWG:</span>
+              <a href="#" id="link-ios">iOS</a> ·
+              <a href="#" id="link-android">Android</a> ·
+              <a href="#" id="link-macos">macOS</a> ·
+              <a href="#" id="link-windows">Windows</a>
+            </p>
+            <div class="created-body">
+              <div class="qr"><img id="result-qr" alt="QR" /></div>
+              <pre id="result-conf" class="conf mono"></pre>
+            </div>
+            <button id="result-download" class="btn" data-i18n="btn_download_conf">Скачать .conf</button>
           </div>
-          <p class="qr-note" data-i18n-html="qr_note">Откройте приложение <b>AmneziaWG</b> и отсканируйте QR — или импортируйте файл .conf.</p>
-          <p class="app-links">
-            <span data-i18n="download_awg">Скачать AmneziaWG:</span>
-            <a href="#" id="link-ios">iOS</a> ·
-            <a href="#" id="link-android">Android</a> ·
-            <a href="#" id="link-macos">macOS</a> ·
-            <a href="#" id="link-windows">Windows</a>
-          </p>
-          <div class="created-body">
-            <div class="qr"><img id="result-qr" alt="QR" /></div>
-            <pre id="result-conf" class="conf mono"></pre>
-          </div>
-          <button id="result-download" class="btn" data-i18n="btn_download_conf">Скачать .conf</button>
-        </div>
-      </section>
-    </main>
+        </main>
+      </div>
+    </div>
 
     <div id="busy" class="overlay hidden"><div class="spinner"></div><div id="busy-text">Подождите…</div></div>
 
-    <!-- confirm modal (native confirm() is unreliable in the Wails webview) -->
+    <!-- confirm modal -->
     <div id="modal" class="overlay hidden">
       <div class="dialog">
         <p id="modal-text"></p>

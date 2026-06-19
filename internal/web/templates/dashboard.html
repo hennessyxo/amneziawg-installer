@@ -23,27 +23,25 @@
   </header>
 
   <main>
-    <section class="panel">
-      <div class="panel-head">
-        <h2>{{.L.clients}}</h2>
-        <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
-          <input type="hidden" name="csrf" value="{{.CSRF}}">
-          <input type="text" name="name" placeholder="{{.L.ph_name}}"
-                 pattern="[A-Za-z0-9_-]{1,32}" required>
-          <input type="number" name="expires_days" min="1" placeholder="{{.L.ph_days}}">
-          <input type="number" name="quota_gb" min="1" step="1" placeholder="{{.L.ph_quota}}">
-          <input type="number" name="speed_mbit" min="1" step="1" placeholder="{{.L.ph_speed}}">
-          <button type="submit">{{.L.add}}</button>
-        </form>
-      </div>
-      <p class="muted hint-profile">{{.L.one_profile}}</p>
+    <div class="page-head">
+      <h1>{{.L.clients}}</h1>
+      <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <input type="text" name="name" placeholder="{{.L.ph_name}}"
+               pattern="[A-Za-z0-9_-]{1,32}" required>
+        <input type="number" name="expires_days" min="1" placeholder="{{.L.ph_days}}">
+        <input type="number" name="quota_gb" min="1" step="1" placeholder="{{.L.ph_quota}}">
+        <input type="number" name="speed_mbit" min="1" step="1" placeholder="{{.L.ph_speed}}">
+        <button type="submit">{{.L.add}}</button>
+      </form>
+    </div>
+    <p class="hint-profile">{{.L.one_profile}}</p>
 
-      <div id="created"></div>
+    <div id="created"></div>
 
-      <div id="clients" hx-get="/partials/clients" hx-trigger="load">
-        <p class="muted">…</p>
-      </div>
-    </section>
+    <div id="clients" hx-get="/partials/clients" hx-trigger="load">
+      <p class="muted">…</p>
+    </div>
   </main>
 </body>
 </html>{{end}}
