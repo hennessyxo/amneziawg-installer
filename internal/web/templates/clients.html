@@ -25,13 +25,13 @@
     <tr>
       <th></th>
       <th><a class="sort{{if eq .Sort "name"}} on{{end}}" hx-get="/partials/clients?sort=name" hx-target="#clients" hx-swap="innerHTML">{{.L.h_client}}</a></th>
-      <th class="r">{{.L.h_speed_dn}}</th><th class="r">{{.L.h_speed_up}}</th>
-      <th class="r">{{.L.h_limit}}</th><th class="r">{{.L.h_quota}}</th>
       <th class="r"><a class="sort{{if eq .Sort "today"}} on{{end}}" hx-get="/partials/clients?sort=today" hx-target="#clients" hx-swap="innerHTML">{{.L.h_today}}</a></th>
       <th class="r"><a class="sort{{if eq .Sort "week"}} on{{end}}" hx-get="/partials/clients?sort=week" hx-target="#clients" hx-swap="innerHTML">{{.L.h_week}}</a></th>
       <th class="r"><a class="sort{{if eq .Sort "month"}} on{{end}}" hx-get="/partials/clients?sort=month" hx-target="#clients" hx-swap="innerHTML">{{.L.h_month}}</a></th>
+      <th class="r">{{.L.h_quota}}</th>
       <th class="r">{{.L.h_expiry}}</th>
-      <th class="r">{{.L.h_handshake}}</th><th></th>
+      <th class="r">{{.L.h_handshake}}</th>
+      <th class="r"></th>
     </tr>
   </thead>
   <tbody>
@@ -39,36 +39,25 @@
     <tr class="{{if .Online}}online{{end}}{{if .Disabled}} disabled{{end}}">
       <td><span class="dot {{if .Disabled}}off{{else if .Online}}on{{else}}off{{end}}"></span></td>
       <td class="name">{{.Name}}{{if .Disabled}} <span class="badge">{{$.L.disabled}}</span>{{end}}</td>
-      <td class="mono r">{{.RateRx}}</td>
-      <td class="mono r">{{.RateTx}}</td>
-      <td class="mono r dim">{{if .Speed}}{{.Speed}}{{else}}∞{{end}}</td>
-      <td class="mono r dim">{{if .Usage}}{{.Usage}}{{else}}∞{{end}}</td>
       <td class="mono r">{{.Today}}</td>
       <td class="mono r">{{.Week}}</td>
       <td class="mono r">{{.Month}}</td>
+      <td class="mono r dim">{{if .Usage}}{{.Usage}}{{else}}∞{{end}}</td>
       <td class="mono r dim">{{if .Expires}}{{.Expires}}{{else}}—{{end}}</td>
       <td class="mono r dim">{{.HandshakeAgo}}</td>
       <td class="actions">
-        {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config">{{$.L.conf}}</a>{{end}}
+        {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config" title="{{$.L.conf}}">{{$.L.conf}}</a>{{end}}
         <button class="link" hx-get="/clients/{{.Name}}/edit" hx-target="#created" hx-swap="innerHTML">{{$.L.edit}}</button>
         {{if .Disabled}}
-          <button class="link" hx-post="/clients/{{.Name}}/enable?sort={{$.Sort}}"
-                  hx-target="#clients" hx-swap="innerHTML"
-                  hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.on}}</button>
+          <button class="link" hx-post="/clients/{{.Name}}/enable?sort={{$.Sort}}" hx-target="#clients" hx-swap="innerHTML" hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.on}}</button>
         {{else}}
-          <button class="link" hx-post="/clients/{{.Name}}/disable?sort={{$.Sort}}"
-                  hx-target="#clients" hx-swap="innerHTML"
-                  hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.off}}</button>
+          <button class="link" hx-post="/clients/{{.Name}}/disable?sort={{$.Sort}}" hx-target="#clients" hx-swap="innerHTML" hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.off}}</button>
         {{end}}
-        <button class="danger"
-                hx-post="/clients/{{.Name}}/revoke?sort={{$.Sort}}"
-                hx-confirm="{{$.L.confirm_del}} {{.Name}}?"
-                hx-target="#clients" hx-swap="innerHTML"
-                hx-vals='{"csrf":"{{$.CSRF}}"}'>✕</button>
+        <button class="link del" title="{{$.L.confirm_del}}" hx-post="/clients/{{.Name}}/revoke?sort={{$.Sort}}" hx-confirm="{{$.L.confirm_del}} {{.Name}}?" hx-target="#clients" hx-swap="innerHTML" hx-vals='{"csrf":"{{$.CSRF}}"}'>✕</button>
       </td>
     </tr>
   {{else}}
-    <tr><td colspan="12" class="muted">{{.L.no_clients}}</td></tr>
+    <tr><td colspan="9" class="muted">{{.L.no_clients}}</td></tr>
   {{end}}
   </tbody>
 </table>

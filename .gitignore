@@ -13,3 +13,4 @@ awg-monitor
 .DS_Store
 *.swp
 *~
+/cmd/panelpreview/
