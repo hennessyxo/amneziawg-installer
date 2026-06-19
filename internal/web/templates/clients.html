@@ -1,4 +1,5 @@
 {{define "clients"}}
+<div hx-get="/partials/clients?sort={{.Sort}}" hx-trigger="every 2s" hx-target="#clients" hx-swap="innerHTML">
 <div class="stats">
   <span><span class="dot on"></span> {{.L.online}} <b>{{.Online}}</b>/{{.Total}}</span>
   <span>↓ {{.TotalRx}}</span>
@@ -9,9 +10,15 @@
 <table class="clients">
   <thead>
     <tr>
-      <th></th><th>{{.L.h_client}}</th><th>Endpoint</th>
+      <th></th>
+      <th><a class="sort{{if eq .Sort "name"}} on{{end}}" hx-get="/partials/clients?sort=name" hx-target="#clients" hx-swap="innerHTML">{{.L.h_client}}</a></th>
+      <th>Endpoint</th>
       <th class="r">{{.L.h_speed_dn}}</th><th class="r">{{.L.h_speed_up}}</th>
-      <th class="r">{{.L.h_limit}}</th><th class="r">{{.L.h_quota}}</th><th class="r">{{.L.h_expiry}}</th>
+      <th class="r">{{.L.h_limit}}</th><th class="r">{{.L.h_quota}}</th>
+      <th class="r"><a class="sort{{if eq .Sort "today"}} on{{end}}" hx-get="/partials/clients?sort=today" hx-target="#clients" hx-swap="innerHTML">{{.L.h_today}}</a></th>
+      <th class="r"><a class="sort{{if eq .Sort "week"}} on{{end}}" hx-get="/partials/clients?sort=week" hx-target="#clients" hx-swap="innerHTML">{{.L.h_week}}</a></th>
+      <th class="r"><a class="sort{{if eq .Sort "month"}} on{{end}}" hx-get="/partials/clients?sort=month" hx-target="#clients" hx-swap="innerHTML">{{.L.h_month}}</a></th>
+      <th class="r">{{.L.h_expiry}}</th>
       <th class="r">{{.L.h_handshake}}</th><th></th>
     </tr>
   </thead>
@@ -25,31 +32,35 @@
       <td class="mono r">{{.RateTx}}</td>
       <td class="mono r dim">{{if .Speed}}{{.Speed}}{{else}}∞{{end}}</td>
       <td class="mono r dim">{{if .Usage}}{{.Usage}}{{else}}∞{{end}}</td>
+      <td class="mono r">{{.Today}}</td>
+      <td class="mono r">{{.Week}}</td>
+      <td class="mono r">{{.Month}}</td>
       <td class="mono r dim">{{if .Expires}}{{.Expires}}{{else}}—{{end}}</td>
       <td class="mono r dim">{{.HandshakeAgo}}</td>
       <td class="actions">
         {{if .HasConfig}}<a class="link" href="/clients/{{.Name}}/config">{{$.L.conf}}</a>{{end}}
         <button class="link" hx-get="/clients/{{.Name}}/edit" hx-target="#created" hx-swap="innerHTML">{{$.L.edit}}</button>
         {{if .Disabled}}
-          <button class="link" hx-post="/clients/{{.Name}}/enable"
+          <button class="link" hx-post="/clients/{{.Name}}/enable?sort={{$.Sort}}"
                   hx-target="#clients" hx-swap="innerHTML"
                   hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.on}}</button>
         {{else}}
-          <button class="link" hx-post="/clients/{{.Name}}/disable"
+          <button class="link" hx-post="/clients/{{.Name}}/disable?sort={{$.Sort}}"
                   hx-target="#clients" hx-swap="innerHTML"
                   hx-vals='{"csrf":"{{$.CSRF}}"}'>{{$.L.off}}</button>
         {{end}}
         <button class="danger"
-                hx-post="/clients/{{.Name}}/revoke"
+                hx-post="/clients/{{.Name}}/revoke?sort={{$.Sort}}"
                 hx-confirm="{{$.L.confirm_del}} {{.Name}}?"
                 hx-target="#clients" hx-swap="innerHTML"
                 hx-vals='{"csrf":"{{$.CSRF}}"}'>✕</button>
       </td>
     </tr>
   {{else}}
-    <tr><td colspan="10" class="muted">{{.L.no_clients}}</td></tr>
+    <tr><td colspan="13" class="muted">{{.L.no_clients}}</td></tr>
   {{end}}
   </tbody>
 </table>
+</div>
 </div>
 {{end}}

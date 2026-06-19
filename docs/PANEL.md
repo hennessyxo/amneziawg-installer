@@ -15,6 +15,8 @@ clients in the browser. Built on the same `awg` parsing core as `awg-monitor`.
 - 🔐 **Auth**: admin password (bcrypt), sessions in HttpOnly cookies, CSRF on forms.
 - 🔒 **HTTPS**: runs over TLS (a self-signed cert is generated automatically).
 - 📊 **Live dashboard**: online status, ↑↓ rates, total traffic per client (htmx polling).
+- 📅 **Usage over time**: per-client traffic for the last **day / week / month**, with
+  **sortable** columns (click a header) — see who used how much at a glance.
 - ➕ **Management**: add / remove / disable / enable / **rename** a client, download `.conf`, QR.
 - ✏️ **Edit on the fly**: change an existing client's speed, quota and expiry (the "edit"
   button) — no need to recreate it.

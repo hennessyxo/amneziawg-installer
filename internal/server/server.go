@@ -101,6 +101,7 @@ func (s *Server) enforceOnce() {
 	_ = s.store.ApplyUsage(transfers)
 
 	now := time.Now()
+	_ = s.store.RecordSamples(now) // daily snapshot for day/week/month usage
 	changed := false
 	for _, rec := range s.store.List() {
 		switch lifecycle.Evaluate(rec, now) {
@@ -256,7 +257,7 @@ func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) clientsPartial(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
-	data, err := s.buildClientsData(sess.CSRF, s.lang(r))
+	data, err := s.buildClientsData(sess.CSRF, s.lang(r), r.URL.Query().Get("sort"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintf(w, `<p class="err">%s</p>`, template.HTMLEscapeString(err.Error()))
@@ -334,7 +335,7 @@ func (s *Server) toggleClient(enable bool) http.HandlerFunc {
 // renderClients re-renders the clients table partial (used after mutations).
 func (s *Server) renderClients(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
-	data, err := s.buildClientsData(sess.CSRF, s.lang(r))
+	data, err := s.buildClientsData(sess.CSRF, s.lang(r), r.URL.Query().Get("sort"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		return
@@ -434,7 +435,11 @@ type peerView struct {
 	RateRx, RateTx, RxStr, TxStr string
 	HandshakeAgo                 string
 	Usage, Expires, Speed        string // lifecycle: "" when unlimited/never
+	Today, Week, Month           string // usage over the last day/week/month
 	Online, HasConfig, Disabled  bool
+
+	// sort keys (not rendered)
+	totalBytes, todayBytes, weekBytes, monthBytes uint64
 }
 
 type clientsData struct {
@@ -442,6 +447,7 @@ type clientsData struct {
 	Online, Total             int
 	TotalRx, TotalTx, TimeStr string
 	CSRF                      string
+	Sort                      string // active sort mode (echoed into the poll URL)
 	L                         map[string]string
 	Lang                      string
 }
@@ -467,7 +473,7 @@ func (s *Server) adoptOrphans() {
 	}
 }
 
-func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
+func (s *Server) buildClientsData(csrf, lang, sortMode string) (clientsData, error) {
 	L := tr(lang)
 	s.adoptOrphans()
 	snap, err := s.ctrl.Snapshot()
@@ -506,6 +512,7 @@ func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
 			endpoint = "—"
 		}
 		rec := recs[name]
+		today, week, month := rec.Today(now), rec.Last7d(now), rec.Last30d(now)
 		views = append(views, peerView{
 			Name:         name,
 			Endpoint:     endpoint,
@@ -517,29 +524,45 @@ func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
 			Usage:        usageStr(rec),
 			Expires:      expiresStr(rec, now, L),
 			Speed:        speedStr(rec, L),
+			Today:        format.HumanBytes(today),
+			Week:         format.HumanBytes(week),
+			Month:        format.HumanBytes(month),
 			Online:       p.Online(now),
 			HasConfig:    true,
+			totalBytes:   p.RxBytes + p.TxBytes,
+			todayBytes:   today,
+			weekBytes:    week,
+			monthBytes:   month,
 		})
 	}
 
 	// Disabled clients are absent from the live config; list them too.
 	for _, rec := range recs {
 		if rec.Disabled && !live[rec.Name] {
+			today, week, month := rec.Today(now), rec.Last7d(now), rec.Last30d(now)
 			views = append(views, peerView{
-				Name:      rec.Name,
-				Endpoint:  "—",
-				RateRx:    format.HumanRate(0),
-				RateTx:    format.HumanRate(0),
-				RxStr:     "—",
-				TxStr:     "—",
-				Usage:     usageStr(rec),
-				Expires:   expiresStr(rec, now, L),
-				Speed:     speedStr(rec, L),
-				Disabled:  true,
-				HasConfig: true,
+				Name:       rec.Name,
+				Endpoint:   "—",
+				RateRx:     format.HumanRate(0),
+				RateTx:     format.HumanRate(0),
+				RxStr:      "—",
+				TxStr:      "—",
+				Usage:      usageStr(rec),
+				Expires:    expiresStr(rec, now, L),
+				Speed:      speedStr(rec, L),
+				Today:      format.HumanBytes(today),
+				Week:       format.HumanBytes(week),
+				Month:      format.HumanBytes(month),
+				Disabled:   true,
+				HasConfig:  true,
+				todayBytes: today,
+				weekBytes:  week,
+				monthBytes: month,
 			})
 		}
 	}
+
+	sortMode = sortViews(views, sortMode)
 
 	return clientsData{
 		Peers:   views,
@@ -549,9 +572,30 @@ func (s *Server) buildClientsData(csrf, lang string) (clientsData, error) {
 		TotalTx: format.HumanBytes(snap.TotalTx()),
 		TimeStr: now.Format("15:04:05"),
 		CSRF:    csrf,
+		Sort:    sortMode,
 		L:       L,
 		Lang:    lang,
 	}, nil
+}
+
+// sortViews orders the table by the chosen mode and returns the normalized mode
+// (default "online" — the online-then-name order already applied above).
+func sortViews(v []peerView, mode string) string {
+	switch mode {
+	case "name":
+		sort.SliceStable(v, func(i, j int) bool { return v[i].Name < v[j].Name })
+	case "total":
+		sort.SliceStable(v, func(i, j int) bool { return v[i].totalBytes > v[j].totalBytes })
+	case "today":
+		sort.SliceStable(v, func(i, j int) bool { return v[i].todayBytes > v[j].todayBytes })
+	case "week":
+		sort.SliceStable(v, func(i, j int) bool { return v[i].weekBytes > v[j].weekBytes })
+	case "month":
+		sort.SliceStable(v, func(i, j int) bool { return v[i].monthBytes > v[j].monthBytes })
+	default:
+		mode = "online"
+	}
+	return mode
 }
 
 // usageStr renders "used / quota" or "" when unlimited.

@@ -30,6 +30,15 @@ type Record struct {
 	LastRx     uint64     `json:"last_rx"`
 	LastTx     uint64     `json:"last_tx"`
 	Disabled   bool       `json:"disabled"`
+	// Samples are daily snapshots of cumulative UsedBytes, used to compute usage
+	// over a day/week/month window. Sorted ascending by Date (YYYY-MM-DD).
+	Samples []UsageSample `json:"samples,omitempty"`
+}
+
+// UsageSample is the cumulative UsedBytes captured at the start of a calendar day.
+type UsageSample struct {
+	Date string `json:"date"` // "2006-01-02"
+	Used uint64 `json:"used"`
 }
 
 // RemainingBytes returns quota left (0 if unlimited or exceeded).

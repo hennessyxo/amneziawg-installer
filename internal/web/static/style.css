@@ -184,3 +184,9 @@ table.clients tbody tr:hover { background: var(--surface-2); }
 .edit-hint { margin: 0.6rem 0 0; font-size: 0.8rem; }
 .hint-profile { margin: 0.5rem 0 0; font-size: 0.8rem; }
 .qr-note { margin: 0 0 0.8rem; font-size: 0.82rem; color: var(--warn, #f59e0b); }
+
+/* sortable column headers */
+table.clients th .sort { cursor: pointer; color: inherit; text-decoration: none; }
+table.clients th .sort:hover { color: var(--text); }
+table.clients th .sort.on { color: var(--accent); }
+table.clients th .sort.on::after { content: " ↓"; }
