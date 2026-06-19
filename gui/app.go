@@ -281,15 +281,26 @@ func (a *App) SaveConfig(name, conf string) (string, error) {
 	if a.ctx == nil {
 		return "", fmt.Errorf("приложение не готово")
 	}
+	// Match the panel's naming (awg0-client-<name>.conf) and constrain the dialog
+	// to .conf so the OS keeps the extension.
+	defaultName := fmt.Sprintf("%s-client-%s.conf", awgIface, name)
 	path, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
-		DefaultFilename: name + ".conf",
+		DefaultFilename: defaultName,
 		Title:           "Сохранить конфиг клиента",
+		Filters: []wruntime.FileFilter{
+			{DisplayName: "AmneziaWG config (*.conf)", Pattern: "*.conf"},
+		},
 	})
 	if err != nil {
 		return "", fmt.Errorf("диалог сохранения не удался: %w", err)
 	}
 	if path == "" {
 		return "", nil // user cancelled
+	}
+	// Guarantee a .conf extension even if the OS dialog didn't append it, so the
+	// file imports cleanly into the AmneziaWG app.
+	if !strings.HasSuffix(strings.ToLower(path), ".conf") {
+		path += ".conf"
 	}
 	if err := os.WriteFile(path, []byte(conf), 0o600); err != nil {
 		return "", fmt.Errorf("не удалось сохранить файл: %w", err)
