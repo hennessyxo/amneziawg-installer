@@ -16,6 +16,16 @@ disguises the handshake and packet headers so DPI systems can't fingerprint and
 block it. This project removes all the manual work — install, NAT/firewall,
 randomized obfuscation, client management with QR codes.
 
+## Screenshots
+
+| Desktop app — clients | Desktop app — settings |
+|:---:|:---:|
+| ![Desktop app, clients tab](docs/img/gui-clients.png) | ![Desktop app, settings tab](docs/img/gui-settings.png) |
+
+| Web panel — clients & usage | Web panel — server overview |
+|:---:|:---:|
+| ![Web panel, clients dashboard](docs/img/panel-clients.png) | ![Web panel, server overview](docs/img/panel-server.png) |
+
 ## What you need
 
 1. **A cheap VPS** running **Ubuntu 22.04+/24.04 or Debian 12+** (any hosting
