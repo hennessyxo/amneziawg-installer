@@ -35,9 +35,9 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
 
 Нативное приложение для **Windows** и **macOS** — вообще без терминала.
 
-1. Скачайте **AmneziaWG Manager** для своего компьютера в
-   [Releases](https://github.com/hennessyxo/amneziawg-installer/releases/latest)
-   (`awg-gui` — `.app` для macOS, `.exe` для Windows).
+1. **Скачайте AmneziaWG Manager** — прямая ссылка, всегда последний релиз:
+   ### ⬇ [macOS](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-macos.zip) · [Windows](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-windows-amd64.exe)
+   _(или посмотреть [все файлы](https://github.com/hennessyxo/amneziawg-installer/releases/latest))_
 2. Откройте, введите **IP сервера + пароль**, нажмите **Установить**.
 3. Добавляйте клиентов, показывайте их **QR / конфиг**, следите за трафиком,
    ставьте или открывайте веб-панель — кнопками. Вкладка **«Настройки»**
@@ -56,15 +56,14 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
 
 Один кросс-платформенный бинарник `awg-deploy`, который управляет сервером по SSH.
 
-1. Скачайте его для **своего компьютера** из
-   [Releases](https://github.com/hennessyxo/amneziawg-installer/releases/latest):
+1. Скачайте его для **своего компьютера** (прямые ссылки, всегда последний релиз):
 
-   | Ваш компьютер | Файл |
-   |---------------|------|
-   | Windows | `awg-deploy-windows-amd64.exe` |
-   | macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64.tar.gz` |
-   | macOS — Intel | `awg-deploy-darwin-amd64.tar.gz` |
-   | Linux — x86_64 / ARM | `awg-deploy-linux-amd64.tar.gz` / `-arm64.tar.gz` |
+   | Ваш компьютер | Скачать |
+   |---------------|---------|
+   | Windows | [`awg-deploy-windows-amd64.exe`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-windows-amd64.exe) |
+   | macOS — Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
+   | macOS — Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
+   | Linux | [`amd64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-amd64.tar.gz) / [`arm64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-arm64.tar.gz) |
 
 2. **Запустите без аргументов** — спросит IP сервера и пароль, подключится по SSH
    и запустит установщик с меню управления **прямо на сервере**:
