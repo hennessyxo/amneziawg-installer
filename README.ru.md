@@ -23,9 +23,12 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
    Нет сервера? Можно арендовать на
    [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) или
    [HSHP](https://hshp.host/?from=144227) _(партнёрские ссылки — поддерживают проект)_.
-2. **Приложение AmneziaWG** на телефоне/ПК для подключения:
-   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365)
-   - **Android / Windows / macOS / Linux** — [amnezia.org/downloads](https://amnezia.org/downloads)
+2. **Приложение AmneziaWG** на телефоне/ПК для подключения — берите из любого источника:
+   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Android** — [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
+   - **Windows** — [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
+   - **macOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Все клиенты / исходники** — [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
 
 И всё. Сервер сразу настроен на стабильное соединение — выбирать ничего не нужно.
 

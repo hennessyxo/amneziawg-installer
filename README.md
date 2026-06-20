@@ -23,9 +23,12 @@ randomized obfuscation, client management with QR codes.
    **password**. No server yet? You can rent one at
    [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) or
    [HSHP](https://hshp.host/?from=144227) _(referral links — they help support the project)_.
-2. **The AmneziaWG app** on your phone/PC to connect:
-   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365)
-   - **Android / Windows / macOS / Linux** — [amnezia.org/downloads](https://amnezia.org/downloads)
+2. **The AmneziaWG app** on your phone/PC to connect — grab it from any of these:
+   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Android** — [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
+   - **Windows** — [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
+   - **macOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **All clients / source** — [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
 
 That's it. The server is tuned for reliable connections out of the box — there's
 nothing to choose.

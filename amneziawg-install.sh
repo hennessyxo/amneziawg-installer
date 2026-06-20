@@ -108,7 +108,7 @@ t() {
 			mon_removed)  echo "awg-monitor removed." ;;
 			panel_offer)  echo "Install the web panel for easy browser management? [Y/n]: " ;;
 			one_profile)  echo "One profile = one device. Make a separate client for each phone/PC, or connections will clash." ;;
-			qr_note)      echo "Open the AmneziaWG app and scan the QR (or import the .conf file). iOS — App Store: https://apps.apple.com/app/amneziawg/id6478942365 ; Android/Windows: https://amnezia.org/downloads" ;;
+			qr_note)      echo "Open the AmneziaWG app and scan the QR (or import the .conf file). Get the app: iOS — App Store https://apps.apple.com/app/amneziawg/id6478942365 ; Android — Google Play https://play.google.com/store/apps/details?id=org.amnezia.awg ; all clients — https://github.com/amnezia-vpn" ;;
 			first_conf)   echo "First client config:" ;;
 			panel_at)     echo "Web panel:" ;;
 			add_more)     echo "Add more clients from the menu or the web panel." ;;
@@ -145,7 +145,7 @@ t() {
 			mon_removed)  echo "awg-monitor удалён." ;;
 			panel_offer)  echo "Поставить веб-панель для удобного управления в браузере? [Y/n]: " ;;
 			one_profile)  echo "Один профиль — одно устройство. Для каждого телефона/ПК создавай отдельного клиента, иначе соединения конфликтуют." ;;
-			qr_note)      echo "Открой приложение AmneziaWG и отсканируй QR (или импортируй файл .conf). iOS — App Store: https://apps.apple.com/app/amneziawg/id6478942365 ; Android/Windows: https://amnezia.org/downloads" ;;
+			qr_note)      echo "Открой приложение AmneziaWG и отсканируй QR (или импортируй файл .conf). Скачать приложение: iOS — App Store https://apps.apple.com/app/amneziawg/id6478942365 ; Android — Google Play https://play.google.com/store/apps/details?id=org.amnezia.awg ; все клиенты — https://github.com/amnezia-vpn" ;;
 			first_conf)   echo "Конфиг первого клиента:" ;;
 			panel_at)     echo "Веб-панель:" ;;
 			add_more)     echo "Добавляй клиентов в меню или в веб-панели." ;;
