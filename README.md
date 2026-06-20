@@ -40,8 +40,10 @@ A native app for **Windows** and **macOS** — no terminal at all.
    [Releases](https://github.com/hennessyxo/amneziawg-installer/releases/latest)
    (`awg-gui` — `.app` for macOS, `.exe` for Windows).
 2. Open it, enter your server **IP + password**, click **Install**.
-3. Add clients, show their **QR / config**, install the web panel, or remove
-   everything — all with buttons. See [`gui/`](gui/).
+3. Add clients, show their **QR / config**, monitor live traffic, and install or
+   open the web panel — all with buttons. A **Settings** tab shows server info
+   (IP, port, version, uptime, clients), renames the connection, changes the web
+   panel password, or removes the panel / AmneziaWG. See [`gui/`](gui/).
 
 > Tick **"Remember password"** to skip typing it next time — it's stored in your
 > OS keychain (macOS Keychain / Windows Credential Manager), never in a file.
@@ -125,9 +127,12 @@ Vars: `AWG_SERVER_IP`, `AWG_PORT` (blank = free random), `AWG_DNS1/2`,
   Menu option 6, or build: `go build -o awg-monitor ./cmd/awg-monitor`. See
   [`docs/MONITOR.md`](docs/MONITOR.md).
 - **`awg-panel`** — browser dashboard (Go + htmx): auth (bcrypt + HTTPS), live
-  traffic, client management, and **traffic quotas, time-based expiry and
-  per-client speed limits** enforced by a background daemon. Menu option 7 (or the
-  GUI's "Install web panel" button). See [`docs/PANEL.md`](docs/PANEL.md).
+  traffic, per-client usage over **day / week / month** (sortable), client
+  management, and **traffic quotas, time-based expiry and per-client speed limits**
+  enforced by a background daemon. A **Server** page shows host load (CPU / RAM /
+  disk / uptime), aggregate client traffic over time, a 30-day chart and the top
+  clients. Menu option 7 (or the GUI's "Install web panel" button). See
+  [`docs/PANEL.md`](docs/PANEL.md).
 
 ## Security notes
 

@@ -11,15 +11,22 @@ CI; the shared SSH logic in `internal/deploy` is reused via a `replace` directiv
 
 ## What it does
 
-1. **Connect** — server IP, user (default `root`), password or SSH key.
-2. **Install** — picks the obfuscation preset (обычный / мобильный for 4G/LTE),
-   optional UDP port, first client name; streams install progress live.
-3. **Manage** — list clients, add a client (shows a scannable QR + downloadable
-   `.conf`), remove a client.
-4. **Uninstall** — removes AmneziaWG, the panel, all clients and configs.
+1. **Connect** — server IP, user (default `root`), password or SSH key. Saved
+   servers reconnect in one click; the SSH password can be remembered in the OS
+   keychain (never written to a file).
+2. **Install** — one tuned profile (mobile params: MTU 1280 + Jc=3, reliable on
+   both 4G/LTE and PC); optional UDP port under *Advanced*. Streams progress live.
+3. **Clients** — list, add (scannable QR + downloadable `.conf`), show any
+   client's config/QR later, rename, remove.
+4. **Monitoring** — live VPN status, uptime, version and per-client traffic.
+5. **Web panel** — install or open the browser panel (it carries per-client
+   speed / quota / expiry limits via an always-on server daemon).
+6. **Settings** — server info (IP, UDP port, AmneziaWG version, uptime, client
+   count), rename the connection, change the web-panel password, or remove the
+   panel / AmneziaWG entirely (danger zone).
 
-The QR is read **only** by the standalone *AmneziaWG* app; for AmneziaVPN / other
-clients, import the `.conf` file.
+The UI is bilingual (RU/EN) with a language switch. Scan the QR in the
+*AmneziaWG* app, or import the downloaded `.conf` file.
 
 ## Develop / build
 

@@ -17,6 +17,9 @@ clients in the browser. Built on the same `awg` parsing core as `awg-monitor`.
 - 📊 **Live dashboard**: online status, ↑↓ rates, total traffic per client (htmx polling).
 - 📅 **Usage over time**: per-client traffic for the last **day / week / month**, with
   **sortable** columns (click a header) — see who used how much at a glance.
+- 🖥️ **Server overview** (the *Server* page): host load — CPU %, load average, RAM and
+  disk usage, uptime — plus aggregate client traffic over day / week / month, all-time
+  totals, a 30-day traffic chart and the top clients by traffic. Reads `/proc` directly.
 - ➕ **Management**: add / remove / disable / enable / **rename** a client, download `.conf`, QR.
 - ✏️ **Edit on the fly**: change an existing client's speed, quota and expiry (the "edit"
   button) — no need to recreate it.
@@ -64,6 +67,16 @@ sudo ./awg-panel \
 
 `awg-panel hash` reads a password from stdin and prints a bcrypt hash (the plaintext is never stored).
 
+To change the admin password later without reinstalling, rewrite the hash file and
+restart the service:
+
+```bash
+echo 'new-password' | awg-panel hash > /etc/amnezia/amneziawg/panel.hash
+systemctl restart awg-panel
+```
+
+The desktop app's **Settings** tab does exactly this over SSH.
+
 ## Security notes
 
 - The panel runs as root (needed for `awg`/`awg-quick`).
@@ -89,8 +102,9 @@ cmd/awg-panel/main.go        # flags, TLS, `hash` subcommand
 internal/
 ├── awgctl/                  # control plane (params, peer add/remove, FileController)
 ├── auth/                    # bcrypt + in-memory sessions + CSRF
-├── lifecycle/               # quota/expiry store, usage accounting, rule engine
+├── lifecycle/               # quota/expiry store, usage accounting, daily samples, rule engine
 ├── shaper/                  # tc command planner (per-client bandwidth caps)
+├── sysstat/                 # host load sampler (CPU/RAM/disk/uptime from /proc)
 ├── server/                  # routing, middleware, handlers, rate tracker, enforcer
 └── web/                     # embedded templates + static (htmx, CSS)
 ```
