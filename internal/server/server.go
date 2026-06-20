@@ -24,6 +24,7 @@ import (
 	"github.com/hennessyxo/amneziawg-installer/internal/format"
 	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
 	"github.com/hennessyxo/amneziawg-installer/internal/shaper"
+	"github.com/hennessyxo/amneziawg-installer/internal/sysstat"
 	"github.com/hennessyxo/amneziawg-installer/internal/web"
 )
 
@@ -44,6 +45,7 @@ type Server struct {
 	tmpl     *template.Template
 	mux      *http.ServeMux
 	rates    *rateTracker
+	sys      *sysstat.Collector
 }
 
 // New builds a Server. It takes the Controller interface (so tests can inject a
@@ -63,6 +65,7 @@ func New(ctrl awgctl.Controller, sessions *auth.Store, store *lifecycle.Store, p
 		secure:   secure,
 		tmpl:     tmpl,
 		rates:    newRateTracker(),
+		sys:      sysstat.NewCollector(),
 	}
 	s.routes()
 	return s, nil
@@ -145,6 +148,8 @@ func (s *Server) routes() {
 	mux.HandleFunc("POST /logout", s.doLogout)
 	mux.HandleFunc("GET /lang/{code}", s.setLang)
 	mux.HandleFunc("GET /{$}", s.requireAuth(s.dashboard))
+	mux.HandleFunc("GET /server", s.requireAuth(s.serverPage))
+	mux.HandleFunc("GET /partials/server", s.requireAuth(s.serverPartial))
 	mux.HandleFunc("GET /partials/clients", s.requireAuth(s.clientsPartial))
 	mux.HandleFunc("POST /clients", s.requireAuth(s.addClient))
 	mux.HandleFunc("POST /clients/{name}/revoke", s.requireAuth(s.revokeClient))
@@ -252,7 +257,18 @@ func (s *Server) doLogout(w http.ResponseWriter, r *http.Request) {
 func (s *Server) dashboard(w http.ResponseWriter, r *http.Request) {
 	sess, _ := s.session(r)
 	lang := s.lang(r)
-	s.render(w, "dashboard", map[string]any{"Iface": s.iface, "CSRF": sess.CSRF, "L": tr(lang), "Lang": lang})
+	s.render(w, "dashboard", map[string]any{"Iface": s.iface, "CSRF": sess.CSRF, "L": tr(lang), "Lang": lang, "Nav": "clients"})
+}
+
+// serverPage renders the server-overview page shell (the stats load via htmx).
+func (s *Server) serverPage(w http.ResponseWriter, r *http.Request) {
+	lang := s.lang(r)
+	s.render(w, "serverpage", map[string]any{"Iface": s.iface, "L": tr(lang), "Lang": lang, "Nav": "server"})
+}
+
+// serverPartial renders the live server stats block (CPU/RAM/disk + traffic).
+func (s *Server) serverPartial(w http.ResponseWriter, r *http.Request) {
+	s.render(w, "serverstats", s.buildServerData(s.lang(r)))
 }
 
 func (s *Server) clientsPartial(w http.ResponseWriter, r *http.Request) {
@@ -596,6 +612,173 @@ func sortViews(v []peerView, mode string) string {
 		mode = "online"
 	}
 	return mode
+}
+
+// --- server overview --------------------------------------------------------
+
+type srvTop struct {
+	Name  string
+	Value string
+	Pct   int
+}
+
+type srvBar struct {
+	Pct   int
+	Label string
+	Value string
+}
+
+type serverData struct {
+	CPU       string
+	Load      string
+	MemUsed   string
+	MemTotal  string
+	MemPct    int
+	DiskUsed  string
+	DiskTotal string
+	DiskPct   int
+	HasDisk   bool
+	Uptime    string
+
+	Today   string
+	Week    string
+	Month   string
+	TotalRx string
+	TotalTx string
+
+	Top   []srvTop
+	Spark []srvBar
+	Peak  string // largest single day in the 30-day window
+
+	TimeStr string
+	L       map[string]string
+	Lang    string
+	Nav     string
+}
+
+// buildServerData assembles the server overview: host load (CPU/RAM/disk/uptime),
+// traffic totals over day/week/month, top clients, and a 30-day daily series.
+func (s *Server) buildServerData(lang string) serverData {
+	L := tr(lang)
+	st := s.sys.Sample()
+	now := time.Now()
+
+	d := serverData{
+		CPU:      fmt.Sprintf("%.0f", st.CPUPercent),
+		Load:     fmt.Sprintf("%.2f / %.2f / %.2f", st.Load1, st.Load5, st.Load15),
+		Uptime:   fmtUptime(st.UptimeSeconds, lang),
+		MemUsed:  format.HumanBytes(st.MemUsedBytes),
+		MemTotal: format.HumanBytes(st.MemTotalBytes),
+		MemPct:   pct(st.MemUsedBytes, st.MemTotalBytes),
+		TimeStr:  now.Format("15:04:05"),
+		L:        L,
+		Lang:     lang,
+		Nav:      "server",
+	}
+	if st.DiskTotalBytes > 0 {
+		d.HasDisk = true
+		d.DiskUsed = format.HumanBytes(st.DiskUsedBytes)
+		d.DiskTotal = format.HumanBytes(st.DiskTotalBytes)
+		d.DiskPct = pct(st.DiskUsedBytes, st.DiskTotalBytes)
+	}
+
+	// Traffic totals + per-client month usage for the top list.
+	var today, week, month uint64
+	type nameBytes struct {
+		name  string
+		bytes uint64
+	}
+	var monthly []nameBytes
+	if s.store != nil {
+		for _, r := range s.store.List() {
+			today += r.Today(now)
+			week += r.Last7d(now)
+			m := r.Last30d(now)
+			month += m
+			monthly = append(monthly, nameBytes{r.Name, m})
+		}
+	}
+	d.Today = format.HumanBytes(today)
+	d.Week = format.HumanBytes(week)
+	d.Month = format.HumanBytes(month)
+
+	sort.Slice(monthly, func(i, j int) bool { return monthly[i].bytes > monthly[j].bytes })
+	var maxMonth uint64
+	if len(monthly) > 0 {
+		maxMonth = monthly[0].bytes
+	}
+	for i, m := range monthly {
+		if i >= 3 || m.bytes == 0 {
+			break
+		}
+		d.Top = append(d.Top, srvTop{Name: m.name, Value: format.HumanBytes(m.bytes), Pct: pct(m.bytes, maxMonth)})
+	}
+
+	// 30-day daily traffic series for the sparkline.
+	if s.store != nil {
+		series := s.store.DailyTotals(now, 30)
+		var maxDay uint64
+		for _, p := range series {
+			if p.Bytes > maxDay {
+				maxDay = p.Bytes
+			}
+		}
+		d.Peak = format.HumanBytes(maxDay)
+		for _, p := range series {
+			h := pct(p.Bytes, maxDay)
+			if h < 3 {
+				h = 3 // keep an empty day visible as a sliver
+			}
+			d.Spark = append(d.Spark, srvBar{Pct: h, Label: p.Date, Value: format.HumanBytes(p.Bytes)})
+		}
+	}
+
+	// All-time totals since the interface came up (live counters).
+	if snap, err := s.ctrl.Snapshot(); err == nil {
+		d.TotalRx = format.HumanBytes(snap.TotalRx())
+		d.TotalTx = format.HumanBytes(snap.TotalTx())
+	}
+	return d
+}
+
+// pct returns used/total as an integer percentage, clamped to [0,100].
+func pct(used, total uint64) int {
+	if total == 0 {
+		return 0
+	}
+	p := int(used * 100 / total)
+	if p > 100 {
+		p = 100
+	}
+	return p
+}
+
+// fmtUptime renders seconds as a localized "Nd Nh" / "Nh Nm" / "Nm".
+func fmtUptime(sec int64, lang string) string {
+	if sec <= 0 {
+		return "—"
+	}
+	d := sec / 86400
+	h := (sec % 86400) / 3600
+	m := (sec % 3600) / 60
+	if lang == "en" {
+		switch {
+		case d > 0:
+			return fmt.Sprintf("%dd %dh", d, h)
+		case h > 0:
+			return fmt.Sprintf("%dh %dm", h, m)
+		default:
+			return fmt.Sprintf("%dm", m)
+		}
+	}
+	switch {
+	case d > 0:
+		return fmt.Sprintf("%d дн %d ч", d, h)
+	case h > 0:
+		return fmt.Sprintf("%d ч %d мин", h, m)
+	default:
+		return fmt.Sprintf("%d мин", m)
+	}
 }
 
 // usageStr renders "used / quota" or "" when unlimited.

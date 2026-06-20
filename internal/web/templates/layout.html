@@ -1,0 +1,28 @@
+{{define "sidebar"}}
+<aside class="side">
+  <div class="side-head">
+    <div class="brand">AmneziaWG <span>panel</span></div>
+    <span class="iface">{{.Iface}}</span>
+  </div>
+  <nav class="side-nav">
+    <a class="nav-item{{if eq .Nav "clients"}} active{{end}}" href="/">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      {{.L.nav_clients}}
+    </a>
+    <a class="nav-item{{if eq .Nav "server"}} active{{end}}" href="/server">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="6" rx="1.5"/><rect x="2" y="13" width="20" height="6" rx="1.5"/><path d="M6 6h.01M6 16h.01"/></svg>
+      {{.L.nav_server}}
+    </a>
+  </nav>
+  <div class="side-foot">
+    <span class="langswitch">
+      <a href="/lang/ru" class="{{if eq .Lang "ru"}}on{{end}}">RU</a>
+      <a href="/lang/en" class="{{if eq .Lang "en"}}on{{end}}">EN</a>
+    </span>
+    <form method="post" action="/logout" class="inline">
+      <button class="ghost block" type="submit">{{.L.logout}}</button>
+    </form>
+    <p class="side-note">self-hosted · AmneziaWG</p>
+  </div>
+</aside>
+{{end}}

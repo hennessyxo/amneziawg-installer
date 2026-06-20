@@ -7,41 +7,84 @@
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>
-<body>
-  <header class="top">
-    <div class="brand">AmneziaWG <span>panel</span></div>
-    <nav>
-      <span class="iface">{{.Iface}}</span>
-      <span class="langswitch">
-        <a href="/lang/ru" class="{{if eq .Lang "ru"}}on{{end}}">RU</a>
-        <a href="/lang/en" class="{{if eq .Lang "en"}}on{{end}}">EN</a>
-      </span>
-      <form method="post" action="/logout" class="inline">
-        <button class="ghost" type="submit">{{.L.logout}}</button>
-      </form>
-    </nav>
-  </header>
+<body class="app">
+  {{template "sidebar" .}}
 
-  <main>
-    <div class="page-head">
-      <h1>{{.L.clients}}</h1>
-      <form class="add" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
-        <input type="hidden" name="csrf" value="{{.CSRF}}">
-        <input type="text" name="name" placeholder="{{.L.ph_name}}"
+  <div class="main-col">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>{{.L.clients}}</h1>
+          <p class="hint-profile">{{.L.one_profile}}</p>
+        </div>
+        <button type="button" class="primary" id="add-open">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          {{.L.add_client}}
+        </button>
+      </div>
+
+      <div id="created"></div>
+
+      <div id="clients" hx-get="/partials/clients" hx-trigger="load">
+        <p class="muted">…</p>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="add-modal" class="modal">
+    <form class="modal-form" hx-post="/clients" hx-target="#created" hx-swap="innerHTML">
+      <div class="modal-head">
+        <h2>{{.L.new_client}}</h2>
+        <button type="button" class="x" data-close aria-label="{{.L.cancel}}">&times;</button>
+      </div>
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <label class="field">
+        <span>{{.L.f_name}}</span>
+        <input type="text" name="name" placeholder="phone, laptop…"
                pattern="[A-Za-z0-9_-]{1,32}" required>
-        <input type="number" name="expires_days" min="1" placeholder="{{.L.ph_days}}">
-        <input type="number" name="quota_gb" min="1" step="1" placeholder="{{.L.ph_quota}}">
-        <input type="number" name="speed_mbit" min="1" step="1" placeholder="{{.L.ph_speed}}">
+      </label>
+      <p class="field-legend">{{.L.f_limits}} <i>· {{.L.optional}}</i></p>
+      <div class="field-grid">
+        <label class="field">
+          <span>{{.L.f_days}}</span>
+          <input type="number" name="expires_days" min="1" placeholder="∞">
+        </label>
+        <label class="field">
+          <span>{{.L.f_quota}}</span>
+          <input type="number" name="quota_gb" min="1" step="1" placeholder="∞">
+        </label>
+        <label class="field">
+          <span>{{.L.f_speed}}</span>
+          <input type="number" name="speed_mbit" min="1" step="1" placeholder="∞">
+        </label>
+      </div>
+      <p class="modal-hint">{{.L.hint_limits}}</p>
+      <div class="modal-actions">
+        <button type="button" class="ghost" data-close>{{.L.cancel}}</button>
         <button type="submit">{{.L.add}}</button>
-      </form>
-    </div>
-    <p class="hint-profile">{{.L.one_profile}}</p>
+      </div>
+    </form>
+  </dialog>
 
-    <div id="created"></div>
-
-    <div id="clients" hx-get="/partials/clients" hx-trigger="load">
-      <p class="muted">…</p>
-    </div>
-  </main>
+  <script>
+    (function () {
+      var modal = document.getElementById('add-modal');
+      var openBtn = document.getElementById('add-open');
+      var form = modal.querySelector('form');
+      function close() { modal.close(); }
+      openBtn.addEventListener('click', function () {
+        modal.showModal();
+        var first = form.querySelector('input[name="name"]');
+        if (first) first.focus();
+      });
+      modal.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', close); });
+      // click on the backdrop (outside the form) closes the dialog
+      modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+      // after a submit: success closes + resets, error keeps the modal open
+      form.addEventListener('htmx:afterRequest', function (e) {
+        if (e.detail && e.detail.successful) { form.reset(); close(); }
+      });
+    })();
+  </script>
 </body>
 </html>{{end}}

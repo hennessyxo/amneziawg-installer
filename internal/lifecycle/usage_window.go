@@ -41,6 +41,51 @@ func (r Record) Last30d(now time.Time) uint64 {
 	return WindowUsage(r.Samples, r.UsedBytes, now, 30)
 }
 
+// DayTotal is one calendar day's total traffic across all clients.
+type DayTotal struct {
+	Date  string
+	Bytes uint64
+}
+
+// DailyTotals returns total traffic (summed across all records) for each of the
+// last `days` calendar days, oldest first. A record's traffic for a day is the
+// increase in its cumulative usage between that day's snapshot and the next one
+// (or the live total for the most recent open day). Days without data read 0.
+func DailyTotals(recs []Record, now time.Time, days int) []DayTotal {
+	if days < 1 {
+		days = 1
+	}
+	out := make([]DayTotal, days)
+	idx := make(map[string]int, days)
+	for i := 0; i < days; i++ {
+		d := now.AddDate(0, 0, -(days - 1 - i)).Format(dateLayout)
+		out[i] = DayTotal{Date: d}
+		idx[d] = i
+	}
+	for _, r := range recs {
+		n := len(r.Samples)
+		for i := 0; i < n; i++ {
+			next := r.UsedBytes
+			if i+1 < n {
+				next = r.Samples[i+1].Used
+			}
+			var delta uint64
+			if next > r.Samples[i].Used {
+				delta = next - r.Samples[i].Used
+			}
+			if j, ok := idx[r.Samples[i].Date]; ok {
+				out[j].Bytes += delta
+			}
+		}
+	}
+	return out
+}
+
+// DailyTotals returns the per-day traffic series over the last `days` days.
+func (s *Store) DailyTotals(now time.Time, days int) []DayTotal {
+	return DailyTotals(s.List(), now, days)
+}
+
 // RecordSamples ensures every record has a snapshot for today's date (capturing
 // the cumulative UsedBytes at the first reconcile of the day) and prunes old
 // samples. Called by the enforcer after usage is applied. Persists once.

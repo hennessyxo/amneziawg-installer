@@ -1,0 +1,104 @@
+{{define "serverpage"}}<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AmneziaWG · server</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="app">
+  {{template "sidebar" .}}
+
+  <div class="main-col">
+    <main>
+      <div class="page-head">
+        <div>
+          <h1>{{.L.nav_server}}</h1>
+          <p class="hint-profile">{{.L.server_hint}}</p>
+        </div>
+      </div>
+
+      <div id="server" hx-get="/partials/server" hx-trigger="load, every 4s" hx-swap="innerHTML">
+        <p class="muted">…</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>{{end}}
+
+{{define "serverstats"}}
+<div class="stat-row">
+  <div class="stat">
+    <div class="stat-label">{{.L.srv_cpu}}</div>
+    <div class="stat-value">{{.CPU}}%</div>
+    <div class="bar"><span style="width:{{.CPU}}%"></span></div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.srv_ram}}</div>
+    <div class="stat-value">{{.MemPct}}%</div>
+    <div class="bar"><span style="width:{{.MemPct}}%"></span></div>
+    <div class="stat-sub mono">{{.MemUsed}} / {{.MemTotal}}</div>
+  </div>
+  {{if .HasDisk}}
+  <div class="stat">
+    <div class="stat-label">{{.L.srv_disk}}</div>
+    <div class="stat-value">{{.DiskPct}}%</div>
+    <div class="bar"><span style="width:{{.DiskPct}}%"></span></div>
+    <div class="stat-sub mono">{{.DiskUsed}} / {{.DiskTotal}}</div>
+  </div>
+  {{end}}
+  <div class="stat">
+    <div class="stat-label">{{.L.srv_uptime}}</div>
+    <div class="stat-value sm">{{.Uptime}}</div>
+    <div class="stat-sub mono">load {{.Load}}</div>
+  </div>
+</div>
+
+<div class="section-head2">{{.L.srv_traffic}}</div>
+<div class="stat-row">
+  <div class="stat">
+    <div class="stat-label">{{.L.h_today}}</div>
+    <div class="stat-value">{{.Today}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.h_week}}</div>
+    <div class="stat-value">{{.Week}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.h_month}}</div>
+    <div class="stat-value">{{.Month}}</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">{{.L.srv_alltime}}</div>
+    <div class="stat-value sm mono">↓ {{.TotalRx}} · ↑ {{.TotalTx}}</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-head">
+      <h3>{{.L.srv_30d}}</h3>
+      <span class="dim mono">{{.L.srv_peak}} {{.Peak}}</span>
+    </div>
+    <div class="spark">
+      {{range .Spark}}<span class="spark-bar" style="height:{{.Pct}}%" title="{{.Label}}: {{.Value}}"></span>{{end}}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>{{.L.srv_top}}</h3></div>
+    {{if .Top}}
+    <ul class="toplist">
+      {{range .Top}}
+      <li>
+        <div class="top-row"><span class="top-name">{{.Name}}</span><span class="top-val mono">{{.Value}}</span></div>
+        <div class="bar slim"><span style="width:{{.Pct}}%"></span></div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}<p class="muted">{{.L.srv_notraffic}}</p>{{end}}
+  </div>
+</div>
+
+<p class="updated dim mono">{{.L.stat_updated}}: {{.TimeStr}}</p>
+{{end}}

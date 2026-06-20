@@ -79,3 +79,41 @@ func TestRecordSamplesDedupAndPrune(t *testing.T) {
 		t.Errorf("samples = %d, want <= %d", len(r.Samples), maxSamples)
 	}
 }
+
+func TestDailyTotals(t *testing.T) {
+	now := time.Date(2026, 6, 20, 12, 0, 0, 0, time.UTC)
+	d := func(daysAgo int) string {
+		return now.AddDate(0, 0, -daysAgo).Format(dateLayout)
+	}
+	recs := []Record{
+		{
+			Name:      "a",
+			UsedBytes: 1000,
+			Samples: []UsageSample{
+				{Date: d(2), Used: 200}, // day -2: next 600 → delta 400
+				{Date: d(1), Used: 600}, // day -1: next 1000(live) → delta 400
+			},
+		},
+		{
+			Name:      "b",
+			UsedBytes: 50,
+			Samples: []UsageSample{
+				{Date: d(1), Used: 0}, // day -1: next 50(live) → delta 50
+			},
+		},
+	}
+	series := DailyTotals(recs, now, 3)
+	if len(series) != 3 {
+		t.Fatalf("len = %d, want 3", len(series))
+	}
+	// oldest..newest: [-2]=400, [-1]=400+50=450, [today]=0
+	if series[0].Bytes != 400 {
+		t.Errorf("day -2 = %d, want 400", series[0].Bytes)
+	}
+	if series[1].Bytes != 450 {
+		t.Errorf("day -1 = %d, want 450", series[1].Bytes)
+	}
+	if series[2].Bytes != 0 {
+		t.Errorf("today = %d, want 0", series[2].Bytes)
+	}
+}
