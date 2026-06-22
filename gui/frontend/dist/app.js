@@ -130,6 +130,14 @@ const I18N = {
     busy_removing_bot: "Удаляю бота…",
     toast_bot_removed: "Telegram-бот удалён",
     e_remove_bot: "Не удалось удалить бота: ",
+    update_title: "Обновление приложения",
+    update_checking: "Проверяю обновления…",
+    update_check: "Проверить",
+    update_download: "Скачать",
+    update_notes: "Что нового",
+    update_found: "Доступна {latest} (у вас {current}). Скачайте и установите как обычно.",
+    update_uptodate: "У вас последняя версия ✓ ({current})",
+    update_failed: "Не удалось проверить обновления.",
     client_ready_prefix: "Клиент",
     client_ready_suffix: "готов",
     qr_note: "Откройте приложение <b>AmneziaWG</b> и отсканируйте QR — или импортируйте файл .conf.",
@@ -309,6 +317,14 @@ const I18N = {
     busy_removing_bot: "Removing the bot…",
     toast_bot_removed: "Telegram bot removed",
     e_remove_bot: "Could not remove the bot: ",
+    update_title: "App update",
+    update_checking: "Checking for updates…",
+    update_check: "Check",
+    update_download: "Download",
+    update_notes: "What's new",
+    update_found: "{latest} is available (you have {current}). Download and install as usual.",
+    update_uptodate: "You're on the latest version ✓ ({current})",
+    update_failed: "Couldn't check for updates.",
     client_ready_prefix: "Client",
     client_ready_suffix: "is ready",
     qr_note: "Open the <b>AmneziaWG</b> app and scan the QR — or import the .conf file.",
@@ -1036,9 +1052,39 @@ async function removeBot() {
 
 // --- settings --------------------------------------------------------------
 
-// loadSettings populates the settings tab: the server-info card, the rename
-// field, and toggles the panel-password section by whether the panel exists.
+// updateURLs holds the latest CheckUpdate() links for the action buttons.
+const updateURLs = { download: "", release: "" };
+
+// checkUpdate asks the backend for the latest release and updates the banner.
+async function checkUpdate() {
+  const status = $("update-status");
+  const dl = $("btn-update-download");
+  const notes = $("btn-update-notes");
+  dl.classList.add("hidden");
+  notes.classList.add("hidden");
+  $("update-card").classList.remove("update-on");
+  status.textContent = t("update_checking");
+  try {
+    const u = await backend().CheckUpdate();
+    updateURLs.download = u.downloadUrl || "";
+    updateURLs.release = u.releaseUrl || "";
+    if (u.available) {
+      status.textContent = t("update_found", { latest: u.latest, current: u.current });
+      dl.classList.remove("hidden");
+      notes.classList.remove("hidden");
+      $("update-card").classList.add("update-on");
+    } else {
+      status.textContent = t("update_uptodate", { current: u.current });
+    }
+  } catch (_) {
+    status.textContent = t("update_failed");
+  }
+}
+
+// loadSettings populates the settings tab: the update banner, the server-info
+// card, the rename field, and toggles the panel-password section.
 async function loadSettings() {
+  checkUpdate();
   $("rename-input").value = ($("srv-label").value || "").trim();
   try {
     const info = await backend().ServerInfo();
@@ -1138,6 +1184,9 @@ window.addEventListener("DOMContentLoaded", () => {
   $("btn-remove-panel").addEventListener("click", removePanel);
   $("btn-rename-server").addEventListener("click", renameServer);
   $("btn-change-pass").addEventListener("click", changePanelPassword);
+  $("btn-update-check").addEventListener("click", checkUpdate);
+  $("btn-update-download").addEventListener("click", () => { if (updateURLs.download) openExternal(updateURLs.download); });
+  $("btn-update-notes").addEventListener("click", () => { if (updateURLs.release) openExternal(updateURLs.release); });
   $("btn-install-bot").addEventListener("click", installBot);
   $("btn-remove-bot").addEventListener("click", removeBot);
   // Delegated so the links survive applyI18n() re-rendering them on language switch.

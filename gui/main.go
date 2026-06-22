@@ -17,6 +17,13 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// appVersion is the build's version, injected at release time via
+//
+//	-ldflags "-X main.appVersion=v1.2.3"
+//
+// It stays "dev" for local builds (the update check then never nags).
+var appVersion = "dev"
+
 func main() {
 	app := NewApp()
 

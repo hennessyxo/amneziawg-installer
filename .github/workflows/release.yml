@@ -143,7 +143,7 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
       - name: Build
-        run: wails build -platform ${{ matrix.platform }} -clean
+        run: wails build -platform ${{ matrix.platform }} -clean -ldflags "-X main.appVersion=${GITHUB_REF_NAME}"
       - name: Package & upload
         run: |
           cd build/bin

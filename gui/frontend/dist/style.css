@@ -192,6 +192,10 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 .bot-install { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; max-width: 480px; }
 .bot-install input { width: 100%; }
 .bot-install button { align-self: flex-start; }
+.update-card { padding: 1rem 1.2rem; }
+.update-card.update-on { border-color: var(--accent-dim); background: var(--accent-soft); }
+.update-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.update-text p { margin: 0.2rem 0 0; font-size: 0.85rem; }
 .panel-up { color: var(--accent); font-weight: 600; }
 .row-actions { display: flex; gap: 0.5rem; align-items: center; }
 
