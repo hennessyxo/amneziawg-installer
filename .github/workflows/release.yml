@@ -73,10 +73,12 @@ jobs:
         run: |
           go build -ldflags "-s -w" -o "awg-monitor-linux-${{ matrix.goarch }}" ./cmd/awg-monitor
           go build -ldflags "-s -w" -o "awg-panel-linux-${{ matrix.goarch }}" ./cmd/awg-panel
+          go build -ldflags "-s -w" -o "awg-bot-linux-${{ matrix.goarch }}" ./cmd/awg-bot
       - name: Upload
         run: >-
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
           "awg-monitor-linux-${{ matrix.goarch }}" "awg-panel-linux-${{ matrix.goarch }}"
+          "awg-bot-linux-${{ matrix.goarch }}"
 
   deploy:
     name: Deploy tool (cross-platform)

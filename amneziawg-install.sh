@@ -32,6 +32,10 @@ readonly PANEL_HASH="${AWG_DIR}/panel.hash"
 readonly PANEL_CERT="${AWG_DIR}/panel-cert.pem"
 readonly PANEL_KEY="${AWG_DIR}/panel-key.pem"
 readonly PANEL_CLIENT_DIR="${AWG_DIR}/clients"
+readonly BOT_BIN="/usr/local/bin/awg-bot"
+readonly BOT_TOKEN_FILE="${AWG_DIR}/bot.token"
+readonly BOT_HASH="${AWG_DIR}/bot.hash"
+readonly BOT_AUTH="${AWG_DIR}/bot-authorized.json"
 readonly REPO_SLUG="hennessyxo/amneziawg-installer"
 
 # Colors (disabled automatically when output is not a terminal)
@@ -57,6 +61,8 @@ LIST_CLIENTS=0
 UNINSTALL=0
 INSTALL_PANEL=0
 REMOVE_PANEL=0
+INSTALL_BOT=0
+REMOVE_BOT=0
 LANG_CODE="ru"
 
 # detectLang picks the UI language: --lang/AWG_LANG, else $LANG, else Russian.
@@ -115,6 +121,16 @@ t() {
 			p_deps)       echo "Installing dependencies..." ;;
 			p_repo)       echo "Adding the AmneziaWG repository..." ;;
 			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
+			m_bot)        echo "Telegram bot (install / remove awg-bot)" ;;
+			bot_inst_q)   echo "The Telegram bot is already installed. Remove it? [y/N]: " ;;
+			bot_removed)  echo "Telegram bot removed." ;;
+			bot_token_q)  echo "Paste the bot token from @BotFather: " ;;
+			bot_no_token) echo "No bot token — aborting." ;;
+			bot_pw_q)     echo "Set an access password (users send /auth <password>): " ;;
+			bot_no_access) echo "No access configured — set an access password or AWG_BOT_ADMINS." ;;
+			bot_started)  echo "Telegram bot started." ;;
+			bot_title)    echo "AmneziaWG Telegram bot" ;;
+			bot_help)     echo "In Telegram: /auth <password>, then /new <name>, /list, /config <name>, /revoke <name>." ;;
 			invalid)      echo "Invalid choice." ;;
 			*)            echo "$1" ;;
 		esac
@@ -152,6 +168,16 @@ t() {
 			p_deps)       echo "Устанавливаю зависимости..." ;;
 			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
 			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
+			m_bot)        echo "Telegram-бот (установить / удалить awg-bot)" ;;
+			bot_inst_q)   echo "Telegram-бот уже установлен. Удалить его? [y/N]: " ;;
+			bot_removed)  echo "Telegram-бот удалён." ;;
+			bot_token_q)  echo "Вставь токен бота от @BotFather: " ;;
+			bot_no_token) echo "Нет токена бота — отмена." ;;
+			bot_pw_q)     echo "Задай пароль доступа (пользователи пишут /auth <пароль>): " ;;
+			bot_no_access) echo "Доступ не настроен — задай пароль или AWG_BOT_ADMINS." ;;
+			bot_started)  echo "Telegram-бот запущен." ;;
+			bot_title)    echo "Telegram-бот AmneziaWG" ;;
+			bot_help)     echo "В Telegram: /auth <пароль>, затем /new <имя>, /list, /config <имя>, /revoke <имя>." ;;
 			invalid)      echo "Неверный выбор." ;;
 			*)            echo "$1" ;;
 		esac
@@ -1012,6 +1038,114 @@ showPanelUsage() {
 }
 
 # ---------------------------------------------------------------------------
+# Telegram bot (awg-bot)
+# ---------------------------------------------------------------------------
+removeBot() {
+	systemctl stop awg-bot 2>/dev/null || true
+	systemctl disable awg-bot 2>/dev/null || true
+	rm -f /etc/systemd/system/awg-bot.service
+	systemctl daemon-reload 2>/dev/null || true
+	rm -f "${BOT_BIN}" "${BOT_TOKEN_FILE}" "${BOT_HASH}" "${BOT_AUTH}"
+	ok "$(t bot_removed)"
+}
+
+writeBotService() {
+	local admins="$1" hashflag="" adminflag=""
+	[[ -s "${BOT_HASH}" ]] && hashflag="--password-hash-file ${BOT_HASH}"
+	[[ -n "${admins}" ]] && adminflag="--admins ${admins}"
+	cat >/etc/systemd/system/awg-bot.service <<-EOF
+		[Unit]
+		Description=AmneziaWG Telegram bot
+		After=network-online.target awg-quick@${AWG_NIC}.service
+		Wants=network-online.target
+
+		[Service]
+		Type=simple
+		ExecStart=${BOT_BIN} --token-file ${BOT_TOKEN_FILE} ${hashflag} ${adminflag} \\
+		  --iface ${AWG_NIC} --conf ${SERVER_CONF} --params ${PARAMS_FILE} \\
+		  --client-dir ${PANEL_CLIENT_DIR} --store ${AWG_DIR}/clients.json \\
+		  --auth-store ${BOT_AUTH} --lang ${LANG_CODE}
+		Restart=on-failure
+		RestartSec=3
+
+		[Install]
+		WantedBy=multi-user.target
+	EOF
+}
+
+showBotUsage() {
+	echo
+	echo -e "${BOLD}$(t bot_title)${NC}"
+	echo "  $(t bot_help)"
+	echo "  systemctl {status|restart|stop} awg-bot"
+}
+
+installBot() {
+	loadParams
+
+	# Already installed → offer removal (non-interactive callers just report).
+	if [[ -f /etc/systemd/system/awg-bot.service ]]; then
+		showBotUsage
+		if [[ "${INSTALL_BOT}" == "1" || -n "${AWG_BOT_TOKEN:-}" ]]; then
+			return 0
+		fi
+		read -rp "$(t bot_inst_q)" r
+		[[ "${r,,}" == "y" ]] && removeBot
+		return 0
+	fi
+
+	fetchGoBinary bot "${BOT_BIN}" || return 1
+
+	# Bot token from @BotFather (secret; stored 600).
+	local token="${AWG_BOT_TOKEN:-}"
+	if [[ -z "${token}" && "${INSTALL_BOT}" != "1" ]]; then
+		read -rp "$(t bot_token_q)" token
+	fi
+	token="$(echo "${token}" | tr -d '[:space:]')"
+	if [[ -z "${token}" ]]; then
+		err "$(t bot_no_token)"
+		return 1
+	fi
+	umask 077
+	printf '%s\n' "${token}" >"${BOT_TOKEN_FILE}"
+	chmod 600 "${BOT_TOKEN_FILE}"
+
+	# Access password → bcrypt hash (optional; admins may be used instead).
+	local pw="${AWG_BOT_PASSWORD:-}"
+	local admins="${AWG_BOT_ADMINS:-}"
+	if [[ -z "${pw}" && -z "${admins}" && "${INSTALL_BOT}" != "1" ]]; then
+		echo "${panel_pw_rule}"
+		read -rsp "$(t bot_pw_q)" pw; echo
+	fi
+	if [[ -n "${pw}" ]]; then
+		if ! panelPasswordOK "${pw}"; then
+			err "${panel_pw_rule}"
+			return 1
+		fi
+		umask 077
+		printf '%s\n' "${pw}" | "${BOT_BIN}" hash >"${BOT_HASH}"
+		chmod 600 "${BOT_HASH}"
+	fi
+	if [[ ! -s "${BOT_HASH}" && -z "${admins}" ]]; then
+		err "$(t bot_no_access)"
+		return 1
+	fi
+
+	writeBotService "${admins}"
+	systemctl daemon-reload
+	systemctl enable awg-bot >/dev/null 2>&1 || true
+	systemctl restart awg-bot
+	sleep 1
+	if systemctl is-active --quiet awg-bot; then
+		ok "$(t bot_started)"
+		showBotUsage
+	else
+		err "awg-bot: journalctl -u awg-bot -n 30"
+		return 1
+	fi
+}
+
+# ---------------------------------------------------------------------------
 # Menu (shown when AmneziaWG is already installed)
 # ---------------------------------------------------------------------------
 manageMenu() {
@@ -1024,10 +1158,11 @@ manageMenu() {
 	echo "  5) $(t m_status)"
 	echo "  6) $(t m_monitor)"
 	echo "  7) $(t m_panel)"
-	echo "  8) $(t m_uninstall)"
-	echo "  9) $(t m_exit)"
+	echo "  8) $(t m_bot)"
+	echo "  9) $(t m_uninstall)"
+	echo " 10) $(t m_exit)"
 	echo
-	read -rp "$(t choose) [1-9]: " choice
+	read -rp "$(t choose) [1-10]: " choice
 	case "${choice}" in
 		1) newClient "" ;;
 		2) revokeClient ;;
@@ -1036,8 +1171,9 @@ manageMenu() {
 		5) showStatus ;;
 		6) installMonitor ;;
 		7) installPanel ;;
-		8) uninstall ;;
-		9) exit 0 ;;
+		8) installBot ;;
+		9) uninstall ;;
+		10) exit 0 ;;
 		*) err "$(t invalid)" ;;
 	esac
 }
@@ -1056,6 +1192,8 @@ parseArgs() {
 			--uninstall) UNINSTALL=1; shift ;;
 			--install-panel) INSTALL_PANEL=1; shift ;;
 			--remove-panel) REMOVE_PANEL=1; shift ;;
+			--install-bot) INSTALL_BOT=1; shift ;;
+			--remove-bot) REMOVE_BOT=1; shift ;;
 			--lang) AWG_LANG="${2:-}"; shift 2 ;;
 			-h | --help)
 				echo "Usage: $0 [-y|--yes] [--lang en|ru] [--add-client NAME] [--remove-client NAME] [--list]"
@@ -1068,6 +1206,8 @@ parseArgs() {
 				echo "  --uninstall        remove everything (needs AWG_CONFIRM=yes)"
 				echo "  --install-panel    install the web panel (password via AWG_PANEL_PASSWORD)"
 				echo "  --remove-panel     remove the web panel"
+				echo "  --install-bot      install the Telegram bot (AWG_BOT_TOKEN, AWG_BOT_PASSWORD, AWG_BOT_ADMINS)"
+				echo "  --remove-bot       remove the Telegram bot"
 				exit 0
 				;;
 			*) shift ;;
@@ -1113,6 +1253,14 @@ main() {
 	fi
 	if [[ "${REMOVE_PANEL}" == "1" ]]; then
 		removePanel
+		exit $?
+	fi
+	if [[ "${INSTALL_BOT}" == "1" ]]; then
+		installBot
+		exit $?
+	fi
+	if [[ "${REMOVE_BOT}" == "1" ]]; then
+		removeBot
 		exit $?
 	fi
 
