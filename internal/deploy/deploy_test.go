@@ -170,3 +170,21 @@ func TestChangePanelPasswordCommand_NoPasswordInArgs(t *testing.T) {
 		t.Errorf("unexpected prefix: %s", cmd)
 	}
 }
+
+func TestInstallBotCommand(t *testing.T) {
+	cmd := InstallBotCommand("sudo ", "123:ABC", "111,222", "Admin2@")
+	for _, want := range []string{"AWG_BOT_TOKEN='123:ABC'", "AWG_BOT_ADMINS='111,222'", "AWG_BOT_PASSWORD='Admin2@'", "--install-bot"} {
+		if !strings.Contains(cmd, want) {
+			t.Errorf("InstallBotCommand missing %q in: %s", want, cmd)
+		}
+	}
+}
+
+func TestIsBotInstalled(t *testing.T) {
+	if !IsBotInstalled("foo\nAWG_BOT_INSTALLED\n") {
+		t.Error("should detect AWG_BOT_INSTALLED")
+	}
+	if IsBotInstalled("nothing here") {
+		t.Error("should not detect when absent")
+	}
+}

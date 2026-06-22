@@ -432,6 +432,62 @@ func (a *App) RemovePanel() error {
 	return nil
 }
 
+// BotResult reports whether the Telegram bot is installed.
+type BotResult struct {
+	Installed bool `json:"installed"`
+}
+
+// BotStatus reports whether the Telegram bot is installed on the server.
+func (a *App) BotStatus() (BotResult, error) {
+	cl, t, err := a.conn()
+	if err != nil {
+		return BotResult{}, err
+	}
+	out, err := cl.Run(deploy.BotInstalledCommand(deploy.Sudo(t.User)))
+	if err != nil {
+		return BotResult{}, fmt.Errorf("проверка бота не удалась: %w", err)
+	}
+	return BotResult{Installed: deploy.IsBotInstalled(out)}, nil
+}
+
+// InstallBot installs the Telegram bot non-interactively. Access requires BOTH
+// the admin allowlist and the access password.
+func (a *App) InstallBot(token, admins, password string) error {
+	cl, t, err := a.conn()
+	if err != nil {
+		return err
+	}
+	token = strings.TrimSpace(token)
+	admins = strings.TrimSpace(admins)
+	if token == "" {
+		return fmt.Errorf("укажите токен бота (получите его у @BotFather)")
+	}
+	if admins == "" {
+		return fmt.Errorf("укажите хотя бы один Telegram ID (узнать у @userinfobot)")
+	}
+	if !validPanelPassword(password) {
+		return fmt.Errorf("слабый пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например Admin2@)")
+	}
+	out, err := cl.RunScript(deploy.InstallBotCommand(deploy.Sudo(t.User), token, admins, password), amneziawg.InstallerScript, a.logWriter("bot:log"))
+	if err != nil {
+		return fmt.Errorf("установка бота не удалась: %w\n%s", err, out)
+	}
+	return nil
+}
+
+// RemoveBot removes the Telegram bot from the server.
+func (a *App) RemoveBot() error {
+	cl, t, err := a.conn()
+	if err != nil {
+		return err
+	}
+	out, err := cl.RunScript(deploy.RemoveBotCommand(deploy.Sudo(t.User)), amneziawg.InstallerScript, a.logWriter("bot:log"))
+	if err != nil {
+		return fmt.Errorf("удаление бота не удалось: %w\n%s", err, out)
+	}
+	return nil
+}
+
 // OpenPanel opens the web panel URL in the user's default browser.
 func (a *App) OpenPanel() error {
 	if a.ctx == nil {

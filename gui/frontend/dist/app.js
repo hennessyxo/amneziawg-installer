@@ -105,6 +105,31 @@ const I18N = {
     busy_changing_pass: "Меняю пароль…",
     toast_pass_changed: "Пароль панели изменён",
     e_change_pass: "Не удалось сменить пароль: ",
+    tab_bot: "Бот",
+    bot_title: "Telegram-бот",
+    bot_desc: "Бот выдаёт профили прямо в Telegram: пишешь <span class=\"mono\">/new имя</span> — он присылает .conf и QR. Пользоваться могут только разрешённые Telegram ID, которые ещё и ввели пароль.",
+    bot_step1: "<b>Создай бота.</b> Открой <a href=\"#\" id=\"link-botfather\" class=\"mono\">@BotFather</a> в Telegram, отправь <span class=\"mono\">/newbot</span>, пройди шаги и скопируй токен.",
+    bot_step2: "<b>Узнай свой Telegram ID.</b> Открой <a href=\"#\" id=\"link-userinfo\" class=\"mono\">@userinfobot</a> — он покажет числовой ID (можно несколько, через запятую).",
+    bot_step3: "<b>Придумай пароль доступа.</b> Его будут вводить командой /auth.",
+    ph_bot_token: "токен от @BotFather",
+    ph_bot_admins: "Telegram ID через запятую",
+    ph_bot_pass: "пароль доступа",
+    btn_install_bot: "Установить бота",
+    btn_remove_bot: "удалить бота",
+    bot_up: "✓ Telegram-бот работает.",
+    bot_present_hint: "В Telegram (с разрешённого аккаунта): один раз <span class=\"mono\">/auth пароль</span>, затем <span class=\"mono\">/new имя</span>.",
+    e_check_bot: "Не удалось проверить бота: ",
+    e_bot_token: "Укажи токен бота (от @BotFather).",
+    e_bot_admins: "Укажи хотя бы один Telegram ID (от @userinfobot).",
+    log_bot: "Установка Telegram-бота",
+    busy_installing_bot: "Устанавливаю бота…",
+    toast_bot_installed: "Telegram-бот установлен",
+    e_install_bot: "Не удалось установить бота: ",
+    confirm_remove_bot: "Удалить Telegram-бота с сервера?",
+    delete_bot: "Удалить бота",
+    busy_removing_bot: "Удаляю бота…",
+    toast_bot_removed: "Telegram-бот удалён",
+    e_remove_bot: "Не удалось удалить бота: ",
     client_ready_prefix: "Клиент",
     client_ready_suffix: "готов",
     qr_note: "Откройте приложение <b>AmneziaWG</b> и отсканируйте QR — или импортируйте файл .conf.",
@@ -259,6 +284,31 @@ const I18N = {
     busy_changing_pass: "Changing password…",
     toast_pass_changed: "Panel password changed",
     e_change_pass: "Could not change the password: ",
+    tab_bot: "Bot",
+    bot_title: "Telegram bot",
+    bot_desc: "The bot hands out profiles right in Telegram: send <span class=\"mono\">/new name</span> and it replies with the .conf + QR. Only allowlisted Telegram IDs that also enter the password can use it.",
+    bot_step1: "<b>Create a bot.</b> Open <a href=\"#\" id=\"link-botfather\" class=\"mono\">@BotFather</a> in Telegram, send <span class=\"mono\">/newbot</span>, follow the steps and copy the token.",
+    bot_step2: "<b>Find your Telegram ID.</b> Open <a href=\"#\" id=\"link-userinfo\" class=\"mono\">@userinfobot</a> — it shows your numeric ID (you can list several, comma-separated).",
+    bot_step3: "<b>Choose an access password.</b> Users enter it with /auth.",
+    ph_bot_token: "token from @BotFather",
+    ph_bot_admins: "Telegram IDs, comma-separated",
+    ph_bot_pass: "access password",
+    btn_install_bot: "Install the bot",
+    btn_remove_bot: "remove bot",
+    bot_up: "✓ The Telegram bot is running.",
+    bot_present_hint: "In Telegram (from an allowlisted account): once <span class=\"mono\">/auth password</span>, then <span class=\"mono\">/new name</span>.",
+    e_check_bot: "Could not check the bot: ",
+    e_bot_token: "Enter the bot token (from @BotFather).",
+    e_bot_admins: "Enter at least one Telegram ID (from @userinfobot).",
+    log_bot: "Installing the Telegram bot",
+    busy_installing_bot: "Installing the bot…",
+    toast_bot_installed: "Telegram bot installed",
+    e_install_bot: "Could not install the bot: ",
+    confirm_remove_bot: "Remove the Telegram bot from the server?",
+    delete_bot: "Remove bot",
+    busy_removing_bot: "Removing the bot…",
+    toast_bot_removed: "Telegram bot removed",
+    e_remove_bot: "Could not remove the bot: ",
     client_ready_prefix: "Client",
     client_ready_suffix: "is ready",
     qr_note: "Open the <b>AmneziaWG</b> app and scan the QR — or import the .conf file.",
@@ -485,12 +535,13 @@ function initAuthTabs() {
   });
 }
 
-const MANAGE_TABS = ["clients", "monitor", "advanced", "settings"];
+const MANAGE_TABS = ["clients", "monitor", "advanced", "bot", "settings"];
 
 function selectTab(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   MANAGE_TABS.forEach((tab) => $("tab-" + tab).classList.toggle("hidden", tab !== name));
   if (name === "settings") loadSettings();
+  if (name === "bot") refreshBot();
 }
 
 function initTabs() {
@@ -920,6 +971,69 @@ async function openPanel() {
   }
 }
 
+// --- telegram bot ----------------------------------------------------------
+
+const BOT_URLS = {
+  botfather: "https://t.me/BotFather",
+  userinfo: "https://t.me/userinfobot",
+};
+
+async function refreshBot() {
+  try {
+    const b = await backend().BotStatus();
+    $("bot-absent").classList.toggle("hidden", b.installed);
+    $("bot-present").classList.toggle("hidden", !b.installed);
+  } catch (err) {
+    toast(t("e_check_bot") + errMsg(err), "err");
+  }
+}
+
+async function installBot() {
+  const token = $("bot-token").value.trim();
+  const admins = $("bot-admins").value.trim();
+  const pass = $("bot-pass").value;
+  if (!token) {
+    toast(t("e_bot_token"), "err");
+    return;
+  }
+  if (!admins) {
+    toast(t("e_bot_admins"), "err");
+    return;
+  }
+  if (!validPanelPassword(pass)) {
+    toast(t("err_weak_pw"), "err");
+    return;
+  }
+  openLog(t("log_bot"));
+  busy(true, t("busy_installing_bot"));
+  try {
+    await backend().InstallBot(token, admins, pass);
+    $("bot-token").value = "";
+    $("bot-pass").value = "";
+    await refreshBot();
+    toast(t("toast_bot_installed"), "ok");
+  } catch (err) {
+    toast(t("e_install_bot") + errMsg(err), "err");
+  } finally {
+    busy(false);
+  }
+}
+
+async function removeBot() {
+  const ok = await confirmDialog(t("confirm_remove_bot"), t("delete_bot"));
+  if (!ok) return;
+  busy(true, t("busy_removing_bot"));
+  try {
+    await backend().RemoveBot();
+    await refreshBot();
+    toast(t("toast_bot_removed"), "ok");
+  } catch (err) {
+    toast(t("e_remove_bot") + errMsg(err), "err");
+  } finally {
+    busy(false);
+  }
+}
+
 // --- settings --------------------------------------------------------------
 
 // loadSettings populates the settings tab: the server-info card, the rename
@@ -1024,6 +1138,15 @@ window.addEventListener("DOMContentLoaded", () => {
   $("btn-remove-panel").addEventListener("click", removePanel);
   $("btn-rename-server").addEventListener("click", renameServer);
   $("btn-change-pass").addEventListener("click", changePanelPassword);
+  $("btn-install-bot").addEventListener("click", installBot);
+  $("btn-remove-bot").addEventListener("click", removeBot);
+  // Delegated so the links survive applyI18n() re-rendering them on language switch.
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("#link-botfather, #link-userinfo");
+    if (!a) return;
+    e.preventDefault();
+    openExternal(a.id === "link-botfather" ? BOT_URLS.botfather : BOT_URLS.userinfo);
+  });
   $("result-close").addEventListener("click", () => hide($("result")));
   $("result-download").addEventListener("click", downloadConf);
   ["ios", "android", "macos", "windows"].forEach((os) => {
@@ -1038,5 +1161,6 @@ window.addEventListener("DOMContentLoaded", () => {
     window.runtime.EventsOn("install:log", appendLog);
     window.runtime.EventsOn("client:log", appendLog);
     window.runtime.EventsOn("panel:log", appendLog);
+    window.runtime.EventsOn("bot:log", appendLog);
   }
 });

@@ -111,6 +111,7 @@
             <button class="nav-item on" data-tab="clients"><span class="ni">👤</span><span data-i18n="tab_clients">Клиенты</span></button>
             <button class="nav-item" data-tab="monitor"><span class="ni">📊</span><span data-i18n="tab_monitor">Мониторинг</span></button>
             <button class="nav-item" data-tab="advanced"><span class="ni">🌐</span><span data-i18n="tab_panel">Веб-панель</span></button>
+            <button class="nav-item" data-tab="bot"><span class="ni">🤖</span><span data-i18n="tab_bot">Бот</span></button>
             <button class="nav-item" data-tab="settings"><span class="ni">⚙️</span><span data-i18n="tab_settings">Настройки</span></button>
           </nav>
         </aside>
@@ -188,6 +189,37 @@
                   <button id="btn-open-panel" class="primary" data-i18n="btn_open_panel">Открыть в браузере</button>
                 </div>
                 <p class="dim" style="margin-top:.6rem" data-i18n="panel_cert_note">Браузер один раз предупредит про самоподписанный сертификат — это нормально, трафик шифруется.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB: telegram bot -->
+          <section id="tab-bot" class="tab-pane hidden">
+            <div class="section-head"><h1 data-i18n="bot_title">Telegram-бот</h1></div>
+            <div class="card">
+              <p class="dim" data-i18n-html="bot_desc">Бот выдаёт профили прямо в Telegram: пишешь <span class="mono">/new имя</span> — он присылает .conf и QR. Пользоваться могут только разрешённые Telegram ID, которые ещё и ввели пароль.</p>
+
+              <div id="bot-absent" class="hidden">
+                <ol class="howto">
+                  <li data-i18n-html="bot_step1"><b>Создай бота.</b> Открой <a href="#" id="link-botfather" class="mono">@BotFather</a> в Telegram, отправь <span class="mono">/newbot</span>, пройди шаги и скопируй токен.</li>
+                  <li data-i18n-html="bot_step2"><b>Узнай свой Telegram ID.</b> Открой <a href="#" id="link-userinfo" class="mono">@userinfobot</a> — он покажет числовой ID (можно несколько, через запятую).</li>
+                  <li data-i18n-html="bot_step3"><b>Придумай пароль доступа.</b> Его будут вводить командой /auth.</li>
+                </ol>
+                <div class="bot-install">
+                  <input id="bot-token" type="text" data-i18n-ph="ph_bot_token" placeholder="токен от @BotFather" autocomplete="off" />
+                  <input id="bot-admins" type="text" data-i18n-ph="ph_bot_admins" placeholder="Telegram ID через запятую" autocomplete="off" />
+                  <input id="bot-pass" type="password" data-i18n-ph="ph_bot_pass" placeholder="пароль доступа" autocomplete="off" />
+                  <button id="btn-install-bot" class="primary" data-i18n="btn_install_bot">Установить бота</button>
+                </div>
+                <p class="dim" style="margin-top:.5rem;font-size:.8rem" data-i18n-html="panel_pw_rule">Пароль: минимум 6 символов, строчные и заглавные буквы, цифра и спецсимвол (например <span class="mono">Admin2@</span>).</p>
+              </div>
+
+              <div id="bot-present" class="hidden">
+                <p class="panel-up" data-i18n="bot_up">✓ Telegram-бот работает.</p>
+                <p class="dim" data-i18n-html="bot_present_hint">В Telegram (с разрешённого аккаунта): один раз <span class="mono">/auth пароль</span>, затем <span class="mono">/new имя</span>.</p>
+                <div class="row-actions" style="justify-content:flex-start">
+                  <button id="btn-remove-bot" class="link del" data-i18n="btn_remove_bot">удалить бота</button>
+                </div>
               </div>
             </div>
           </section>

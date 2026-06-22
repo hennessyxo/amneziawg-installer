@@ -156,6 +156,31 @@ func IsPanelInstalled(output string) bool {
 	return strings.Contains(output, "AWG_PANEL_INSTALLED")
 }
 
+// InstallBotCommand builds the remote command to install the Telegram bot
+// non-interactively. Access needs both the allowlist and the password, so all
+// three are passed via env.
+func InstallBotCommand(sudo, token, admins, password string) string {
+	return sudo + "env AWG_BOT_TOKEN=" + shellQuote(token) +
+		" AWG_BOT_ADMINS=" + shellQuote(admins) +
+		" AWG_BOT_PASSWORD=" + shellQuote(password) +
+		" bash -s -- --install-bot"
+}
+
+// RemoveBotCommand builds the remote command to remove the Telegram bot.
+func RemoveBotCommand(sudo string) string {
+	return sudo + "bash -s -- --remove-bot"
+}
+
+// BotInstalledCommand prints AWG_BOT_INSTALLED if the bot service exists.
+func BotInstalledCommand(sudo string) string {
+	return sudo + "test -f /etc/systemd/system/awg-bot.service && echo AWG_BOT_INSTALLED || true"
+}
+
+// IsBotInstalled interprets the output of BotInstalledCommand.
+func IsBotInstalled(output string) bool {
+	return strings.Contains(output, "AWG_BOT_INSTALLED")
+}
+
 // Panel file locations on the server (mirrors the installer's readonly paths).
 const (
 	panelBin  = "/usr/local/bin/awg-panel"

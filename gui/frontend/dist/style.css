@@ -189,6 +189,9 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 /* ---- web panel pane ---- */
 .panel-install { display: flex; gap: 0.5rem; margin-top: 0.9rem; flex-wrap: wrap; }
 .panel-install input { flex: 1; min-width: 220px; }
+.bot-install { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; max-width: 480px; }
+.bot-install input { width: 100%; }
+.bot-install button { align-self: flex-start; }
 .panel-up { color: var(--accent); font-weight: 600; }
 .row-actions { display: flex; gap: 0.5rem; align-items: center; }
 
