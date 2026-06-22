@@ -55,6 +55,11 @@ A native app for **Windows** and **macOS** — no terminal at all.
 |:---:|:---:|
 | ![Desktop app — clients tab](docs/img/gui-clients.png) | ![Desktop app — settings tab](docs/img/gui-settings.png) |
 
+Install an access-controlled **Telegram bot** straight from the app — token, allowed
+IDs and a password, with an in-window setup guide:
+
+<p align="center"><img src="docs/img/gui-bot.png" alt="Desktop app — Telegram bot tab" width="640"></p>
+
 ### 2. From your computer (command line) ⌨️
 
 A single cross-platform binary `awg-deploy` that drives the server over SSH.
