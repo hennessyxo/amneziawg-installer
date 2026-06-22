@@ -145,8 +145,8 @@ sudo bash amneziawg-install.sh --add-client laptop
 | ![Веб-панель — список клиентов](docs/img/panel-clients.ru.png) | ![Веб-панель — обзор сервера](docs/img/panel-server.ru.png) |
 
 - **`awg-bot`** — **Telegram-бот** для выдачи профилей: пишешь `/new phone` — он
-  присылает `.conf` + QR. С контролем доступа (ID админов и/или пароль), опрашивает
-  Telegram сам, так что входящий порт не нужен. Пункт меню 8. См.
+  присылает `.conf` + QR. Двухфакторный доступ (список Telegram ID **и** пароль),
+  опрашивает Telegram сам, так что входящий порт не нужен. Пункт меню 8. См.
   [`docs/BOT.ru.md`](docs/BOT.ru.md).
 
 ## Безопасность

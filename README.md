@@ -145,8 +145,8 @@ Vars: `AWG_SERVER_IP`, `AWG_PORT` (blank = free random), `AWG_DNS1/2`,
 | ![Web panel — clients dashboard](docs/img/panel-clients.png) | ![Web panel — server overview](docs/img/panel-server.png) |
 
 - **`awg-bot`** — a **Telegram bot** that hands out profiles: send `/new phone` and
-  it replies with the `.conf` + QR. Access-controlled (admin IDs and/or an access
-  password), polls Telegram so no inbound port is needed. Menu option 8. See
+  it replies with the `.conf` + QR. Two-factor access (an allowlist of Telegram IDs
+  **and** a password), polls Telegram so no inbound port is needed. Menu option 8. See
   [`docs/BOT.md`](docs/BOT.md).
 
 ## Security notes

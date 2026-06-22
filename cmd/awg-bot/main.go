@@ -69,8 +69,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("awg-bot: %v", err)
 	}
-	if len(adminIDs) == 0 && pwHash == "" {
-		log.Fatalf("awg-bot: no access configured — set --admins and/or --password-hash-file")
+	if len(adminIDs) == 0 || pwHash == "" {
+		log.Fatalf("awg-bot: both --admins and --password-hash-file are required (allowlist AND password)")
 	}
 
 	store, err := lifecycle.Open(*storePath)

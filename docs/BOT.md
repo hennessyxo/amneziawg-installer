@@ -15,9 +15,11 @@ reuses the same `awgctl` core as the web panel.
 
 - 💬 **Commands**: `/new <name>` (creates a client, sends `.conf` + QR), `/list`,
   `/config <name>` (resend), `/revoke <name>`, plus `/start` and `/help`.
-- 🔐 **Access control**: only authorized users. A user is allowed if their Telegram
-  ID is a preset **admin**, or their chat authenticated with an **access password**
-  via `/auth <password>` (authorized chats are remembered across restarts).
+- 🔐 **Access control (two factors)**: a user must be **both** on the **admin
+  allowlist** (Telegram IDs) **and** have entered the **access password** via
+  `/auth <password>`. A non-listed user is rejected even with the right password;
+  removing an ID from the allowlist revokes access immediately. Passing the
+  password is remembered across restarts.
 - 📡 **No inbound port**: the bot **long-polls** the Telegram API, so nothing needs
   to be exposed on the server — works behind any firewall/NAT.
 - 📦 **Single binary**: no extra services; reuses the installer's config + client dir.
@@ -41,13 +43,15 @@ It downloads the binary, asks for the **token** and an **access password**, then
 starts a systemd service. Non-interactive (automation / SSH):
 
 ```bash
-AWG_BOT_TOKEN='123456:ABC...' AWG_BOT_PASSWORD='Admin2@' \
+AWG_BOT_TOKEN='123456:ABC...' \
+AWG_BOT_ADMINS='12345678,87654321' \
+AWG_BOT_PASSWORD='Admin2@' \
   sudo -E bash amneziawg-install.sh --install-bot
-# optional: AWG_BOT_ADMINS='12345678,87654321'
 sudo bash amneziawg-install.sh --remove-bot
 ```
 
-Then, in Telegram: `/auth <password>` once, then `/new laptop`.
+Both the allowlist (`AWG_BOT_ADMINS`) and the password are required. Then, from
+an allowlisted account in Telegram: `/auth <password>` once, then `/new laptop`.
 
 ## Flags
 
@@ -62,13 +66,15 @@ Then, in Telegram: `/auth <password>` once, then `/new laptop`.
 | `--lang` | `ru` | bot reply language (`ru`/`en`) |
 
 `awg-bot hash` reads a password from stdin and prints a bcrypt hash (the plaintext
-is never stored). At least one of `--admins` / `--password-hash-file` is required.
+is never stored). **Both** `--admins` and `--password-hash-file` are required — a
+user must be on the allowlist *and* pass the password.
 
 ## Security notes
 
 - The **token** is a secret — it is stored `600` under `umask 077`, never in the repo.
-- The bot answers management commands **only** to authorized users; everyone else
-  gets "not authorized". Set a strong access password (same complexity rule as the
+- Access is **two-factor**: the allowlist (who) **and** the password (proof). The
+  bot answers management commands only when both are satisfied; everyone else gets
+  "not authorized". Set a strong access password (same complexity rule as the
   panel: lower- and upper-case, a digit and a special character).
 - When a user sends `/auth <password>`, the bot **deletes that message** so the
   password doesn't linger in the chat history.

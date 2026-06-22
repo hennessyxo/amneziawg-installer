@@ -17,8 +17,8 @@ var messages = map[string]map[string]string{
 			"/list — список клиентов\n" +
 			"/config <имя> — прислать конфиг и QR снова\n" +
 			"/revoke <имя> — удалить клиента",
-		"help_locked":   "🔒 Сначала авторизуйся: /auth <пароль>",
-		"denied":        "🔒 Нет доступа. Авторизуйся: /auth <пароль>",
+		"not_allowed":   "⛔ У тебя нет доступа к этому боту.",
+		"denied":        "🔒 Нужна авторизация: /auth <пароль>",
 		"unknown":       "Не знаю такую команду. /help",
 		"auth_disabled": "Авторизация по паролю отключена.",
 		"auth_usage":    "Использование: /auth <пароль>",
@@ -44,8 +44,8 @@ var messages = map[string]map[string]string{
 			"/list — list clients\n" +
 			"/config <name> — resend a client's config and QR\n" +
 			"/revoke <name> — remove a client",
-		"help_locked":   "🔒 Authenticate first: /auth <password>",
-		"denied":        "🔒 Not authorized. Use: /auth <password>",
+		"not_allowed":   "⛔ You're not authorized to use this bot.",
+		"denied":        "🔒 Authentication required: /auth <password>",
 		"unknown":       "Unknown command. /help",
 		"auth_disabled": "Password authentication is disabled.",
 		"auth_usage":    "Usage: /auth <password>",

@@ -126,8 +126,9 @@ t() {
 			bot_removed)  echo "Telegram bot removed." ;;
 			bot_token_q)  echo "Paste the bot token from @BotFather: " ;;
 			bot_no_token) echo "No bot token — aborting." ;;
-			bot_pw_q)     echo "Set an access password (users send /auth <password>): " ;;
-			bot_no_access) echo "No access configured — set an access password or AWG_BOT_ADMINS." ;;
+			bot_admins_q) echo "Allowed Telegram user IDs, comma-separated (from @userinfobot): " ;;
+			bot_no_admins) echo "No admin IDs — access needs both the allowlist and a password. Aborting." ;;
+			bot_pw_q)     echo "Set an access password (allowed users then send /auth <password>): " ;;
 			bot_started)  echo "Telegram bot started." ;;
 			bot_title)    echo "AmneziaWG Telegram bot" ;;
 			bot_help)     echo "In Telegram: /auth <password>, then /new <name>, /list, /config <name>, /revoke <name>." ;;
@@ -173,8 +174,9 @@ t() {
 			bot_removed)  echo "Telegram-бот удалён." ;;
 			bot_token_q)  echo "Вставь токен бота от @BotFather: " ;;
 			bot_no_token) echo "Нет токена бота — отмена." ;;
-			bot_pw_q)     echo "Задай пароль доступа (пользователи пишут /auth <пароль>): " ;;
-			bot_no_access) echo "Доступ не настроен — задай пароль или AWG_BOT_ADMINS." ;;
+			bot_admins_q) echo "Разрешённые Telegram ID через запятую (узнать через @userinfobot): " ;;
+			bot_no_admins) echo "Нет ID админов — для доступа нужны и список, и пароль. Отмена." ;;
+			bot_pw_q)     echo "Задай пароль доступа (разрешённые пишут /auth <пароль>): " ;;
 			bot_started)  echo "Telegram-бот запущен." ;;
 			bot_title)    echo "Telegram-бот AmneziaWG" ;;
 			bot_help)     echo "В Telegram: /auth <пароль>, затем /new <имя>, /list, /config <имя>, /revoke <имя>." ;;
@@ -1110,26 +1112,30 @@ installBot() {
 	printf '%s\n' "${token}" >"${BOT_TOKEN_FILE}"
 	chmod 600 "${BOT_TOKEN_FILE}"
 
-	# Access password → bcrypt hash (optional; admins may be used instead).
-	local pw="${AWG_BOT_PASSWORD:-}"
+	# Admin allowlist (Telegram IDs) — REQUIRED. Access needs the ID AND the password.
 	local admins="${AWG_BOT_ADMINS:-}"
-	if [[ -z "${pw}" && -z "${admins}" && "${INSTALL_BOT}" != "1" ]]; then
+	if [[ -z "${admins}" && "${INSTALL_BOT}" != "1" ]]; then
+		read -rp "$(t bot_admins_q)" admins
+	fi
+	admins="$(echo "${admins}" | tr -d '[:space:]')"
+	if [[ -z "${admins}" ]]; then
+		err "$(t bot_no_admins)"
+		return 1
+	fi
+
+	# Access password → bcrypt hash — REQUIRED (second factor).
+	local pw="${AWG_BOT_PASSWORD:-}"
+	if [[ -z "${pw}" && "${INSTALL_BOT}" != "1" ]]; then
 		echo "${panel_pw_rule}"
 		read -rsp "$(t bot_pw_q)" pw; echo
 	fi
-	if [[ -n "${pw}" ]]; then
-		if ! panelPasswordOK "${pw}"; then
-			err "${panel_pw_rule}"
-			return 1
-		fi
-		umask 077
-		printf '%s\n' "${pw}" | "${BOT_BIN}" hash >"${BOT_HASH}"
-		chmod 600 "${BOT_HASH}"
-	fi
-	if [[ ! -s "${BOT_HASH}" && -z "${admins}" ]]; then
-		err "$(t bot_no_access)"
+	if [[ -z "${pw}" ]] || ! panelPasswordOK "${pw}"; then
+		err "${panel_pw_rule}"
 		return 1
 	fi
+	umask 077
+	printf '%s\n' "${pw}" | "${BOT_BIN}" hash >"${BOT_HASH}"
+	chmod 600 "${BOT_HASH}"
 
 	writeBotService "${admins}"
 	systemctl daemon-reload

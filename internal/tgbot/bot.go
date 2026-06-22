@@ -87,9 +87,9 @@ func (b *Bot) handle(m *Message) {
 		return
 	}
 
-	// Everything below requires authorization.
+	// Everything below requires authorization (allowlist AND password).
 	if !b.auth.IsAuthorized(senderID) {
-		b.reply(chatID, b.t("denied"))
+		b.reply(chatID, b.accessMsg(senderID))
 		return
 	}
 
@@ -109,6 +109,10 @@ func (b *Bot) handle(m *Message) {
 
 func (b *Bot) handleAuth(chatID, senderID, messageID int64, args []string) {
 	b.api.DeleteMessage(chatID, messageID) // scrub the typed password from history
+	if !b.auth.IsAdmin(senderID) {
+		b.reply(chatID, b.t("not_allowed")) // not on the allowlist — password won't help
+		return
+	}
 	if !b.auth.HasPassword() {
 		b.reply(chatID, b.t("auth_disabled"))
 		return
@@ -217,7 +221,16 @@ func (b *Bot) reply(chatID int64, text string) {
 func (b *Bot) helpText(senderID int64) string {
 	head := b.t("help")
 	if !b.auth.IsAuthorized(senderID) {
-		head += "\n\n" + b.t("help_locked")
+		head += "\n\n" + b.accessMsg(senderID)
 	}
 	return head
+}
+
+// accessMsg returns the right "no access" reply: a non-admin is simply not
+// allowed; an allowlisted user who hasn't entered the password is prompted to.
+func (b *Bot) accessMsg(senderID int64) string {
+	if !b.auth.IsAdmin(senderID) {
+		return b.t("not_allowed")
+	}
+	return b.t("denied")
 }
