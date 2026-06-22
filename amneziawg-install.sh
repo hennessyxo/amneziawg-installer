@@ -122,6 +122,11 @@ t() {
 			p_repo)       echo "Adding the AmneziaWG repository..." ;;
 			p_module)     echo "Building the AmneziaWG kernel module (DKMS, ~2-5 min — this is normal, please wait)..." ;;
 			m_bot)        echo "Telegram bot (install / remove awg-bot)" ;;
+			bot_intro)    echo "Setting up the Telegram bot — you'll need 3 things:
+  1) A bot token: open @BotFather in Telegram, send /newbot, follow the steps, copy the token.
+  2) Your Telegram ID: open @userinfobot — it shows your numeric ID (allow several, comma-separated).
+  3) An access password you choose.
+Access needs BOTH: the ID must be on the list AND the user must enter the password (/auth)." ;;
 			bot_inst_q)   echo "The Telegram bot is already installed. Remove it? [y/N]: " ;;
 			bot_removed)  echo "Telegram bot removed." ;;
 			bot_token_q)  echo "Paste the bot token from @BotFather: " ;;
@@ -170,6 +175,11 @@ t() {
 			p_repo)       echo "Подключаю репозиторий AmneziaWG..." ;;
 			p_module)     echo "Собираю модуль ядра AmneziaWG (DKMS, ~2–5 мин — это нормально, дождись)..." ;;
 			m_bot)        echo "Telegram-бот (установить / удалить awg-bot)" ;;
+			bot_intro)    echo "Настройка Telegram-бота — понадобится 3 вещи:
+  1) Токен бота: открой @BotFather в Telegram, отправь /newbot, пройди шаги, скопируй токен.
+  2) Свой Telegram ID: открой @userinfobot — он покажет числовой ID (можно несколько, через запятую).
+  3) Пароль доступа на твой выбор.
+Доступ нужен ОБА: ID должен быть в списке И пользователь должен ввести пароль (/auth)." ;;
 			bot_inst_q)   echo "Telegram-бот уже установлен. Удалить его? [y/N]: " ;;
 			bot_removed)  echo "Telegram-бот удалён." ;;
 			bot_token_q)  echo "Вставь токен бота от @BotFather: " ;;
@@ -1094,6 +1104,13 @@ installBot() {
 		read -rp "$(t bot_inst_q)" r
 		[[ "${r,,}" == "y" ]] && removeBot
 		return 0
+	fi
+
+	# Show the setup walkthrough before asking (interactive only).
+	if [[ "${INSTALL_BOT}" != "1" ]]; then
+		echo
+		echo "$(t bot_intro)"
+		echo
 	fi
 
 	fetchGoBinary bot "${BOT_BIN}" || return 1
