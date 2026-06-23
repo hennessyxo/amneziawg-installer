@@ -113,6 +113,14 @@ sudo bash amneziawg-install.sh --add-client laptop
 Vars: `AWG_SERVER_IP`, `AWG_PORT` (blank = free random), `AWG_DNS1/2`,
 `AWG_CLIENT`, `AWG_LANG` (`ru|en`).
 
+## Expert mode
+
+Zero-config for everyone, but if you know what you're doing you can fine-tune the
+**obfuscation** (mobile/desktop/plain/custom profiles or manual params),
+**split tunnel** (`AllowedIPs`), **DNS**, **MTU** and **port** — at install and
+per client, from the app, the panel or via `AWG_*` env. Defaults stay the same. See
+[`docs/EXPERT.md`](docs/EXPERT.md).
+
 ## Nuances & gotchas
 
 - **Unsigned apps.** The GUI and `awg-deploy` aren't code-signed, so the OS warns
