@@ -645,14 +645,18 @@ newClient() {
 
 	# Build the client config (obfuscation params MUST match the server).
 	# CLIENT_MTU defaults for installs created before the mobile-preset feature.
-	local client_mtu="${CLIENT_MTU:-1420}"
+	# Per-client overrides for experts ("" = server default). Split tunnel via
+	# AWG_ALLOWED_IPS (e.g. "10.0.0.0/8,192.168.0.0/16"), custom DNS / MTU.
+	local client_mtu="${AWG_CLIENT_MTU:-${CLIENT_MTU:-1420}}"
+	local client_dns="${AWG_CLIENT_DNS:-${CLIENT_DNS_1},${CLIENT_DNS_2}}"
+	local client_allowed="${AWG_ALLOWED_IPS:-0.0.0.0/0,::/0}"
 	client_file="${CLIENT_OUT_DIR}/${SERVER_WG_NIC}-client-${name}.conf"
 	umask 077
 	cat >"${client_file}" <<-EOF
 		[Interface]
 		PrivateKey = ${priv}
 		Address = ${client_ipv4}/32,${client_ipv6}/128
-		DNS = ${CLIENT_DNS_1},${CLIENT_DNS_2}
+		DNS = ${client_dns}
 		MTU = ${client_mtu}
 		Jc = ${JC}
 		Jmin = ${JMIN}
@@ -668,7 +672,7 @@ newClient() {
 		PublicKey = ${SERVER_PUB_KEY}
 		PresharedKey = ${psk}
 		Endpoint = ${SERVER_PUB_IP}:${SERVER_PORT}
-		AllowedIPs = 0.0.0.0/0,::/0
+		AllowedIPs = ${client_allowed}
 		PersistentKeepalive = 25
 	EOF
 

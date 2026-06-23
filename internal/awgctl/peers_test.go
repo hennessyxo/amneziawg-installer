@@ -143,10 +143,11 @@ func TestRenderClientConfig(t *testing.T) {
 		Jc: "3", Jmin: "40", Jmax: "70", S1: "33", S2: "99",
 		H1: "11", H2: "22", H3: "33", H4: "44",
 	}
-	cfg := RenderClientConfig(p, "CLIPRIV=", "PSK=", 5)
+	cfg := RenderClientConfig(p, ClientOverrides{}, "CLIPRIV=", "PSK=", 5)
 	for _, want := range []string{
 		"PrivateKey = CLIPRIV=",
 		"Address = 10.66.66.5/32,fd42:42:42::5/128",
+		"DNS = 1.1.1.1,1.0.0.1",
 		"MTU = 1280",
 		"Jc = 3",
 		"Endpoint = 203.0.113.7:51820",
@@ -156,6 +157,31 @@ func TestRenderClientConfig(t *testing.T) {
 		if !strings.Contains(cfg, want) {
 			t.Errorf("client config missing %q\n%s", want, cfg)
 		}
+	}
+}
+
+func TestRenderClientConfig_Overrides(t *testing.T) {
+	p := Params{
+		ServerPubIP: "203.0.113.7", ServerPort: "51820", ServerPubKey: "SRVPUB=",
+		ClientDNS1: "1.1.1.1", ClientDNS2: "1.0.0.1", ClientMTU: "1280",
+	}
+	ov := ClientOverrides{
+		AllowedIPs: "10.0.0.0/8,192.168.0.0/16", // split tunnel
+		DNS:        "9.9.9.9",
+		MTU:        "1380",
+	}
+	cfg := RenderClientConfig(p, ov, "CLIPRIV=", "PSK=", 5)
+	for _, want := range []string{
+		"AllowedIPs = 10.0.0.0/8,192.168.0.0/16",
+		"DNS = 9.9.9.9",
+		"MTU = 1380",
+	} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf("override not applied: missing %q\n%s", want, cfg)
+		}
+	}
+	if strings.Contains(cfg, "0.0.0.0/0") {
+		t.Errorf("split tunnel should not contain full-tunnel route\n%s", cfg)
 	}
 }
 

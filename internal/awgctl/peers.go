@@ -179,13 +179,34 @@ func RenamePeer(conf, oldName, newName string) string {
 	return re.ReplaceAllString(conf, "${1}"+newName)
 }
 
-// RenderClientConfig builds a client .conf. Obfuscation parameters MUST match
-// the server, so they are copied verbatim from Params.
-func RenderClientConfig(p Params, privKey, psk string, octet int) string {
+// ClientOverrides are optional per-client config tweaks for advanced users.
+// An empty field falls back to the server default.
+type ClientOverrides struct {
+	AllowedIPs string // client routing; "" = full tunnel (0.0.0.0/0,::/0)
+	DNS        string // "" = the server's default DNS
+	MTU        string // "" = the server's default MTU
+}
+
+// RenderClientConfig builds a client .conf. Obfuscation parameters MUST match the
+// server, so they are copied verbatim from Params. ov applies optional per-client
+// overrides (empty fields use the server defaults).
+func RenderClientConfig(p Params, ov ClientOverrides, privKey, psk string, octet int) string {
+	allowedIPs := ov.AllowedIPs
+	if allowedIPs == "" {
+		allowedIPs = "0.0.0.0/0,::/0"
+	}
+	dns := ov.DNS
+	if dns == "" {
+		dns = p.ClientDNS1 + "," + p.ClientDNS2
+	}
+	mtu := ov.MTU
+	if mtu == "" {
+		mtu = p.ClientMTU
+	}
 	return fmt.Sprintf(`[Interface]
 PrivateKey = %s
 Address = %s%d/32,fd42:42:42::%d/128
-DNS = %s,%s
+DNS = %s
 MTU = %s
 Jc = %s
 Jmin = %s
@@ -201,13 +222,13 @@ H4 = %s
 PublicKey = %s
 PresharedKey = %s
 Endpoint = %s:%s
-AllowedIPs = 0.0.0.0/0,::/0
+AllowedIPs = %s
 PersistentKeepalive = 25
 `,
 		privKey, ipBase, octet, octet,
-		p.ClientDNS1, p.ClientDNS2, p.ClientMTU,
+		dns, mtu,
 		p.Jc, p.Jmin, p.Jmax, p.S1, p.S2, p.H1, p.H2, p.H3, p.H4,
-		p.ServerPubKey, psk, p.ServerPubIP, p.ServerPort,
+		p.ServerPubKey, psk, p.ServerPubIP, p.ServerPort, allowedIPs,
 	)
 }
 

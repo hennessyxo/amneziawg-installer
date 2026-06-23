@@ -18,11 +18,17 @@ type Client struct {
 	Config string
 }
 
-// AddOptions carries optional lifecycle limits for a new client.
+// AddOptions carries optional lifecycle limits and per-client config overrides
+// for a new client. The override fields are empty by default (server defaults).
 type AddOptions struct {
 	ExpiresIn  time.Duration // 0 = never expires
 	QuotaBytes uint64        // 0 = unlimited
 	SpeedMbit  int           // bandwidth cap in Mbit/s (0 = unlimited)
+
+	// Advanced per-client config overrides ("" = server default).
+	AllowedIPs string // client routing (split tunnel)
+	DNS        string // custom DNS
+	MTU        string // custom MTU
 }
 
 // UpdateOptions carries the new lifecycle limits for an existing client.
@@ -105,7 +111,8 @@ func (c FileController) AddClient(name string, opts AddOptions) (Client, error) 
 		return Client{}, err
 	}
 
-	clientCfg := RenderClientConfig(params, priv, psk, octet)
+	ov := ClientOverrides{AllowedIPs: opts.AllowedIPs, DNS: opts.DNS, MTU: opts.MTU}
+	clientCfg := RenderClientConfig(params, ov, priv, psk, octet)
 	block := PeerBlock(name, pub, psk, octet)
 
 	if err := os.WriteFile(c.ConfPath, []byte(AppendBlock(conf, block)), 0o600); err != nil {
