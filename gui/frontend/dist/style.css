@@ -167,6 +167,10 @@ table.clients th {
   background: var(--surface-2); border-bottom: 1px solid var(--line);
 }
 table.clients th.r, table.clients td.r { text-align: right; }
+table.clients th.sort { cursor: pointer; user-select: none; transition: color var(--dur); }
+table.clients th.sort:hover { color: var(--text-2); }
+table.clients th.sort.on { color: var(--accent); }
+table.clients th .sort-ind { font-size: 0.7rem; }
 table.clients td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--line-soft); }
 table.clients tbody tr:last-child td { border-bottom: none; }
 table.clients .name { font-weight: 600; }
@@ -215,12 +219,26 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 .panel-up { color: var(--accent); font-weight: 600; }
 .row-actions { display: flex; gap: 0.5rem; align-items: center; }
 
-/* ---- log drawer ---- */
-.log { margin-top: 1.4rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 0.8rem 1.1rem; }
-.log summary { cursor: pointer; color: var(--text-2); font-size: 0.85rem; font-weight: 600; list-style: revert; }
+/* ---- log drawer (floating, overlays content; lives outside tab flow) ---- */
+.log { position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 60; width: min(560px, calc(100vw - 2.8rem)); margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 0.7rem 0.95rem; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+.log summary { cursor: pointer; color: var(--text-2); font-size: 0.85rem; font-weight: 600; list-style: revert; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .log summary:hover { color: var(--text); }
-.log[open] summary { margin-bottom: 0.8rem; }
+.log[open] summary { margin-bottom: 0.7rem; }
+.log-x { border: none; background: transparent; color: var(--muted); font-size: 1.15rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; border-radius: var(--r-sm); }
+.log-x:hover { color: var(--text); background: var(--line-soft); }
 .log pre { margin: 0; padding: 0.95rem 1.05rem; max-height: 240px; overflow: auto; background: var(--bg); border: 1px solid var(--line-soft); border-radius: var(--r-sm); font-family: var(--mono); font-size: 12px; line-height: 1.5; color: #9fb3c4; white-space: pre-wrap; user-select: text; }
+
+/* ---- server terminal ---- */
+.term-card { margin-top: 0.9rem; padding: 0; overflow: hidden; }
+.term-output { margin: 0; padding: 1rem 1.1rem; min-height: 300px; max-height: 46vh; overflow: auto; background: var(--bg); font-family: var(--mono); font-size: 12.5px; line-height: 1.55; color: #b9c7d4; white-space: pre-wrap; word-break: break-word; user-select: text; }
+.term-input { display: flex; align-items: center; gap: 0.55rem; padding: 0.6rem 0.7rem; border-top: 1px solid var(--line); background: var(--surface-2); }
+.term-prompt { color: var(--accent); font-weight: 700; padding-left: 0.3rem; }
+.term-input input { flex: 1 1 auto; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0.5rem 0.7rem; color: var(--text); font-family: var(--mono); font-size: 12.5px; }
+.term-input input:focus { outline: none; border-color: var(--accent); }
+.term-suggest { margin-top: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.term-cmds { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.term-chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0.35rem 0.75rem; font-size: 11.5px; color: var(--text-2); cursor: pointer; transition: border-color var(--dur), color var(--dur), background var(--dur); }
+.term-chip:hover { border-color: var(--accent); color: var(--text); background: var(--surface-2); }
 
 /* ---- created (QR + conf) ---- */
 .created { margin-top: 1.4rem; border-color: var(--accent-dim); }
@@ -281,8 +299,9 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 .card-title { margin: 0 0 0.4rem; font-size: 1.05rem; letter-spacing: -0.01em; }
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem 1.4rem; margin-top: 0.9rem; }
 .info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.info.wide { grid-column: 1 / -1; }
 .info-k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.info-v { font-size: 0.98rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.info-v { font-size: 0.98rem; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .info-v.mono { font-weight: 500; font-size: 0.9rem; }
 .inline-form { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
 .inline-form input { flex: 1 1 220px; width: auto; margin: 0; }

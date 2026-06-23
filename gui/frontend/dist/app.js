@@ -79,6 +79,12 @@ const I18N = {
     stat_clients: "Клиентов",
     stat_uptime: "Аптайм",
     traffic: "Трафик",
+    periods_title: "Сводный трафик",
+    period_today: "За день",
+    period_week: "За неделю",
+    period_month: "За месяц",
+    period_all: "За всё время",
+    periods_hint: "Трафик за период считает веб-панель — у неё есть постоянно работающая служба, которая ведёт учёт. Установите её во вкладке «Веб-панель», чтобы видеть день/неделю/месяц. Ниже — текущий трафик клиентов с момента запуска VPN.",
     th_client: "Клиент",
     th_rx: "↓ принято",
     th_tx: "↑ отдано",
@@ -93,6 +99,13 @@ const I18N = {
     btn_remove_panel: "Удалить панель",
     panel_cert_note: "Браузер один раз предупредит про самоподписанный сертификат — это нормально, трафик шифруется.",
     tab_settings: "Настройки",
+    tab_terminal: "Терминал сервера",
+    terminal_title: "Терминал сервера",
+    terminal_hint: "Команды выполняются на сервере по SSH от текущего пользователя. Каждая команда запускается отдельно — рабочая папка и переменные не сохраняются между командами (например, <span class=\"mono\">cd</span> не запомнится).",
+    terminal_ph: "например: awg show",
+    terminal_run: "Выполнить",
+    terminal_clear: "Очистить",
+    terminal_suggest: "Полезные команды (нажмите, чтобы выполнить):",
     settings_server: "Сервер",
     info_host: "Адрес",
     info_port: "UDP-порт",
@@ -122,7 +135,7 @@ const I18N = {
     busy_changing_pass: "Меняю пароль…",
     toast_pass_changed: "Пароль панели изменён",
     e_change_pass: "Не удалось сменить пароль: ",
-    tab_bot: "Бот",
+    tab_bot: "Telegram Бот",
     bot_title: "Telegram-бот",
     bot_desc: "Бот выдаёт профили прямо в Telegram: пишешь <span class=\"mono\">/new имя</span> — он присылает .conf и QR. Пользоваться могут только разрешённые Telegram ID, которые ещё и ввели пароль.",
     bot_step1: "<b>Создай бота.</b> Открой <a href=\"#\" id=\"link-botfather\" class=\"mono\">@BotFather</a> в Telegram, отправь <span class=\"mono\">/newbot</span>, пройди шаги и скопируй токен.",
@@ -283,6 +296,12 @@ const I18N = {
     stat_clients: "Clients",
     stat_uptime: "Uptime",
     traffic: "Traffic",
+    periods_title: "Traffic summary",
+    period_today: "Today",
+    period_week: "Last 7 days",
+    period_month: "Last 30 days",
+    period_all: "All time",
+    periods_hint: "Per-period traffic is tracked by the web panel — it runs an always-on service that records usage. Install it on the \"Web panel\" tab to see day/week/month. Below is the live client traffic since the VPN last started.",
     th_client: "Client",
     th_rx: "↓ received",
     th_tx: "↑ sent",
@@ -297,6 +316,13 @@ const I18N = {
     btn_remove_panel: "Remove panel",
     panel_cert_note: "The browser warns once about the self-signed certificate — that's expected; traffic is still encrypted.",
     tab_settings: "Settings",
+    tab_terminal: "Server terminal",
+    terminal_title: "Server terminal",
+    terminal_hint: "Commands run on the server over SSH as the current user. Each command runs on its own — the working directory and variables aren't kept between commands (e.g. <span class=\"mono\">cd</span> won't persist).",
+    terminal_ph: "e.g. awg show",
+    terminal_run: "Run",
+    terminal_clear: "Clear",
+    terminal_suggest: "Useful commands (click to run):",
     settings_server: "Server",
     info_host: "Address",
     info_port: "UDP port",
@@ -326,7 +352,7 @@ const I18N = {
     busy_changing_pass: "Changing password…",
     toast_pass_changed: "Panel password changed",
     e_change_pass: "Could not change the password: ",
-    tab_bot: "Bot",
+    tab_bot: "Telegram Bot",
     bot_title: "Telegram bot",
     bot_desc: "The bot hands out profiles right in Telegram: send <span class=\"mono\">/new name</span> and it replies with the .conf + QR. Only allowlisted Telegram IDs that also enter the password can use it.",
     bot_step1: "<b>Create a bot.</b> Open <a href=\"#\" id=\"link-botfather\" class=\"mono\">@BotFather</a> in Telegram, send <span class=\"mono\">/newbot</span>, follow the steps and copy the token.",
@@ -509,13 +535,18 @@ function errMsg(err) {
   return typeof err === "string" ? err : (err && err.message) || String(err);
 }
 
-// openLog clears and reveals the collapsible log drawer for an operation.
+// openLog clears and reveals the floating log drawer for an operation.
 function openLog(title) {
   $("log").textContent = "";
   $("log-title").textContent = title;
   const d = $("log-panel");
   d.classList.remove("hidden");
   d.open = true;
+}
+
+// closeLog dismisses the floating log drawer.
+function closeLog() {
+  hide($("log-panel"));
 }
 
 // promptDialog shows an in-app text-input modal and resolves the value (or null).
@@ -585,13 +616,16 @@ function initAuthTabs() {
   });
 }
 
-const MANAGE_TABS = ["clients", "monitor", "advanced", "bot", "settings"];
+const MANAGE_TABS = ["clients", "monitor", "advanced", "bot", "settings", "terminal"];
 
 function selectTab(name) {
   document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   MANAGE_TABS.forEach((tab) => $("tab-" + tab).classList.toggle("hidden", tab !== name));
+  hide($("log-panel")); // the floating op-log shouldn't linger when changing tabs
   if (name === "settings") loadSettings();
   if (name === "bot") refreshBot();
+  if (name === "monitor") refreshPeriods();
+  if (name === "terminal") setTimeout(() => $("term-cmd").focus(), 0);
 }
 
 function initTabs() {
@@ -911,8 +945,120 @@ async function refreshHealth() {
   }
 }
 
+// refreshPeriods fetches aggregate traffic over day/week/month. The windows need
+// the web panel's always-on sampler; without it we show only a hint + all-time.
+async function refreshPeriods() {
+  const row = $("periods-row");
+  const hint = $("periods-hint");
+  try {
+    const p = await backend().TrafficPeriods();
+    if (p.tracked) {
+      $("period-today").textContent = p.today || "—";
+      $("period-week").textContent = p.week || "—";
+      $("period-month").textContent = p.month || "—";
+      $("period-all").textContent = p.allTime || "—";
+      show(row);
+      hide(hint);
+    } else {
+      hide(row);
+      show(hint);
+    }
+  } catch (_) {
+    hide(row);
+    hide(hint);
+  }
+}
+
 let trafficTimer = null;
 let trafficBusy = false;
+let trafficPeers = []; // last fetched peers, re-sorted client-side
+// trafficSort persists across the 5s poll so the chosen order doesn't reset.
+const trafficSort = { key: "name", dir: 1 };
+
+// sortPeers orders a copy of the peers by the active column/direction.
+function sortPeers(peers) {
+  const { key, dir } = trafficSort;
+  const val = (p) => {
+    switch (key) {
+      case "rx": return p.rxBytes || 0;
+      case "tx": return p.txBytes || 0;
+      case "hs": return p.handshakeUnix || 0;
+      default: return null; // name → string compare below
+    }
+  };
+  return peers.slice().sort((a, b) => {
+    if (key === "name") return dir * a.name.localeCompare(b.name);
+    return dir * ((val(a) - val(b)) || a.name.localeCompare(b.name));
+  });
+}
+
+// renderTraffic paints the table body from trafficPeers using the active sort.
+function renderTraffic() {
+  const body = $("traffic-body");
+  body.innerHTML = "";
+  if (!trafficPeers || trafficPeers.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 5;
+    td.className = "traffic-empty";
+    td.textContent = t("traffic_empty");
+    tr.appendChild(td);
+    body.appendChild(tr);
+    updateSortIndicators();
+    return;
+  }
+  sortPeers(trafficPeers).forEach((p) => {
+    const tr = document.createElement("tr");
+    const dotTd = document.createElement("td");
+    dotTd.innerHTML = `<span class="tdot${p.online ? " on" : ""}"></span>`;
+    const name = document.createElement("td");
+    name.className = "name";
+    name.textContent = p.name;
+    const rx = document.createElement("td");
+    rx.className = "r mono";
+    rx.textContent = p.rx;
+    const tx = document.createElement("td");
+    tx.className = "r mono";
+    tx.textContent = p.tx;
+    const hs = document.createElement("td");
+    hs.className = "r dim";
+    hs.textContent = p.handshake;
+    tr.append(dotTd, name, rx, tx, hs);
+    body.appendChild(tr);
+  });
+  updateSortIndicators();
+}
+
+// updateSortIndicators reflects the active column/direction in the headers.
+function updateSortIndicators() {
+  document.querySelectorAll("#tab-monitor th.sort").forEach((th) => {
+    const ind = th.querySelector(".sort-ind");
+    if (th.dataset.sort === trafficSort.key) {
+      th.classList.add("on");
+      if (ind) ind.textContent = trafficSort.dir > 0 ? " ▲" : " ▼";
+    } else {
+      th.classList.remove("on");
+      if (ind) ind.textContent = "";
+    }
+  });
+}
+
+// initTrafficSort wires header clicks: same column toggles direction, a new one
+// sorts ascending (descending first for the numeric byte/handshake columns).
+function initTrafficSort() {
+  document.querySelectorAll("#tab-monitor th.sort").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (trafficSort.key === key) {
+        trafficSort.dir = -trafficSort.dir;
+      } else {
+        trafficSort.key = key;
+        trafficSort.dir = key === "name" ? 1 : -1;
+      }
+      renderTraffic();
+    });
+  });
+}
 
 async function refreshTraffic() {
   if (trafficBusy) return;
@@ -920,37 +1066,8 @@ async function refreshTraffic() {
   try {
     const r = await backend().Traffic();
     $("traffic-summary").textContent = t("traffic_summary", { online: r.online, total: r.total });
-    const body = $("traffic-body");
-    body.innerHTML = "";
-    if (!r.peers || r.peers.length === 0) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = 5;
-      td.className = "traffic-empty";
-      td.textContent = t("traffic_empty");
-      tr.appendChild(td);
-      body.appendChild(tr);
-      return;
-    }
-    r.peers.forEach((p) => {
-      const tr = document.createElement("tr");
-      const dotTd = document.createElement("td");
-      dotTd.innerHTML = `<span class="tdot${p.online ? " on" : ""}"></span>`;
-      const name = document.createElement("td");
-      name.className = "name";
-      name.textContent = p.name;
-      const rx = document.createElement("td");
-      rx.className = "r mono";
-      rx.textContent = p.rx;
-      const tx = document.createElement("td");
-      tx.className = "r mono";
-      tx.textContent = p.tx;
-      const hs = document.createElement("td");
-      hs.className = "r dim";
-      hs.textContent = p.handshake;
-      tr.append(dotTd, name, rx, tx, hs);
-      body.appendChild(tr);
-    });
+    trafficPeers = r.peers || [];
+    renderTraffic();
   } catch (_) {
     /* transient — keep last values */
   } finally {
@@ -1093,6 +1210,71 @@ async function removeBot() {
   }
 }
 
+// --- server terminal -------------------------------------------------------
+
+// TERM_CMDS are curated, mostly read-only diagnostics for an AmneziaWG server.
+// Clicking one runs it; the user can also type any command.
+const TERM_CMDS = [
+  "awg show",
+  "systemctl status awg-quick@awg0 --no-pager",
+  "systemctl status awg-panel --no-pager",
+  "journalctl -u awg-quick@awg0 -n 50 --no-pager",
+  "ip -br addr",
+  "ss -tulpn | grep -E 'awg|8443' || true",
+  "uptime",
+  "df -h /",
+  "free -h",
+];
+
+let termRunning = false;
+
+// termWrite appends text to the terminal output and keeps it scrolled to the end.
+function termWrite(text) {
+  const out = $("term-output");
+  out.textContent += text;
+  out.scrollTop = out.scrollHeight;
+}
+
+// runTerminal executes a command on the server and echoes it + its output, like a
+// shell session. Errors (transport failures) are shown inline, not as a toast.
+async function runTerminal(cmd) {
+  cmd = (cmd || "").trim();
+  if (!cmd || termRunning) return;
+  termRunning = true;
+  termWrite("$ " + cmd + "\n");
+  $("term-cmd").value = "";
+  try {
+    const out = await backend().RunCommand(cmd);
+    termWrite(out && out.length ? (out.endsWith("\n") ? out : out + "\n") : "");
+  } catch (err) {
+    termWrite("⚠ " + errMsg(err) + "\n");
+  } finally {
+    termWrite("\n");
+    termRunning = false;
+    $("term-cmd").focus();
+  }
+}
+
+// renderTermCmds builds the clickable suggested-command chips.
+function renderTermCmds() {
+  const box = $("term-cmds");
+  box.innerHTML = "";
+  TERM_CMDS.forEach((cmd) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "term-chip mono";
+    b.textContent = cmd;
+    b.addEventListener("click", () => runTerminal(cmd));
+    box.appendChild(b);
+  });
+}
+
+function initTerminal() {
+  renderTermCmds();
+  $("term-form").addEventListener("submit", (e) => { e.preventDefault(); runTerminal($("term-cmd").value); });
+  $("term-clear").addEventListener("click", () => { $("term-output").textContent = ""; $("term-cmd").focus(); });
+}
+
 // --- settings --------------------------------------------------------------
 
 // updateURLs holds the latest CheckUpdate() links for the action buttons.
@@ -1211,6 +1393,8 @@ window.addEventListener("DOMContentLoaded", () => {
   backend().SetLang(LANG).catch(() => {});
   initAuthTabs();
   initTabs();
+  initTrafficSort();
+  initTerminal();
   prefill();
 
   document.querySelectorAll(".langswitch a").forEach((a) => {
@@ -1239,6 +1423,7 @@ window.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     openExternal(a.id === "link-botfather" ? BOT_URLS.botfather : BOT_URLS.userinfo);
   });
+  $("log-close").addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeLog(); });
   $("result-close").addEventListener("click", () => hide($("result")));
   $("result-download").addEventListener("click", downloadConf);
   ["ios", "android", "macos", "windows"].forEach((os) => {

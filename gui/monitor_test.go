@@ -96,3 +96,33 @@ func TestShortKey(t *testing.T) {
 		t.Errorf("shortKey(short) = %q, want %q", got, "abc")
 	}
 }
+
+func TestParseLifecycleRecords(t *testing.T) {
+	// Arrange: a valid two-record store with daily samples.
+	js := `[
+	  {"name":"phone","used_bytes":1000,"samples":[{"date":"2026-06-20","used":200}]},
+	  {"name":"laptop","used_bytes":500,"samples":[]}
+	]`
+
+	// Act
+	recs := parseLifecycleRecords(js)
+
+	// Assert
+	if len(recs) != 2 {
+		t.Fatalf("len = %d, want 2", len(recs))
+	}
+	if recs[0].Name != "phone" || recs[0].UsedBytes != 1000 {
+		t.Errorf("rec0 = %+v, want phone/1000", recs[0])
+	}
+	if len(recs[0].Samples) != 1 || recs[0].Samples[0].Used != 200 {
+		t.Errorf("rec0 samples = %+v, want one sample used=200", recs[0].Samples)
+	}
+}
+
+func TestParseLifecycleRecordsEmptyOrBad(t *testing.T) {
+	for _, in := range []string{"", "   ", "not json", "{}"} {
+		if got := parseLifecycleRecords(in); got != nil {
+			t.Errorf("parseLifecycleRecords(%q) = %+v, want nil", in, got)
+		}
+	}
+}

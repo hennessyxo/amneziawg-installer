@@ -556,6 +556,28 @@ func (a *App) Uninstall() error {
 	return nil
 }
 
+// RunCommand executes a single shell command on the connected server and returns
+// its combined stdout+stderr. Each call runs in a fresh SSH session, so there is
+// no persistent shell state or working directory between commands — this powers
+// the in-app "server terminal". A non-zero exit status is normal for a terminal
+// (e.g. grep with no match), so its output is returned rather than treated as an
+// error; only a session/transport failure with no output surfaces as an error.
+func (a *App) RunCommand(cmd string) (string, error) {
+	cl, _, err := a.conn()
+	if err != nil {
+		return "", err
+	}
+	cmd = strings.TrimSpace(cmd)
+	if cmd == "" {
+		return "", nil
+	}
+	out, runErr := cl.Run(cmd)
+	if runErr != nil && strings.TrimSpace(out) == "" {
+		return "", fmt.Errorf("команда не выполнена: %w", runErr)
+	}
+	return out, nil
+}
+
 // --- settings --------------------------------------------------------------
 
 // ServerInfoResult is the settings "about the server" card payload.

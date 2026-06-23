@@ -122,8 +122,9 @@
             <button class="nav-item on" data-tab="clients"><span class="ni">👤</span><span data-i18n="tab_clients">Клиенты</span></button>
             <button class="nav-item" data-tab="monitor"><span class="ni">📊</span><span data-i18n="tab_monitor">Мониторинг</span></button>
             <button class="nav-item" data-tab="advanced"><span class="ni">🌐</span><span data-i18n="tab_panel">Веб-панель</span></button>
-            <button class="nav-item" data-tab="bot"><span class="ni">🤖</span><span data-i18n="tab_bot">Бот</span></button>
+            <button class="nav-item" data-tab="bot"><span class="ni">🤖</span><span data-i18n="tab_bot">Telegram Бот</span></button>
             <button class="nav-item" data-tab="settings"><span class="ni">⚙️</span><span data-i18n="tab_settings">Настройки</span></button>
+            <button class="nav-item" data-tab="terminal"><span class="ni">⌨️</span><span data-i18n="tab_terminal">Терминал сервера</span></button>
           </nav>
         </aside>
 
@@ -184,11 +185,39 @@
                 <div class="stat-value mono sm" id="health-version">—</div>
               </div>
             </div>
+
+            <div class="section-head"><h2 data-i18n="periods_title">Сводный трафик</h2></div>
+            <div id="periods-row" class="stat-row hidden">
+              <div class="stat">
+                <div class="stat-label" data-i18n="period_today">За день</div>
+                <div class="stat-value" id="period-today">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label" data-i18n="period_week">За неделю</div>
+                <div class="stat-value" id="period-week">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label" data-i18n="period_month">За месяц</div>
+                <div class="stat-value" id="period-month">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label" data-i18n="period_all">За всё время</div>
+                <div class="stat-value" id="period-all">—</div>
+              </div>
+            </div>
+            <p id="periods-hint" class="dim hidden" data-i18n="periods_hint">Трафик за период считает веб-панель — у неё есть постоянно работающая служба, которая ведёт учёт. Установите её во вкладке «Веб-панель», чтобы видеть день/неделю/месяц. Ниже — текущий трафик клиентов с момента запуска VPN.</p>
+
             <div class="section-head"><h2><span data-i18n="traffic">Трафик</span> <span id="traffic-summary" class="dim"></span></h2></div>
             <div class="card flush">
               <div class="table-wrap">
                 <table class="clients traffic">
-                  <thead><tr><th></th><th data-i18n="th_client">Клиент</th><th class="r" data-i18n="th_rx">↓ принято</th><th class="r" data-i18n="th_tx">↑ отдано</th><th class="r" data-i18n="th_handshake">рукопожатие</th></tr></thead>
+                  <thead><tr>
+                    <th></th>
+                    <th class="sort" data-sort="name"><span data-i18n="th_client">Клиент</span><span class="sort-ind"></span></th>
+                    <th class="r sort" data-sort="rx"><span data-i18n="th_rx">↓ принято</span><span class="sort-ind"></span></th>
+                    <th class="r sort" data-sort="tx"><span data-i18n="th_tx">↑ отдано</span><span class="sort-ind"></span></th>
+                    <th class="r sort" data-sort="hs"><span data-i18n="th_handshake">рукопожатие</span><span class="sort-ind"></span></th>
+                  </tr></thead>
                   <tbody id="traffic-body"></tbody>
                 </table>
               </div>
@@ -276,7 +305,7 @@
                 <div class="info"><span class="info-k">AmneziaWG</span><span class="info-v mono" id="info-version">—</span></div>
                 <div class="info"><span class="info-k" data-i18n="info_uptime">Аптайм</span><span class="info-v" id="info-uptime">—</span></div>
                 <div class="info"><span class="info-k" data-i18n="info_clients">Клиентов</span><span class="info-v" id="info-clients">—</span></div>
-                <div class="info"><span class="info-k" data-i18n="info_panel">Панель</span><span class="info-v mono" id="info-panel">—</span></div>
+                <div class="info wide"><span class="info-k" data-i18n="info_panel">Панель</span><span class="info-v mono" id="info-panel">—</span></div>
               </div>
             </div>
 
@@ -321,11 +350,24 @@
             </div>
           </section>
 
-          <!-- log console (collapsible) -->
-          <details id="log-panel" class="log hidden">
-            <summary><span id="log-title">Журнал</span></summary>
-            <pre id="log"></pre>
-          </details>
+          <!-- TAB: server terminal -->
+          <section id="tab-terminal" class="tab-pane hidden">
+            <div class="section-head"><h1 data-i18n="terminal_title">Терминал сервера</h1></div>
+            <p class="dim" data-i18n-html="terminal_hint">Команды выполняются на сервере по SSH от текущего пользователя. Каждая команда запускается отдельно — рабочая папка и переменные не сохраняются между командами (например, <span class="mono">cd</span> не запомнится).</p>
+            <div class="card flush term-card">
+              <pre id="term-output" class="term-output"></pre>
+              <form id="term-form" class="term-input">
+                <span class="term-prompt mono">$</span>
+                <input id="term-cmd" type="text" data-i18n-ph="terminal_ph" placeholder="например: awg show" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+                <button class="primary" type="submit" data-i18n="terminal_run">Выполнить</button>
+                <button type="button" id="term-clear" class="ghost" data-i18n="terminal_clear">Очистить</button>
+              </form>
+            </div>
+            <div class="term-suggest">
+              <span class="dim" data-i18n="terminal_suggest">Полезные команды (нажмите, чтобы выполнить):</span>
+              <div id="term-cmds" class="term-cmds"></div>
+            </div>
+          </section>
 
           <!-- client result (QR + conf) -->
           <div id="result" class="card created hidden">
@@ -348,6 +390,15 @@
             <button id="result-download" class="btn" data-i18n="btn_download_conf">Скачать .conf</button>
           </div>
         </main>
+
+        <!-- floating operation log (overlays content, dismissible, hidden on tab switch) -->
+        <details id="log-panel" class="log hidden">
+          <summary>
+            <span id="log-title">Журнал</span>
+            <button type="button" id="log-close" class="log-x" aria-label="Закрыть">×</button>
+          </summary>
+          <pre id="log"></pre>
+        </details>
       </div>
     </div>
 
