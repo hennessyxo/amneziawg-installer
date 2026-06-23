@@ -45,6 +45,13 @@ const I18N = {
     lbl_first_client: "Имя первого клиента",
     advanced: "Дополнительно",
     lbl_port: "UDP-порт (необязательно — оставьте пустым для автоподбора)",
+    lbl_profile: "Профиль обфускации",
+    profile_mobile: "Мобильный (по умолчанию)",
+    profile_desktop: "Десктоп (выше MTU)",
+    profile_plain: "Чистый WireGuard (без обфускации)",
+    lbl_dns: "DNS клиентов (необязательно)",
+    ph_dns1: "1.1.1.1",
+    ph_dns2: "1.0.0.1 (резервный)",
     ph_port: "авто",
     btn_install: "Установить",
     tab_clients: "Клиенты",
@@ -232,6 +239,13 @@ const I18N = {
     lbl_first_client: "First client name",
     advanced: "Advanced",
     lbl_port: "UDP port (optional — leave empty for auto)",
+    lbl_profile: "Obfuscation profile",
+    profile_mobile: "Mobile (default)",
+    profile_desktop: "Desktop (higher MTU)",
+    profile_plain: "Plain WireGuard (no obfuscation)",
+    lbl_dns: "Client DNS (optional)",
+    ph_dns1: "1.1.1.1",
+    ph_dns2: "1.0.0.1 (secondary)",
     ph_port: "auto",
     btn_install: "Install",
     tab_clients: "Clients",
@@ -711,6 +725,9 @@ async function install() {
   const req = {
     port: $("port").value.trim(),
     client: $("first-client").value.trim() || "phone",
+    preset: $("obf-profile").value,
+    dns1: $("dns1").value.trim(),
+    dns2: $("dns2").value.trim(),
   };
   openLog(t("log_install"));
   $("btn-install").disabled = true;

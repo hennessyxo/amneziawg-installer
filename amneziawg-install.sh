@@ -362,7 +362,7 @@ installQuestions() {
 		CLIENT_DNS_1="${AWG_DNS1:-1.1.1.1}"
 		CLIENT_DNS_2="${AWG_DNS2:-1.0.0.1}"
 		FIRST_CLIENT="$(sanitizeName "${AWG_CLIENT:-phone}")"
-		PRESET="mobile"
+		PRESET="${AWG_PRESET:-mobile}"
 		SERVER_WG_IPV4="10.66.66.1"
 		SERVER_WG_IPV6="fd42:42:42::1"
 		msg "Неинтерактивная установка: ${SERVER_PUB_IP}:${SERVER_PORT}/udp"
@@ -402,8 +402,16 @@ installQuestions() {
 	FIRST_CLIENT="${FIRST_CLIENT:-phone}"
 	FIRST_CLIENT=$(sanitizeName "${FIRST_CLIENT}")
 
-	# Single universal profile (MTU 1280 + Jc=3): works on both mobile and PC.
-	PRESET="mobile"
+	# Obfuscation profile (Enter = the safe mobile default). Experts can pick a
+	# higher-MTU desktop profile or plain WireGuard (no obfuscation).
+	local prof
+	read -rp "Профиль обфускации: 1=мобильный (по умолч.), 2=десктоп, 3=чистый WireGuard [1]: " prof
+	case "${prof}" in
+		2 | desktop) AWG_PRESET="desktop" ;;
+		3 | plain)   AWG_PRESET="plain" ;;
+		*)           AWG_PRESET="${AWG_PRESET:-mobile}" ;;
+	esac
+	PRESET="${AWG_PRESET}"
 
 	# Internal VPN subnets
 	SERVER_WG_IPV4="10.66.66.1"

@@ -98,6 +98,17 @@
               <label><span data-i18n="lbl_port">UDP-порт (необязательно — оставьте пустым для автоподбора)</span>
                 <input id="port" type="text" data-i18n-ph="ph_port" placeholder="авто" autocomplete="off" />
               </label>
+              <label><span data-i18n="lbl_profile">Профиль обфускации</span>
+                <select id="obf-profile">
+                  <option value="mobile" data-i18n="profile_mobile">Мобильный (по умолчанию)</option>
+                  <option value="desktop" data-i18n="profile_desktop">Десктоп (выше MTU)</option>
+                  <option value="plain" data-i18n="profile_plain">Чистый WireGuard (без обфускации)</option>
+                </select>
+              </label>
+              <label><span data-i18n="lbl_dns">DNS клиентов (необязательно)</span>
+                <input id="dns1" type="text" data-i18n-ph="ph_dns1" placeholder="1.1.1.1" autocomplete="off" />
+              </label>
+              <input id="dns2" type="text" data-i18n-ph="ph_dns2" placeholder="1.0.0.1 (резервный)" autocomplete="off" style="margin-top:.4rem" />
             </details>
             <button id="btn-install" class="primary block" data-i18n="btn_install">Установить</button>
           </div>

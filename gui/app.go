@@ -102,6 +102,9 @@ type ConnectRequest struct {
 type InstallRequest struct {
 	Port   string `json:"port"`   // optional UDP port (blank = auto/free)
 	Client string `json:"client"` // first client name
+	Preset string `json:"preset"` // obfuscation profile: mobile|desktop|plain (blank = mobile)
+	Dns1   string `json:"dns1"`   // optional custom DNS (blank = default)
+	Dns2   string `json:"dns2"`   // optional secondary DNS
 }
 
 // StatusResult reports whether the connected server already has AmneziaWG.
@@ -241,10 +244,15 @@ func (a *App) Install(req InstallRequest) (ClientResult, error) {
 		client = "phone"
 	}
 
-	// Single universal profile (mobile: MTU 1280 + Jc=3) — works on phone and PC.
-	env := map[string]string{"AWG_PRESET": "mobile", "AWG_CLIENT": client}
+	env := map[string]string{"AWG_PRESET": normalizePreset(req.Preset), "AWG_CLIENT": client}
 	if p := strings.TrimSpace(req.Port); p != "" {
 		env["AWG_PORT"] = p
+	}
+	if d := strings.TrimSpace(req.Dns1); d != "" {
+		env["AWG_DNS1"] = d
+	}
+	if d := strings.TrimSpace(req.Dns2); d != "" {
+		env["AWG_DNS2"] = d
 	}
 
 	out, err := cl.RunScript(deploy.InstallCommand(deploy.Sudo(t.User), env), amneziawg.InstallerScript, a.logWriter("install:log"))
@@ -587,6 +595,18 @@ func (a *App) ChangePanelPassword(newPassword string) error {
 }
 
 // --- helpers ---------------------------------------------------------------
+
+// normalizePreset clamps the obfuscation profile to a supported value.
+func normalizePreset(p string) string {
+	switch strings.TrimSpace(p) {
+	case "desktop":
+		return "desktop"
+	case "plain":
+		return "plain"
+	default:
+		return "mobile"
+	}
+}
 
 // conn returns the live client and target, or an error if not connected.
 func (a *App) conn() (*deploy.Client, deploy.Target, error) {
