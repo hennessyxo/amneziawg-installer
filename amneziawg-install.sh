@@ -265,16 +265,42 @@ generateHeaders() {
 # (RFC 8200 minimum, passes everywhere) and Jc=3. A lower MTU + gentle junk sizing
 # is the usual fix for "connected but no internet" on mobile networks and costs
 # nothing meaningful on a desktop link — so there is a single, universal profile.
+# generateObfuscation builds the AmneziaWG parameter set. Defaults reproduce the
+# battle-tested "mobile" profile exactly, so a normal install is unchanged. EXPERTS
+# can override the profile and any individual value via env (see EXPERT docs):
+#   AWG_PRESET = mobile (default) | desktop | plain | custom
+#   AWG_JC, AWG_JMIN, AWG_JMAX, AWG_S1, AWG_S2, AWG_H1..AWG_H4, AWG_MTU
+# WARNING: S1/S2/H1-H4 MUST match between server and clients — changing them means
+# every existing client config must be re-issued.
 generateObfuscation() {
-	JC=3                              # fixed: Jc>3 often fails first connect on cellular
-	JMIN=$(randInt 30 50)
-	JMAX=$(( JMIN + 20 + RANDOM % 61 ))   # Jmin + 20..80
-	CLIENT_MTU=1280
-	S1=$(randInt 15 150)          # init packet junk size
-	S2=$(randInt 15 150)          # response packet junk size
-	# Constraint: S1 + 56 must not equal S2
-	while [[ $((S1 + 56)) -eq "$S2" ]]; do S2=$(randInt 15 150); done
-	read -r H1 H2 H3 H4 <<<"$(generateHeaders)"
+	PRESET="${AWG_PRESET:-mobile}"
+	case "${PRESET}" in
+		desktop)   JC="${AWG_JC:-4}"; CLIENT_MTU="${AWG_MTU:-1420}" ;; # broadband/PC
+		plain)     JC="${AWG_JC:-0}"; CLIENT_MTU="${AWG_MTU:-1420}" ;; # plain WireGuard
+		mobile|custom|*) JC="${AWG_JC:-3}"; CLIENT_MTU="${AWG_MTU:-1280}" ;; # safe default
+	esac
+
+	# Plain WireGuard: zero the Amnezia junk/headers (standard WG message types).
+	if [[ "${PRESET}" == "plain" ]]; then
+		JMIN="${AWG_JMIN:-0}"; JMAX="${AWG_JMAX:-0}"
+		S1="${AWG_S1:-0}"; S2="${AWG_S2:-0}"
+		H1="${AWG_H1:-1}"; H2="${AWG_H2:-2}"; H3="${AWG_H3:-3}"; H4="${AWG_H4:-4}"
+		return
+	fi
+
+	JMIN="${AWG_JMIN:-$(randInt 30 50)}"
+	JMAX="${AWG_JMAX:-$(( JMIN + 20 + RANDOM % 61 ))}"   # Jmin + 20..80
+	S1="${AWG_S1:-$(randInt 15 150)}"          # init packet junk size
+	S2="${AWG_S2:-$(randInt 15 150)}"          # response packet junk size
+	# Constraint: S1 + 56 must not equal S2 (only auto-fix when S2 was not pinned).
+	if [[ -z "${AWG_S2:-}" ]]; then
+		while [[ $((S1 + 56)) -eq "$S2" ]]; do S2=$(randInt 15 150); done
+	fi
+	if [[ -n "${AWG_H1:-}${AWG_H2:-}${AWG_H3:-}${AWG_H4:-}" ]]; then
+		H1="${AWG_H1:-1}"; H2="${AWG_H2:-2}"; H3="${AWG_H3:-3}"; H4="${AWG_H4:-4}"
+	else
+		read -r H1 H2 H3 H4 <<<"$(generateHeaders)"
+	fi
 }
 
 # Detect the public-facing IPv4 address.
