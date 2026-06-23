@@ -174,6 +174,11 @@ dialog.modal::backdrop { background: rgba(6, 9, 13, 0.62); backdrop-filter: blur
 .modal-adv > summary i { color: var(--muted); font-weight: 400; font-style: normal; }
 .modal-adv[open] > summary { margin-bottom: 0.7rem; }
 .modal-adv .field, .modal-adv .field-grid { margin-bottom: 0.6rem; }
+.fld-label { display: inline-flex; align-items: center; gap: 0.3rem; }
+.hint { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 700; cursor: help; position: relative; }
+.hint:hover, .hint:focus { color: var(--text); border-color: var(--accent-dim); outline: none; }
+.hint .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 230px; background: var(--surface-3); border: 1px solid var(--line); border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.76rem; font-weight: 400; line-height: 1.45; color: var(--text-2); text-align: left; box-shadow: var(--sh-3); opacity: 0; visibility: hidden; transition: opacity .14s; z-index: 60; pointer-events: none; }
+.hint:hover .tip, .hint:focus .tip { opacity: 1; visibility: visible; }
 .field-grid .field > span { font-size: 0.72rem; color: var(--muted); }
 .field-grid .field input { font-family: var(--mono); font-size: 0.9rem; padding: 0.55rem 0.6rem; }
 .modal-hint { margin: -0.2rem 0 0; font-size: 0.78rem; color: var(--muted); }

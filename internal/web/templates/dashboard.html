@@ -62,16 +62,16 @@
       <details class="modal-adv">
         <summary>{{.L.f_advanced}} <i>· {{.L.optional}}</i></summary>
         <label class="field">
-          <span>{{.L.f_routes}}</span>
+          <span class="fld-label">{{.L.f_routes}} <span class="hint" tabindex="0">?<span class="tip">{{.L.tip_routes}}</span></span></span>
           <input type="text" name="allowed_ips" placeholder="0.0.0.0/0, ::/0">
         </label>
         <div class="field-grid two">
           <label class="field">
-            <span>{{.L.f_dns}}</span>
+            <span class="fld-label">{{.L.f_dns}} <span class="hint" tabindex="0">?<span class="tip">{{.L.tip_dns}}</span></span></span>
             <input type="text" name="dns" placeholder="1.1.1.1, 1.0.0.1">
           </label>
           <label class="field">
-            <span>{{.L.f_mtu}}</span>
+            <span class="fld-label">{{.L.f_mtu}} <span class="hint" tabindex="0">?<span class="tip">{{.L.tip_mtu}}</span></span></span>
             <input type="number" name="mtu" min="576" max="9000" placeholder="auto">
           </label>
         </div>

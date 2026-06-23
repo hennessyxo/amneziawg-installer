@@ -205,6 +205,13 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 .adv-grid input { width: 100%; font-family: var(--mono); font-size: 13px; }
 .adv-hint { margin: 0.6rem 0 0; font-size: 0.8rem; }
 @media (max-width: 720px) { .adv-grid { grid-template-columns: 1fr; } }
+
+/* ---- help hints (hover/focus the "?") ---- */
+.fld-label { display: inline-flex; align-items: center; gap: 0.3rem; }
+.hint { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; flex: 0 0 auto; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 700; cursor: help; position: relative; }
+.hint:hover, .hint:focus { color: var(--text); border-color: var(--accent-dim); outline: none; }
+.hint .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 230px; background: var(--surface-3); border: 1px solid var(--line); border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.76rem; font-weight: 400; line-height: 1.45; color: var(--text-2); text-align: left; box-shadow: var(--sh-3); opacity: 0; visibility: hidden; transition: opacity .14s; z-index: 60; pointer-events: none; }
+.hint:hover .tip, .hint:focus .tip { opacity: 1; visibility: visible; }
 .panel-up { color: var(--accent); font-weight: 600; }
 .row-actions { display: flex; gap: 0.5rem; align-items: center; }
 

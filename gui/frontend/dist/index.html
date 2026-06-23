@@ -95,17 +95,17 @@
             </label>
             <details class="advanced">
               <summary data-i18n="advanced">Дополнительно</summary>
-              <label><span data-i18n="lbl_port">UDP-порт (необязательно — оставьте пустым для автоподбора)</span>
+              <label><span class="fld-label"><span data-i18n="lbl_port">UDP-порт (необязательно — оставьте пустым для автоподбора)</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_port">Порт UDP, на котором сервер слушает VPN.</span></span></span>
                 <input id="port" type="text" data-i18n-ph="ph_port" placeholder="авто" autocomplete="off" />
               </label>
-              <label><span data-i18n="lbl_profile">Профиль обфускации</span>
+              <label><span class="fld-label"><span data-i18n="lbl_profile">Профиль обфускации</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_profile">Как маскируется трафик от DPI.</span></span></span>
                 <select id="obf-profile">
                   <option value="mobile" data-i18n="profile_mobile">Мобильный (по умолчанию)</option>
                   <option value="desktop" data-i18n="profile_desktop">Десктоп (выше MTU)</option>
                   <option value="plain" data-i18n="profile_plain">Чистый WireGuard (без обфускации)</option>
                 </select>
               </label>
-              <label><span data-i18n="lbl_dns">DNS клиентов (необязательно)</span>
+              <label><span class="fld-label"><span data-i18n="lbl_dns">DNS клиентов (необязательно)</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_dns">DNS-серверы для клиентов.</span></span></span>
                 <input id="dns1" type="text" data-i18n-ph="ph_dns1" placeholder="1.1.1.1" autocomplete="off" />
               </label>
               <input id="dns2" type="text" data-i18n-ph="ph_dns2" placeholder="1.0.0.1 (резервный)" autocomplete="off" style="margin-top:.4rem" />
@@ -141,13 +141,13 @@
             <details class="add-adv">
               <summary data-i18n="adv_client">Расширенные настройки клиента</summary>
               <div class="adv-grid">
-                <label><span data-i18n="f_routes">Маршруты (AllowedIPs)</span>
+                <label><span class="fld-label"><span data-i18n="f_routes">Маршруты (AllowedIPs)</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_routes">Какой трафик идёт через VPN.</span></span></span>
                   <input id="adv-allowed" type="text" placeholder="0.0.0.0/0, ::/0" autocomplete="off" />
                 </label>
-                <label><span data-i18n="f_dns">DNS</span>
+                <label><span class="fld-label"><span data-i18n="f_dns">DNS</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_dns">DNS-серверы для клиентов.</span></span></span>
                   <input id="adv-dns" type="text" placeholder="1.1.1.1, 1.0.0.1" autocomplete="off" />
                 </label>
-                <label><span data-i18n="f_mtu">MTU</span>
+                <label><span class="fld-label"><span data-i18n="f_mtu">MTU</span><span class="hint" tabindex="0">?<span class="tip" data-i18n="tip_mtu">Максимальный размер пакета.</span></span></span>
                   <input id="adv-mtu" type="number" min="576" max="9000" placeholder="auto" autocomplete="off" />
                 </label>
               </div>
