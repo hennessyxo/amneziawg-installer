@@ -258,7 +258,7 @@ func runAddClient(args []string) error {
 	defer cl.Close()
 
 	fmt.Printf("→ Создаю клиента %q на %s ...\n\n", name, t.Addr())
-	output, err := cl.RunScript(deploy.AddClientCommand(deploy.Sudo(t.User), name), amneziawg.InstallerScript, os.Stdout)
+	output, err := cl.RunScript(deploy.AddClientCommand(deploy.Sudo(t.User), name, nil), amneziawg.InstallerScript, os.Stdout)
 	if err != nil {
 		return fmt.Errorf("создание клиента не удалось: %w", err)
 	}

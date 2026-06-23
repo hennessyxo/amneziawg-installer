@@ -196,6 +196,15 @@ table.traffic .tdot.on { background: var(--accent); box-shadow: 0 0 6px var(--ac
 .update-card.update-on { border-color: var(--accent-dim); background: var(--accent-soft); }
 .update-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .update-text p { margin: 0.2rem 0 0; font-size: 0.85rem; }
+.add-adv { margin: 0 0 1.1rem; }
+.add-adv > summary { cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--text-2); width: fit-content; }
+.add-adv > summary:hover { color: var(--text); }
+.add-adv[open] > summary { margin-bottom: 0.8rem; }
+.adv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; }
+.adv-grid label { display: grid; gap: 0.3rem; font-size: 0.74rem; font-weight: 600; color: var(--text-2); }
+.adv-grid input { width: 100%; font-family: var(--mono); font-size: 13px; }
+.adv-hint { margin: 0.6rem 0 0; font-size: 0.8rem; }
+@media (max-width: 720px) { .adv-grid { grid-template-columns: 1fr; } }
 .panel-up { color: var(--accent); font-weight: 600; }
 .row-actions { display: flex; gap: 0.5rem; align-items: center; }
 

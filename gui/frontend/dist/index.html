@@ -138,6 +138,21 @@
               </form>
             </div>
             <p class="hint-profile dim" data-i18n="hint_profile">Один профиль = одно устройство. Для каждого устройства создавайте свой профиль, иначе будет конфликт.</p>
+            <details class="add-adv">
+              <summary data-i18n="adv_client">Расширенные настройки клиента</summary>
+              <div class="adv-grid">
+                <label><span data-i18n="f_routes">Маршруты (AllowedIPs)</span>
+                  <input id="adv-allowed" type="text" placeholder="0.0.0.0/0, ::/0" autocomplete="off" />
+                </label>
+                <label><span data-i18n="f_dns">DNS</span>
+                  <input id="adv-dns" type="text" placeholder="1.1.1.1, 1.0.0.1" autocomplete="off" />
+                </label>
+                <label><span data-i18n="f_mtu">MTU</span>
+                  <input id="adv-mtu" type="number" min="576" max="9000" placeholder="auto" autocomplete="off" />
+                </label>
+              </div>
+              <p class="dim adv-hint" data-i18n="hint_advanced">Пусто = весь трафик (0.0.0.0/0) и серверные DNS/MTU. Split-tunnel: укажите нужные подсети.</p>
+            </details>
             <div class="card flush">
               <div class="table-wrap">
                 <table class="clients">

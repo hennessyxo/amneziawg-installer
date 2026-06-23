@@ -167,6 +167,13 @@ dialog.modal::backdrop { background: rgba(6, 9, 13, 0.62); backdrop-filter: blur
 .field-legend { margin: 0.1rem 0 -0.4rem; font-size: 0.76rem; font-weight: 600; color: var(--text-2); }
 .field-legend i { color: var(--muted); font-weight: 400; font-style: normal; }
 .field-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.field-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.modal-adv { margin: -0.2rem 0 0; }
+.modal-adv > summary { cursor: pointer; font-size: 0.78rem; font-weight: 600; color: var(--text-2); list-style-position: inside; }
+.modal-adv > summary:hover { color: var(--text); }
+.modal-adv > summary i { color: var(--muted); font-weight: 400; font-style: normal; }
+.modal-adv[open] > summary { margin-bottom: 0.7rem; }
+.modal-adv .field, .modal-adv .field-grid { margin-bottom: 0.6rem; }
 .field-grid .field > span { font-size: 0.72rem; color: var(--muted); }
 .field-grid .field input { font-family: var(--mono); font-size: 0.9rem; padding: 0.55rem 0.6rem; }
 .modal-hint { margin: -0.2rem 0 0; font-size: 0.78rem; color: var(--muted); }

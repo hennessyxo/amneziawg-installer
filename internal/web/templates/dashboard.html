@@ -59,6 +59,24 @@
         </label>
       </div>
       <p class="modal-hint">{{.L.hint_limits}}</p>
+      <details class="modal-adv">
+        <summary>{{.L.f_advanced}} <i>· {{.L.optional}}</i></summary>
+        <label class="field">
+          <span>{{.L.f_routes}}</span>
+          <input type="text" name="allowed_ips" placeholder="0.0.0.0/0, ::/0">
+        </label>
+        <div class="field-grid two">
+          <label class="field">
+            <span>{{.L.f_dns}}</span>
+            <input type="text" name="dns" placeholder="1.1.1.1, 1.0.0.1">
+          </label>
+          <label class="field">
+            <span>{{.L.f_mtu}}</span>
+            <input type="number" name="mtu" min="576" max="9000" placeholder="auto">
+          </label>
+        </div>
+        <p class="modal-hint">{{.L.hint_advanced}}</p>
+      </details>
       <div class="modal-actions">
         <button type="button" class="ghost" data-close>{{.L.cancel}}</button>
         <button type="submit">{{.L.add}}</button>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -266,7 +267,7 @@ func (a *App) Install(req InstallRequest) (ClientResult, error) {
 }
 
 // AddClient creates a new client on the server and returns its config + QR.
-func (a *App) AddClient(name string) (ClientResult, error) {
+func (a *App) AddClient(name, allowedIPs, dns, mtu string) (ClientResult, error) {
 	cl, t, err := a.conn()
 	if err != nil {
 		return ClientResult{}, err
@@ -275,11 +276,48 @@ func (a *App) AddClient(name string) (ClientResult, error) {
 	if name == "" {
 		return ClientResult{}, fmt.Errorf("укажите имя клиента")
 	}
-	out, err := cl.RunScript(deploy.AddClientCommand(deploy.Sudo(t.User), name), amneziawg.InstallerScript, a.logWriter("client:log"))
+	// Optional per-client overrides ("" = server default). Sanitized so nothing
+	// can inject extra lines into the generated client config.
+	env := map[string]string{}
+	if v := safeConfList(allowedIPs); v != "" {
+		env["AWG_ALLOWED_IPS"] = v
+	}
+	if v := safeConfList(dns); v != "" {
+		env["AWG_CLIENT_DNS"] = v
+	}
+	if v := safeMTU(mtu); v != "" {
+		env["AWG_CLIENT_MTU"] = v
+	}
+	out, err := cl.RunScript(deploy.AddClientCommand(deploy.Sudo(t.User), name, env), amneziawg.InstallerScript, a.logWriter("client:log"))
 	if err != nil {
 		return ClientResult{}, fmt.Errorf("создание клиента не удалось: %w", err)
 	}
 	return buildClientResult(name, out)
+}
+
+// safeConfList accepts an AllowedIPs/DNS value only if it is just the safe charset
+// (IP digits/hex, dots, colons, slashes, commas, spaces) — no newline injection.
+func safeConfList(s string) string {
+	s = strings.TrimSpace(s)
+	for _, r := range s {
+		switch {
+		case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F',
+			r == '.', r == ':', r == '/', r == ',', r == ' ':
+		default:
+			return ""
+		}
+	}
+	return s
+}
+
+// safeMTU returns the MTU only if it is a plausible value, else "" (default).
+func safeMTU(s string) string {
+	s = strings.TrimSpace(s)
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 576 || n > 9000 {
+		return ""
+	}
+	return s
 }
 
 // SaveConfig opens a native Save dialog and writes the client config to the

@@ -59,6 +59,11 @@ const I18N = {
     tab_panel: "Веб-панель",
     clients_title: "Клиенты",
     ph_new_client: "имя нового клиента",
+    adv_client: "Расширенные настройки клиента",
+    f_routes: "Маршруты (AllowedIPs)",
+    f_dns: "DNS",
+    f_mtu: "MTU",
+    hint_advanced: "Пусто = весь трафик (0.0.0.0/0) и серверные DNS/MTU. Split-tunnel: укажите нужные подсети.",
     btn_add: "Добавить",
     hint_profile: "Один профиль = одно устройство. Для каждого устройства создавайте свой профиль, иначе будет конфликт.",
     th_name: "Имя",
@@ -253,6 +258,11 @@ const I18N = {
     tab_panel: "Web panel",
     clients_title: "Clients",
     ph_new_client: "new client name",
+    adv_client: "Advanced client settings",
+    f_routes: "Routes (AllowedIPs)",
+    f_dns: "DNS",
+    f_mtu: "MTU",
+    hint_advanced: "Empty = all traffic (0.0.0.0/0) and the server's DNS/MTU. Split tunnel: list the subnets to route.",
     btn_add: "Add",
     hint_profile: "One profile = one device. Create a separate profile per device, or connections will clash.",
     th_name: "Name",
@@ -800,8 +810,14 @@ async function addClient(e) {
   if (!name) return;
   busy(true, t("busy_creating"));
   try {
-    const res = await backend().AddClient(name);
+    const res = await backend().AddClient(
+      name,
+      $("adv-allowed").value.trim(),
+      $("adv-dns").value.trim(),
+      $("adv-mtu").value.trim(),
+    );
     $("new-client").value = "";
+    ["adv-allowed", "adv-dns", "adv-mtu"].forEach((id) => { $(id).value = ""; });
     await refreshClients();
     showResult(res);
   } catch (err) {

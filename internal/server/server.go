@@ -297,6 +297,9 @@ func (s *Server) addClient(w http.ResponseWriter, r *http.Request) {
 		ExpiresIn:  daysToDuration(r.FormValue("expires_days")),
 		QuotaBytes: gbToBytes(r.FormValue("quota_gb")),
 		SpeedMbit:  atoiNonNeg(r.FormValue("speed_mbit")),
+		AllowedIPs: safeConfList(r.FormValue("allowed_ips")),
+		DNS:        safeConfList(r.FormValue("dns")),
+		MTU:        safeMTU(r.FormValue("mtu")),
 	}
 	client, err := s.ctrl.AddClient(name, opts)
 	if err != nil {
@@ -811,6 +814,34 @@ func speedStr(rec lifecycle.Record, L map[string]string) string {
 		return ""
 	}
 	return fmt.Sprintf("%d %s", rec.SpeedMbit, L["speed_unit"])
+}
+
+// safeConfList accepts an AllowedIPs/DNS value only if it contains nothing but
+// the safe charset (IP digits/hex, dots, colons, slashes, commas, spaces) — so a
+// newline can't inject extra config lines. Returns "" (use the default) otherwise.
+func safeConfList(s string) string {
+	s = strings.TrimSpace(s)
+	for _, r := range s {
+		switch {
+		case r >= '0' && r <= '9', r >= 'a' && r <= 'f', r >= 'A' && r <= 'F',
+			r == '.', r == ':', r == '/', r == ',', r == ' ':
+		default:
+			return ""
+		}
+	}
+	return s
+}
+
+// safeMTU returns the MTU if it is a plausible value, else "" (use the default).
+func safeMTU(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if n, err := strconv.Atoi(s); err != nil || n < 576 || n > 9000 {
+		return ""
+	}
+	return s
 }
 
 // atoiNonNeg parses a non-negative integer from a form field (0 on error).

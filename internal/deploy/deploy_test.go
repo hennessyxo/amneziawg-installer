@@ -80,9 +80,19 @@ func TestInstallCommand(t *testing.T) {
 }
 
 func TestAddClientCommand_QuotesName(t *testing.T) {
-	cmd := AddClientCommand("sudo ", "weird name; rm -rf /")
+	cmd := AddClientCommand("sudo ", "weird name; rm -rf /", nil)
 	if !strings.Contains(cmd, "--add-client 'weird name; rm -rf /'") {
 		t.Errorf("AddClientCommand should single-quote the name: %q", cmd)
+	}
+}
+
+func TestAddClientCommand_Overrides(t *testing.T) {
+	cmd := AddClientCommand("", "phone", map[string]string{"AWG_ALLOWED_IPS": "10.0.0.0/8", "AWG_CLIENT_MTU": ""})
+	if !strings.Contains(cmd, "AWG_ALLOWED_IPS='10.0.0.0/8'") {
+		t.Errorf("missing allowed ips override: %s", cmd)
+	}
+	if strings.Contains(cmd, "AWG_CLIENT_MTU") {
+		t.Errorf("empty override should be skipped: %s", cmd)
 	}
 }
 

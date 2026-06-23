@@ -91,9 +91,17 @@ func InstallCommand(sudo string, env map[string]string) string {
 	return sudo + "env " + envArgs(full) + " bash -s -- --yes"
 }
 
-// AddClientCommand builds the remote command to create a single client.
-func AddClientCommand(sudo, name string) string {
-	return sudo + "env AWG_PRINT_CONFIG=1 bash -s -- --add-client " + shellQuote(name)
+// AddClientCommand builds the remote command to create a single client. Optional
+// env (e.g. AWG_ALLOWED_IPS / AWG_CLIENT_DNS / AWG_CLIENT_MTU for per-client
+// overrides) is merged in; empty values are skipped.
+func AddClientCommand(sudo, name string, env map[string]string) string {
+	full := map[string]string{"AWG_PRINT_CONFIG": "1"}
+	for k, v := range env {
+		if v != "" {
+			full[k] = v
+		}
+	}
+	return sudo + "env " + envArgs(full) + " bash -s -- --add-client " + shellQuote(name)
 }
 
 // RemoveClientCommand builds the remote command to delete a client.
