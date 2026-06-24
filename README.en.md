@@ -189,6 +189,10 @@ journalctl -u awg-quick@awg0 -n 50
 awg show awg0
 ```
 
+## Changelog
+
+Every version and change is recorded in [CHANGELOG.md](CHANGELOG.md).
+
 ## Disclaimer
 
 For **lawful** use: privacy, accessing your own resources, and learning
