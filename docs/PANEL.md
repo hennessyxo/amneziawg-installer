@@ -2,7 +2,7 @@
 
 [English](PANEL.md) · [Русский](PANEL.ru.md)
 
-> Web management panel for a self-hosted **AmneziaWG** VPN — Go + htmx, single binary.
+> Web management panel for a self-hosted **AmneziaWG** VPN. Go + htmx, single binary.
 
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![ui](https://img.shields.io/badge/UI-htmx-3366cc)
@@ -16,20 +16,20 @@ clients in the browser. Built on the same `awg` parsing core as `awg-monitor`.
 - 🔒 **HTTPS**: runs over TLS (a self-signed cert is generated automatically).
 - 📊 **Live dashboard**: online status, ↑↓ rates, total traffic per client (htmx polling).
 - 📅 **Usage over time**: per-client traffic for the last **day / week / month**, with
-  **sortable** columns (click a header) — see who used how much at a glance.
-- 🖥️ **Server overview** (the *Server* page): host load — CPU %, load average, RAM and
-  disk usage, uptime — plus aggregate client traffic over day / week / month, all-time
+  **sortable** columns (click a header) to see who used how much at a glance.
+- 🖥️ **Server overview** (the *Server* page): host load (CPU %, load average, RAM and
+  disk usage, uptime) plus aggregate client traffic over day / week / month, all-time
   totals, a 30-day traffic chart and the top clients by traffic. Reads `/proc` directly.
 - ➕ **Management**: add / remove / disable / enable / **rename** a client, download `.conf`, QR.
 - ✏️ **Edit on the fly**: change an existing client's speed, quota and expiry (the "edit"
-  button) — no need to recreate it.
+  button), no need to recreate it.
 - ⏳ **Quotas & expiry**: when creating a client you set a traffic limit (GB) and/or an
   expiry (days); a background enforcer accounts traffic (reset-aware) and automatically
-  **disables** expired and over-quota clients — they are kept and can be **re-enabled**
+  **disables** expired and over-quota clients. They are kept and can be **re-enabled**
   (enabling clears a past expiry and resets an exceeded quota).
-- 🐢 **Speed limit**: set a cap in Mbit/s — a background `tc` shaper throttles upload
+- 🐢 **Speed limit**: set a cap in Mbit/s, and a background `tc` shaper throttles upload
   (an HTB class on the client IP) and download (ingress policing) instead of cutting off.
-- 📦 **Single binary**: HTML/CSS/htmx are embedded — nothing to deploy separately.
+- 📦 **Single binary**: HTML/CSS/htmx are embedded, so nothing to deploy separately.
 
 ## Install
 
@@ -63,7 +63,7 @@ sudo ./awg-panel \
 | `--client-dir` | `/etc/amnezia/amneziawg/clients` | where panel-created configs live |
 | `--store` | `/etc/amnezia/amneziawg/clients.json` | lifecycle metadata (quotas/expiry) |
 | `--password-hash-file` | `/etc/amnezia/amneziawg/panel.hash` | bcrypt hash of the admin password |
-| `--tls-cert` / `--tls-key` | — | enable HTTPS |
+| `--tls-cert` / `--tls-key` | (none) | enable HTTPS |
 
 `awg-panel hash` reads a password from stdin and prints a bcrypt hash (the plaintext is never stored).
 
@@ -86,7 +86,7 @@ The desktop app's **Settings** tab does exactly this over SSH.
 - Cookies are `HttpOnly` + `SameSite=Lax`; the `Secure` flag is set under HTTPS.
 - Forms carry a session-bound CSRF token.
 - **Maximum security (if you're paranoid):** don't open port `8443` to the
-  internet — reach the panel over an SSH tunnel instead:
+  internet. Reach the panel over an SSH tunnel instead:
   ```bash
   ssh -L 8443:localhost:8443 root@SERVER   # then open https://localhost:8443
   ```
@@ -118,4 +118,4 @@ unit-tested; run `go test ./...`.
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+MIT, see [../LICENSE](../LICENSE).

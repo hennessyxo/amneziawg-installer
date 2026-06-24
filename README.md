@@ -2,7 +2,7 @@
 
 **Русский** · [English](README.en.md)
 
-> Поднимите свой **AmneziaWG** VPN на Linux-сервере — через приложение, одну
+> Поднимите свой **AmneziaWG** VPN на Linux-сервере: через приложение, одну
 > команду или скрипт на сервере. Знания Linux не нужны.
 
 ![shell](https://img.shields.io/badge/shell-bash-1f425f)
@@ -11,9 +11,9 @@
 ![ci](https://github.com/hennessyxo/amneziawg-installer/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-AmneziaWG — это форк **WireGuard** со встроенной маскировкой трафика: он прячет
+AmneziaWG, форк **WireGuard** со встроенной маскировкой трафика, прячет
 рукопожатие и заголовки пакетов, чтобы DPI-системы не могли его распознать и
-заблокировать. Проект убирает всю ручную работу — установку, NAT/файрвол,
+заблокировать. Проект убирает всю ручную работу: установку, NAT/файрвол,
 случайную обфускацию, управление клиентами с QR-кодами.
 
 ## Что нужно
@@ -22,43 +22,46 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
    Понадобятся его **IP-адрес**, **пользователь** (обычно `root`) и **пароль**.
    Нет сервера? Можно арендовать на
    [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) или
-   [HSHP](https://hshp.host/?from=144227) _(партнёрские ссылки — поддерживают проект)_.
-2. **Приложение AmneziaWG** на телефоне/ПК для подключения — берите из любого источника:
-   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
-   - **Android** — [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
-   - **Windows** — [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
-   - **macOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
-   - **Все клиенты / исходники** — [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
+   [HSHP](https://hshp.host/?from=144227) _(партнёрские ссылки, поддерживают проект)_.
+2. **Приложение AmneziaWG** на телефоне/ПК для подключения. Подойдёт любой источник:
+   - **iOS**: [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Android**: [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
+   - **Windows**: [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
+   - **macOS**: [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Все клиенты / исходники**: [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
 
-И всё. Сервер сразу настроен на стабильное соединение — выбирать ничего не нужно.
+И всё. Сервер сразу настроен на стабильное соединение, выбирать ничего не нужно.
 
-## Установка — выберите один способ
+## Установка: выберите один способ
 
 ### 1. Приложение (проще всего, мышкой) 🖱️
 
-Нативное приложение для **Windows** и **macOS** — вообще без терминала.
+Нативное приложение для **Windows** и **macOS**, вообще без терминала.
 
-1. **Скачайте AmneziaWG Manager** — прямая ссылка, всегда последний релиз:
+1. **Скачайте AmneziaWG Manager** (прямая ссылка, всегда последний релиз):
    ### ⬇ [macOS](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-macos.zip) · [Windows](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-windows-amd64.exe)
    _(или посмотреть [все файлы](https://github.com/hennessyxo/amneziawg-installer/releases/latest))_
 2. Откройте, введите **IP сервера + пароль**, нажмите **Установить**.
 3. Добавляйте клиентов, показывайте их **QR / конфиг**, следите за трафиком,
-   ставьте или открывайте веб-панель — кнопками. Вкладка **«Настройки»**
+   ставьте или открывайте веб-панель, всё кнопками. Вкладка **«Настройки»**
    показывает данные сервера (IP, порт, версию, аптайм, число клиентов),
    переименовывает подключение, меняет пароль веб-панели или удаляет панель /
    AmneziaWG. Подробнее в [`gui/`](gui/).
 
-> Галочка **«Запомнить пароль»** избавит от повторного ввода — пароль хранится в
+Готовый **QR или конфиг** отсканируйте либо импортируйте в приложении
+**AmneziaWG** на телефоне или ПК. Это и есть подключение к VPN.
+
+> Галочка **«Запомнить пароль»** избавит от повторного ввода. Пароль хранится в
 > системном хранилище (Keychain / Credential Manager), а не в файле.
 
 | Управление клиентами | Настройки (инфо о сервере, пароль, опасная зона) |
 |:---:|:---:|
-| ![Приложение — вкладка клиентов](docs/img/gui-clients.ru.png) | ![Приложение — вкладка настроек](docs/img/gui-settings.ru.png) |
+| ![Приложение, вкладка клиентов](docs/img/gui-clients.ru.png) | ![Приложение, вкладка настроек](docs/img/gui-settings.ru.png) |
 
-Установить **Telegram-бота** можно прямо из приложения — токен, разрешённые ID и
-пароль, с пошаговой инструкцией прямо в окне:
+Установить **Telegram-бота** можно прямо из приложения: токен, разрешённые ID и
+пароль, с пошаговой инструкцией прямо в окне.
 
-<p align="center"><img src="docs/img/gui-bot.ru.png" alt="Приложение — вкладка Telegram-бота" width="640"></p>
+<p align="center"><img src="docs/img/gui-bot.ru.png" alt="Приложение, вкладка Telegram-бота" width="640"></p>
 
 ### 2. С компьютера (командная строка) ⌨️
 
@@ -69,16 +72,20 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
    | Ваш компьютер | Скачать |
    |---------------|---------|
    | Windows | [`awg-deploy-windows-amd64.exe`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-windows-amd64.exe) |
-   | macOS — Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
-   | macOS — Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
+   | macOS, Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
+   | macOS, Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
    | Linux | [`amd64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-amd64.tar.gz) / [`arm64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-arm64.tar.gz) |
 
-2. **Запустите без аргументов** — спросит IP сервера и пароль, подключится по SSH
-   и запустит установщик с меню управления **прямо на сервере**:
+2. **Запустите без аргументов**: программа спросит IP сервера и пароль,
+   подключится по SSH и запустит установщик с меню управления **прямо на
+   сервере**:
 
    ```bash
    ./awg-deploy            # macOS/Linux  (Windows: двойной клик или .\awg-deploy-windows-amd64.exe)
    ```
+
+   Первый клиент создаётся на сервере. Его **QR или конфиг** отсканируйте либо
+   импортируйте в приложении **AmneziaWG**, чтобы подключиться.
 
 3. (Для продвинутых) прямые команды для скриптов:
    ```bash
@@ -89,7 +96,7 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
    awg-deploy uninstall     root@IP_СЕРВЕРА
    ```
 
-Подробнее — [`docs/DEPLOY.ru.md`](docs/DEPLOY.ru.md).
+Подробнее в [`docs/DEPLOY.ru.md`](docs/DEPLOY.ru.md).
 
 ### 3. Прямо на сервере 🐧
 
@@ -98,7 +105,7 @@ AmneziaWG — это форк **WireGuard** со встроенной маски
 ```bash
 git clone https://github.com/hennessyxo/amneziawg-installer.git
 cd amneziawg-installer
-sudo bash amneziawg-install.sh
+sudo bash amneziawg-install.sh          # добавьте --lang en для английского интерфейса
 ```
 
 Ответьте на пару вопросов (IP, порт, DNS, первый клиент) и отсканируйте QR в
@@ -115,37 +122,37 @@ sudo bash amneziawg-install.sh --add-client laptop
 
 ## Экспертный режим
 
-Всё работает без настроек, но если ты понимаешь, что делаешь — можно тонко настроить
+Дефолты покрывают большинство случаев, но при желании можно тонко настроить
 **обфускацию** (профили mobile/desktop/plain/custom или параметры вручную),
-**split-tunnel** (`AllowedIPs`), **DNS**, **MTU** и **порт** — на установке и на каждого
-клиента, из приложения, панели или через `AWG_*`. Дефолты не меняются. См.
-[`docs/EXPERT.ru.md`](docs/EXPERT.ru.md).
+**split-tunnel** (`AllowedIPs`), **DNS**, **MTU** и **порт**: на установке и на
+каждого клиента, из приложения, панели или через `AWG_*`. Дефолты не меняются.
+См. [`docs/EXPERT.ru.md`](docs/EXPERT.ru.md).
 
 ## Нюансы и сложности
 
 - **Приложения без подписи.** GUI и `awg-deploy` не подписаны, поэтому ОС
   предупредит при первом запуске:
-  - **macOS** — первый запуск блокируется. Дважды кликните, закройте
+  - **macOS**: первый запуск блокируется. Дважды кликните, закройте
     предупреждение, затем **Системные настройки → Конфиденциальность и
     безопасность → «Открыть всё равно»** (один раз). На старых macOS: правый
     клик → **Открыть**. В архиве с приложением есть текстовая памятка.
-  - **Windows** — SmartScreen → **Подробнее → Выполнить в любом случае**.
+  - **Windows**: SmartScreen → **Подробнее → Выполнить в любом случае**.
 - **Облачный файрвол.** Если у провайдера свой файрвол (AWS/GCP/Oracle…),
   откройте **UDP-порт** VPN и там. Локальный файрвол установщик открывает сам и
   теперь **автоматически подбирает свободный порт** (не конфликтует с другими сервисами).
-- **Один профиль = одно устройство.** На каждый телефон/ПК — свой клиент, иначе
-  соединения конфликтуют.
-- **Сертификат панели.** Веб-панель использует самоподписанный TLS — браузер
-  предупредит один раз, это нормально, трафик шифруется. Не выставляйте панель в
-  открытый интернет без необходимости (SSH-туннель / доверенная сеть).
-- **OpenVZ**-серверы не поддерживаются (нет модулей ядра) — нужен KVM.
+- **Один профиль = одно устройство.** На каждый телефон/ПК нужен свой клиент,
+  иначе соединения конфликтуют.
+- **Сертификат панели.** Веб-панель использует самоподписанный TLS, поэтому
+  браузер предупредит один раз. Это нормально, трафик шифруется. Не выставляйте
+  панель в открытый интернет без необходимости (SSH-туннель / доверенная сеть).
+- **OpenVZ**-серверы не поддерживаются (нет модулей ядра), нужен KVM.
 
 ## Мониторинг и веб-панель
 
-- **`awg-monitor`** — живая панель в терминале (трафик, скорости, рукопожатие,
+- **`awg-monitor`**: живая панель в терминале (трафик, скорости, рукопожатие,
   онлайн). Пункт меню 6 или сборка: `go build -o awg-monitor ./cmd/awg-monitor`.
   См. [`docs/MONITOR.ru.md`](docs/MONITOR.ru.md).
-- **`awg-panel`** — панель в браузере (Go + htmx): вход (bcrypt + HTTPS), живой
+- **`awg-panel`**: панель в браузере (Go + htmx). Вход (bcrypt + HTTPS), живой
   трафик, расход на клиента за **день / неделю / месяц** (с сортировкой),
   управление клиентами и **квоты трафика, срок действия и лимит скорости на
   клиента**, которые применяет фоновый сервис. Страница **«Сервер»** показывает
@@ -153,11 +160,11 @@ sudo bash amneziawg-install.sh --add-client laptop
   30 дней и топ-клиентов. Пункт меню 7 (или кнопка «Установить веб-панель» в
   приложении). См. [`docs/PANEL.ru.md`](docs/PANEL.ru.md).
 
-| Веб-панель — клиенты и трафик | Веб-панель — обзор сервера |
+| Веб-панель: клиенты и трафик | Веб-панель: обзор сервера |
 |:---:|:---:|
-| ![Веб-панель — список клиентов](docs/img/panel-clients.ru.png) | ![Веб-панель — обзор сервера](docs/img/panel-server.ru.png) |
+| ![Веб-панель, список клиентов](docs/img/panel-clients.ru.png) | ![Веб-панель, обзор сервера](docs/img/panel-server.ru.png) |
 
-- **`awg-bot`** — **Telegram-бот** для выдачи профилей: пишешь `/new phone` — он
+- **`awg-bot`**: **Telegram-бот** для выдачи профилей. Пишешь `/new phone`, и он
   присылает `.conf` + QR. Двухфакторный доступ (список Telegram ID **и** пароль),
   опрашивает Telegram сам, так что входящий порт не нужен. Пункт меню 8. См.
   [`docs/BOT.ru.md`](docs/BOT.ru.md).
@@ -166,7 +173,8 @@ sudo bash amneziawg-install.sh --add-client laptop
 
 - Приватные ключи, параметры и хеш пароля панели хранятся с правами `600` под `umask 077`.
 - У каждого клиента уникальный preshared-ключ; параметры обфускации случайны для каждой установки.
-- Приложение держит SSH-пароль только в памяти (или в системном хранилище, если включите) — никогда в файле проекта.
+- Приложение держит SSH-пароль только в памяти (или в системном хранилище, если
+  включите), но никогда в файле проекта.
 - SSH-ключи хостов проверяются через `known_hosts` (доверие при первом подключении, жёсткий отказ при смене ключа).
 
 ## Диагностика
@@ -181,7 +189,7 @@ awg show awg0
 
 ## Дисклеймер
 
-Только для **законного** использования — приватность, доступ к своим ресурсам,
+Только для **законного** использования: приватность, доступ к своим ресурсам,
 изучение сетей. Соблюдайте законы своей юрисдикции.
 
 ## ☕ Поддержать
@@ -192,5 +200,5 @@ awg show awg0
 ## Лицензия
 
 MIT © contributors. См. [LICENSE](LICENSE). Логика установки адаптирована из
-проверенного [`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
+[`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
 и портирована на AmneziaWG с поддержкой обфускации.

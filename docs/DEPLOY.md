@@ -2,7 +2,7 @@
 
 [English](DEPLOY.md) · [Русский](DEPLOY.ru.md)
 
-> Cross-platform SSH deploy tool — install & manage AmneziaWG on a remote server
+> Cross-platform SSH deploy tool: install and manage AmneziaWG on a remote server
 > from your own machine (Windows `.exe`, macOS, Linux). One binary, nothing to
 > pre-install on the server.
 
@@ -20,13 +20,13 @@ Grab the binary for your OS from [Releases](https://github.com/hennessyxo/amnezi
 | Your computer | File |
 |---------------|------|
 | Windows | `awg-deploy-windows-amd64.exe` |
-| macOS — Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64.tar.gz` |
-| macOS — Intel | `awg-deploy-darwin-amd64.tar.gz` |
-| Linux — x86_64 | `awg-deploy-linux-amd64.tar.gz` |
-| Linux — ARM | `awg-deploy-linux-arm64.tar.gz` |
+| macOS, Apple Silicon (M1–M5) | `awg-deploy-darwin-arm64.tar.gz` |
+| macOS, Intel | `awg-deploy-darwin-amd64.tar.gz` |
+| Linux, x86_64 | `awg-deploy-linux-amd64.tar.gz` |
+| Linux, ARM | `awg-deploy-linux-arm64.tar.gz` |
 
-> `darwin` = macOS. Download the build for **your own** computer, not the server —
-> the server is configured automatically over SSH. The archives preserve the
+> `darwin` = macOS. Download the build for **your own** computer, not the server.
+> The server is configured automatically over SSH. The archives preserve the
 > executable bit (no `chmod` needed).
 
 ### macOS: Gatekeeper
@@ -52,7 +52,7 @@ Run the binary with **no arguments** (on Windows, double-click the `.exe`):
 
 It asks for the server address and root password, connects over SSH, and runs the
 installer and management menu **directly on the server** (over an interactive SSH
-session). Everything — install, add/remove/rename clients, monitoring, web panel —
+session). Everything (install, add/remove/rename clients, monitoring, web panel)
 runs server-side; this tool just "logs in" for you. The commands below are for
 calling actions directly (scripts/automation).
 
@@ -84,7 +84,7 @@ awg-deploy monitor root@YOUR_SERVER_IP
 awg-deploy uninstall root@YOUR_SERVER_IP
 ```
 
-> Re-running `install` on a configured server is safe — it detects this and prints
+> Re-running `install` on a configured server is safe: it detects this and prints
 > the management commands (`add-client`, `list`, `remove-client`, `monitor`). The
 > interactive menu also lives on the server itself: `sudo bash amneziawg-install.sh`.
 
@@ -98,7 +98,7 @@ On Windows just run the `.exe` from a terminal (PowerShell/Windows Terminal):
 
 | Flag | Meaning |
 |------|---------|
-| `--preset` | obfuscation preset; defaults to `mobile` (MTU 1280, Jc=3 — works on mobile and PC) |
+| `--preset` | obfuscation preset; defaults to `mobile` (MTU 1280, Jc=3, works on mobile and PC) |
 | `--port` | AmneziaWG UDP port (default: a free random one) |
 | `--client` | first client name |
 | `--server-ip` | public IP/host clients connect to (default: autodetect) |
@@ -113,7 +113,7 @@ On Windows just run the `.exe` from a terminal (PowerShell/Windows Terminal):
 - The host key is verified against `known_hosts`. An unknown host → a trust-on-first-use
   prompt showing the SHA256 fingerprint; a **changed** key → refusal (possible MITM).
 - The password is read with hidden input and is never stored.
-- The installer script is **embedded in the binary** — nothing extra to download.
+- The installer script is **embedded in the binary**, so there's nothing extra to download.
 
 ## How it works
 
@@ -130,4 +130,4 @@ TUI as [`awg-monitor`](MONITOR.md), reusing `internal/awg` and `internal/ui`.
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+MIT, see [../LICENSE](../LICENSE).

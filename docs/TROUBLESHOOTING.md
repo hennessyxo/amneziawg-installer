@@ -8,18 +8,18 @@
 journalctl -u awg-quick@awg0 -n 50
 ```
 
-- **`Cannot find device "awg0"` / module not loaded** — the kernel module didn't
+- **`Cannot find device "awg0"` / module not loaded**: the kernel module didn't
   build. Make sure the kernel headers are installed and rebuild DKMS:
   ```bash
   apt-get install -y linux-headers-$(uname -r)
   dkms autoinstall
   modprobe amneziawg
   ```
-  If the kernel is non-standard (some VPSs), the headers may not match — update the
+  If the kernel is non-standard (some VPSs), the headers may not match. Update the
   kernel (`apt full-upgrade && reboot`) and run the install again.
 
-- **`RTNETLINK answers: Address already in use`** — the port is taken. Run the
-  script, uninstall (menu option 8), and reinstall choosing a different port.
+- **`RTNETLINK answers: Address already in use`**: the port is taken. Run the
+  script, uninstall (menu option 9), and reinstall choosing a different port.
 
 ## The client connects but there's no internet
 
@@ -38,9 +38,9 @@ journalctl -u awg-quick@awg0 -n 50
 ## The connection drops / DPI still blocks it
 
 - The obfuscation parameters **must match** between server and client (except
-  `Jc/Jmin/Jmax`). The script guarantees this — don't edit them by hand.
+  `Jc/Jmin/Jmax`). The script guarantees this, so don't edit them by hand.
 - Try a different UDP port (e.g. 443 is rarely throttled, but may be taken).
-- Some providers throttle all UDP — then a TCP wrapper is needed (out of scope for this script).
+- Some providers throttle all UDP; then you need a TCP wrapper (out of scope for this script).
 
 ## `apt` can't find the `amneziawg` package
 
@@ -61,4 +61,4 @@ A peer's `latest handshake` line shows whether that client is connected.
 
 ## Full removal
 
-Run the script → menu option **8** (removes the packages, configs and clients).
+Run the script → menu option **9** (removes the packages, configs and clients).

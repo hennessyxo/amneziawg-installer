@@ -2,7 +2,7 @@
 
 [English](MONITOR.md) · [Русский](MONITOR.ru.md)
 
-> Live terminal dashboard for a self-hosted **AmneziaWG** VPN — written in Go.
+> Live terminal dashboard for a self-hosted **AmneziaWG** VPN, written in Go.
 
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![tui](https://img.shields.io/badge/TUI-Bubble%20Tea-ff69b4)
@@ -10,7 +10,7 @@
 `awg-monitor` polls `awg show <iface> dump`, resolves client names from the
 server config produced by [`amneziawg-install.sh`](../amneziawg-install.sh), and
 renders per-client traffic, throughput rates, handshake age, online status, and
-inline throughput sparklines — refreshing live in the terminal.
+inline throughput sparklines, refreshing live in the terminal.
 
 ```
   AmneziaWG Monitor   iface awg0   ● online 4/5   ↓ 6.9 GB  ↑ 1.6 GB   15:41:46
@@ -26,7 +26,7 @@ inline throughput sparklines — refreshing live in the terminal.
 
 ## Why
 
-The most popular AmneziaWG installers are **headless by design** — no metrics, no
+The most popular AmneziaWG installers are **headless by design**: no metrics, no
 dashboard. This fills that gap with a zero-dependency single binary that needs no
 Docker, web server, or Grafana stack.
 
@@ -91,4 +91,4 @@ Coverage: `internal/awg` ~96%, `internal/ui` ~71%.
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+MIT, see [../LICENSE](../LICENSE).

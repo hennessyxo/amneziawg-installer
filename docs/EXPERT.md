@@ -3,13 +3,13 @@
 [English](EXPERT.md) · [Русский](EXPERT.ru.md)
 
 > The tool is zero-config for normal users. If you know what you're doing, every
-> knob below is optional and defaults to the safe, battle-tested values — so a
+> knob below is optional and defaults to the safe, well-tested values, so a
 > plain install is unchanged.
 
 There are two kinds of expert settings:
 
-1. **Server-wide** — chosen once at install (obfuscation profile/params, port, DNS).
-2. **Per-client** — chosen when you add a client (split tunnel, DNS, MTU).
+1. **Server-wide**: chosen once at install (obfuscation profile/params, port, DNS).
+2. **Per-client**: chosen when you add a client (split tunnel, DNS, MTU).
 
 ---
 
@@ -20,9 +20,9 @@ Pick a profile when installing:
 
 | Profile | What it does |
 |---------|--------------|
-| `mobile` | **Default.** MTU 1280 + gentle junk — reliable on 4G/LTE and PC alike. |
-| `desktop` | Higher MTU (1420), slightly more junk — for broadband/PC links. |
-| `plain` | **Plain WireGuard** — junk/headers off, interoperable with standard WG. |
+| `mobile` | **Default.** MTU 1280, Jc=3, gentle junk. Reliable on 4G/LTE and PC alike. |
+| `desktop` | Higher MTU (1420), slightly more junk. For broadband/PC links. |
+| `plain` | **Plain WireGuard**: junk/headers off, interoperable with standard WG. |
 | `custom` | You set the individual parameters yourself (see below). |
 
 **Where to choose it:**
@@ -49,15 +49,15 @@ Any value you don't set keeps the profile's default (randomized for `Jmin/Jmax/S
 
 ## 2. Port & DNS (install time)
 
-- **Port** — `AWG_PORT=51820` (blank = a free random UDP port is picked). Also in the
+- **Port**: `AWG_PORT=51820` (blank = a free random UDP port is picked). Also in the
   desktop app's *Advanced*, and the installer prompt.
-- **DNS** — `AWG_DNS1=1.1.1.1 AWG_DNS2=1.0.0.1` (server default for new clients). Also in
+- **DNS**: `AWG_DNS1=1.1.1.1 AWG_DNS2=1.0.0.1` (server default for new clients). Also in
   the desktop app's *Advanced*, and the installer prompt.
 
 ## 3. Per-client overrides (when adding a client)
 
-Each client can override the defaults — useful for **split tunnel** (route only some
-subnets through the VPN), a custom resolver, or a different MTU.
+Each client can override the defaults. This is useful for **split tunnel** (route only
+some subnets through the VPN), a custom resolver, or a different MTU.
 
 | Field | Default | Example |
 |-------|---------|---------|
@@ -74,8 +74,8 @@ subnets through the VPN), a custom resolver, or a different MTU.
     sudo -E bash amneziawg-install.sh --add-client work-laptop
   ```
 
-Routes (`AllowedIPs`) only change what **that client** sends through the tunnel — they
-don't affect server routing or addressing, so they are safe to tweak per client.
+Routes (`AllowedIPs`) only change what **that client** sends through the tunnel. They
+don't affect server routing or addressing, so they're safe to tweak per client.
 
 ## Examples
 
@@ -92,16 +92,16 @@ AWG_ALLOWED_IPS='10.20.0.0/16' sudo -E bash amneziawg-install.sh --add-client of
 ## Caveats
 
 - `S1/S2/H1-H4` must match server ↔ client (see the warning above).
-- `plain` mode removes the DPI-evading obfuscation — only use it where censorship
+- `plain` mode removes the DPI-evading obfuscation, so only use it where censorship
   isn't a concern.
 - Bad per-client values are ignored (the safe default is used) rather than written
   into a config.
 
 ## Not yet configurable
 
-- **Custom VPN subnet** (`10.66.66.0/24`) — on the roadmap. It is woven through client
+- **Custom VPN subnet** (`10.66.66.0/24`): on the roadmap. It's woven through client
   IP allocation, so it needs careful, tested work before exposing.
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+MIT, see [../LICENSE](../LICENSE).

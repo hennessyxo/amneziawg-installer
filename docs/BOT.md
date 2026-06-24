@@ -2,7 +2,7 @@
 
 [English](BOT.md) · [Русский](BOT.ru.md)
 
-> Access-controlled **Telegram bot** for issuing AmneziaWG client profiles — Go, single binary.
+> Access-controlled **Telegram bot** for issuing AmneziaWG client profiles. Go, single binary.
 
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![telegram](https://img.shields.io/badge/Telegram-Bot%20API-26A5E4?logo=telegram)
@@ -21,7 +21,7 @@ reuses the same `awgctl` core as the web panel.
   removing an ID from the allowlist revokes access immediately. Passing the
   password is remembered across restarts.
 - 📡 **No inbound port**: the bot **long-polls** the Telegram API, so nothing needs
-  to be exposed on the server — works behind any firewall/NAT.
+  to be exposed on the server. It works behind any firewall/NAT.
 - 📦 **Single binary**: no extra services; reuses the installer's config + client dir.
 
 ## Get a bot token
@@ -57,21 +57,21 @@ an allowlisted account in Telegram: `/auth <password>` once, then `/new laptop`.
 
 | Flag | Default | Meaning |
 |------|---------|---------|
-| `--token-file` | — | file with the bot token (preferred over `--token`) |
-| `--admins` | — | comma-separated Telegram user IDs always allowed |
-| `--password-hash-file` | — | bcrypt hash of the access password (`awg-bot hash`) |
+| `--token-file` | (none) | file with the bot token (preferred over `--token`) |
+| `--admins` | (none) | comma-separated Telegram user IDs always allowed |
+| `--password-hash-file` | (none) | bcrypt hash of the access password (`awg-bot hash`) |
 | `--auth-store` | `/etc/amnezia/amneziawg/bot-authorized.json` | remembered authorized chats |
 | `--iface` | `awg0` | AmneziaWG interface |
 | `--conf` / `--params` / `--client-dir` / `--store` | installer paths | server config + client data |
 | `--lang` | `ru` | bot reply language (`ru`/`en`) |
 
 `awg-bot hash` reads a password from stdin and prints a bcrypt hash (the plaintext
-is never stored). **Both** `--admins` and `--password-hash-file` are required — a
+is never stored). **Both** `--admins` and `--password-hash-file` are required: a
 user must be on the allowlist *and* pass the password.
 
 ## Security notes
 
-- The **token** is a secret — it is stored `600` under `umask 077`, never in the repo.
+- The **token** is a secret: it is stored `600` under `umask 077`, never in the repo.
 - Access is **two-factor**: the allowlist (who) **and** the password (proof). The
   bot answers management commands only when both are satisfied; everyone else gets
   "not authorized". Set a strong access password (same complexity rule as the
@@ -97,4 +97,4 @@ Pure logic (command parsing, authorization) is unit-tested with `go test ./...`.
 
 ## License
 
-MIT — see [../LICENSE](../LICENSE).
+MIT, see [../LICENSE](../LICENSE).

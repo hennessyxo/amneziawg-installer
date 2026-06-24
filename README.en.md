@@ -2,7 +2,7 @@
 
 [Русский](README.md) · **English**
 
-> Set up your own **AmneziaWG** VPN on a Linux server — with a desktop app, a
+> Set up your own **AmneziaWG** VPN on a Linux server: with a desktop app, a
 > one-line command, or a script on the server. No Linux knowledge required.
 
 ![shell](https://img.shields.io/badge/shell-bash-1f425f)
@@ -13,7 +13,7 @@
 
 AmneziaWG is a fork of **WireGuard** with built-in traffic obfuscation: it
 disguises the handshake and packet headers so DPI systems can't fingerprint and
-block it. This project removes all the manual work — install, NAT/firewall,
+block it. This project removes all the manual work: install, NAT/firewall,
 randomized obfuscation, client management with QR codes.
 
 ## What you need
@@ -22,43 +22,47 @@ randomized obfuscation, client management with QR codes.
    provider). You'll need its **IP address**, a **user** (usually `root`) and the
    **password**. No server yet? You can rent one at
    [VDSina](https://www.vdsina.com/?partner=7yhz21p6dkml) or
-   [HSHP](https://hshp.host/?from=144227) _(referral links — they help support the project)_.
-2. **The AmneziaWG app** on your phone/PC to connect — grab it from any of these:
-   - **iOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
-   - **Android** — [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
-   - **Windows** — [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
-   - **macOS** — [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
-   - **All clients / source** — [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
+   [HSHP](https://hshp.host/?from=144227) _(referral links that help support the project)_.
+2. **The AmneziaWG app** on your phone/PC to connect. Grab it from any of these:
+   - **iOS**: [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **Android**: [Google Play](https://play.google.com/store/apps/details?id=org.amnezia.awg) · [GitHub](https://github.com/amnezia-vpn/amneziawg-android/releases)
+   - **Windows**: [GitHub](https://github.com/amnezia-vpn/amneziawg-windows-client/releases)
+   - **macOS**: [App Store](https://apps.apple.com/app/amneziawg/id6478942365) · [GitHub](https://github.com/amnezia-vpn/amneziawg-apple/releases)
+   - **All clients / source**: [github.com/amnezia-vpn](https://github.com/amnezia-vpn) · [amnezia.org](https://amnezia.org/downloads)
 
-That's it. The server is tuned for reliable connections out of the box — there's
+That's it. The server is tuned for reliable connections out of the box, with
 nothing to choose.
 
-## Install — pick one way
+## Install: pick one way
 
 ### 1. Desktop app (easiest, point & click) 🖱️
 
-A native app for **Windows** and **macOS** — no terminal at all.
+A native app for **Windows** and **macOS**, with no terminal at all.
 
-1. **Download AmneziaWG Manager** — direct download, always the latest release:
+1. **Download AmneziaWG Manager** (direct download, always the latest release):
    ### ⬇ [macOS](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-macos.zip) · [Windows](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-windows-amd64.exe)
    _(or browse [all files](https://github.com/hennessyxo/amneziawg-installer/releases/latest))_
 2. Open it, enter your server **IP + password**, click **Install**.
 3. Add clients, show their **QR / config**, monitor live traffic, and install or
-   open the web panel — all with buttons. A **Settings** tab shows server info
+   open the web panel, all with buttons. A **Settings** tab shows server info
    (IP, port, version, uptime, clients), renames the connection, changes the web
    panel password, or removes the panel / AmneziaWG. See [`gui/`](gui/).
 
-> Tick **"Remember password"** to skip typing it next time — it's stored in your
-> OS keychain (macOS Keychain / Windows Credential Manager), never in a file.
+Then scan the shown **QR** or import the **config** in the **AmneziaWG** app on
+your phone or PC. That's your actual VPN connection.
+
+> Tick **"Remember password"** to skip typing it next time. The password is
+> stored in your OS keychain (macOS Keychain, Windows Credential Manager), not in
+> a file.
 
 | Manage clients | Settings (server info, password, danger zone) |
 |:---:|:---:|
-| ![Desktop app — clients tab](docs/img/gui-clients.png) | ![Desktop app — settings tab](docs/img/gui-settings.png) |
+| ![Desktop app, clients tab](docs/img/gui-clients.png) | ![Desktop app, settings tab](docs/img/gui-settings.png) |
 
-Install an access-controlled **Telegram bot** straight from the app — token, allowed
-IDs and a password, with an in-window setup guide:
+Install an access-controlled **Telegram bot** straight from the app: token,
+allowed IDs and a password, with an in-window setup guide.
 
-<p align="center"><img src="docs/img/gui-bot.png" alt="Desktop app — Telegram bot tab" width="640"></p>
+<p align="center"><img src="docs/img/gui-bot.png" alt="Desktop app, Telegram bot tab" width="640"></p>
 
 ### 2. From your computer (command line) ⌨️
 
@@ -69,16 +73,20 @@ A single cross-platform binary `awg-deploy` that drives the server over SSH.
    | Your computer | Download |
    |---------------|----------|
    | Windows | [`awg-deploy-windows-amd64.exe`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-windows-amd64.exe) |
-   | macOS — Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
-   | macOS — Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
+   | macOS, Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
+   | macOS, Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
    | Linux | [`amd64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-amd64.tar.gz) / [`arm64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-arm64.tar.gz) |
 
-2. **Run it with no arguments** — it asks for your server IP + password, connects
-   over SSH and runs the installer + management menu **on the server**:
+2. **Run it with no arguments**: it asks for your server IP and password,
+   connects over SSH and runs the installer and management menu **on the
+   server**:
 
    ```bash
    ./awg-deploy            # macOS/Linux  (Windows: double-click or .\awg-deploy-windows-amd64.exe)
    ```
+
+   The first client is created on the server. Scan its **QR** or import the
+   **config** in the **AmneziaWG** app to connect.
 
 3. (Advanced) direct commands for scripting:
    ```bash
@@ -115,20 +123,20 @@ Vars: `AWG_SERVER_IP`, `AWG_PORT` (blank = free random), `AWG_DNS1/2`,
 
 ## Expert mode
 
-Zero-config for everyone, but if you know what you're doing you can fine-tune the
-**obfuscation** (mobile/desktop/plain/custom profiles or manual params),
-**split tunnel** (`AllowedIPs`), **DNS**, **MTU** and **port** — at install and
-per client, from the app, the panel or via `AWG_*` env. Defaults stay the same. See
-[`docs/EXPERT.md`](docs/EXPERT.md).
+Works out of the box for everyone. If you want to fine-tune it, you can adjust
+the **obfuscation** (mobile/desktop/plain/custom profiles or manual params),
+**split tunnel** (`AllowedIPs`), **DNS**, **MTU** and **port**: at install time
+or per client, from the app, the web panel, or via `AWG_*` env vars. Defaults
+stay the same. See [`docs/EXPERT.md`](docs/EXPERT.md).
 
 ## Nuances & gotchas
 
 - **Unsigned apps.** The GUI and `awg-deploy` aren't code-signed, so the OS warns
   the first time:
-  - **macOS** — the first launch is blocked. Double-click, dismiss the warning,
+  - **macOS**: the first launch is blocked. Double-click, dismiss the warning,
     then **System Settings → Privacy & Security → Open Anyway** (once). On older
     macOS: right-click → **Open**. The GUI zip includes a short text guide.
-  - **Windows** — SmartScreen → **More info → Run anyway**.
+  - **Windows**: SmartScreen → **More info → Run anyway**.
 - **Cloud firewall.** If your provider has its own firewall (AWS/GCP/Oracle…),
   open the VPN's **UDP port** there too. The installer opens the local firewall
   itself and now picks a **free** port automatically (won't collide with other
@@ -136,16 +144,16 @@ per client, from the app, the panel or via `AWG_*` env. Defaults stay the same. 
 - **One profile = one device.** Create a separate client for each phone/PC, or
   their connections will clash.
 - **Web panel cert.** The panel uses a self-signed TLS cert, so the browser warns
-  once — that's expected; traffic is still encrypted. Don't expose it to the
+  once. That's expected; traffic is still encrypted. Don't expose it to the
   public internet without need (use an SSH tunnel / trusted network).
-- **OpenVZ** VPSs are not supported (no kernel modules) — use KVM.
+- **OpenVZ** VPSs are not supported (no kernel modules); use KVM.
 
 ## Monitoring & web panel
 
-- **`awg-monitor`** — live terminal dashboard (traffic, rates, handshake, online).
+- **`awg-monitor`**: live terminal dashboard (traffic, rates, handshake, online).
   Menu option 6, or build: `go build -o awg-monitor ./cmd/awg-monitor`. See
   [`docs/MONITOR.md`](docs/MONITOR.md).
-- **`awg-panel`** — browser dashboard (Go + htmx): auth (bcrypt + HTTPS), live
+- **`awg-panel`**: browser dashboard (Go + htmx). Auth (bcrypt + HTTPS), live
   traffic, per-client usage over **day / week / month** (sortable), client
   management, and **traffic quotas, time-based expiry and per-client speed limits**
   enforced by a background daemon. A **Server** page shows host load (CPU / RAM /
@@ -153,11 +161,11 @@ per client, from the app, the panel or via `AWG_*` env. Defaults stay the same. 
   clients. Menu option 7 (or the GUI's "Install web panel" button). See
   [`docs/PANEL.md`](docs/PANEL.md).
 
-| Web panel — clients & usage | Web panel — server overview |
+| Web panel: clients & usage | Web panel: server overview |
 |:---:|:---:|
-| ![Web panel — clients dashboard](docs/img/panel-clients.png) | ![Web panel — server overview](docs/img/panel-server.png) |
+| ![Web panel, clients dashboard](docs/img/panel-clients.png) | ![Web panel, server overview](docs/img/panel-server.png) |
 
-- **`awg-bot`** — a **Telegram bot** that hands out profiles: send `/new phone` and
+- **`awg-bot`**: a **Telegram bot** that hands out profiles. Send `/new phone` and
   it replies with the `.conf` + QR. Two-factor access (an allowlist of Telegram IDs
   **and** a password), polls Telegram so no inbound port is needed. Menu option 8. See
   [`docs/BOT.md`](docs/BOT.md).
@@ -167,7 +175,7 @@ per client, from the app, the panel or via `AWG_*` env. Defaults stay the same. 
 - Private keys, params and the panel password hash are stored `600` under `umask 077`.
 - Each client gets a unique preshared key; obfuscation parameters are randomized per install.
 - The desktop app keeps the SSH password only in memory (or the OS keychain if you
-  opt in) — never in a project file.
+  opt in), never in a project file.
 - SSH host keys are verified via `known_hosts` (trust-on-first-use, hard-fail on a changed key).
 
 ## Troubleshooting
@@ -182,7 +190,7 @@ awg show awg0
 
 ## Disclaimer
 
-For **lawful** use — privacy, accessing your own resources, and learning
+For **lawful** use: privacy, accessing your own resources, and learning
 networking. Follow the laws of your jurisdiction.
 
 ## ☕ Support
@@ -193,5 +201,5 @@ If this project saved you time, you can support its development on
 ## License
 
 MIT © contributors. See [LICENSE](LICENSE). Install logic adapted from the
-battle-tested [`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
+widely-used [`angristan/wireguard-install`](https://github.com/angristan/wireguard-install)
 and ported to AmneziaWG with obfuscation support.
