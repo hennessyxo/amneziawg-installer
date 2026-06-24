@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/lifecycle"
 )
 
 // Client is a generated VPN client and its full configuration text.

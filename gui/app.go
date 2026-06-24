@@ -11,9 +11,9 @@ import (
 	"time"
 	"unicode"
 
-	amneziawg "github.com/hennessyxo/amneziawg-installer"
-	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
-	"github.com/hennessyxo/amneziawg-installer/internal/deploy"
+	amneziawg "github.com/hennessyxo/awg-suite"
+	"github.com/hennessyxo/awg-suite/internal/awgctl"
+	"github.com/hennessyxo/awg-suite/internal/deploy"
 	"github.com/skip2/go-qrcode"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )

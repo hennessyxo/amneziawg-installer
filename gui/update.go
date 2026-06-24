@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const repoReleasesBase = "https://github.com/hennessyxo/amneziawg-installer/releases"
+const repoReleasesBase = "https://github.com/hennessyxo/awg-suite/releases"
 
 // UpdateInfo is the result of an update check (JSON-bound to the frontend).
 type UpdateInfo struct {

@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/hennessyxo/amneziawg-installer/internal/awg"
+import "github.com/hennessyxo/awg-suite/internal/awg"
 
 // Source supplies fresh snapshots to the UI. Implementations live in main
 // (a real `awg` command runner and a synthetic demo generator) so the UI stays

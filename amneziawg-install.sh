@@ -36,7 +36,7 @@ readonly BOT_BIN="/usr/local/bin/awg-bot"
 readonly BOT_TOKEN_FILE="${AWG_DIR}/bot.token"
 readonly BOT_HASH="${AWG_DIR}/bot.hash"
 readonly BOT_AUTH="${AWG_DIR}/bot-authorized.json"
-readonly REPO_SLUG="hennessyxo/amneziawg-installer"
+readonly REPO_SLUG="hennessyxo/awg-suite"
 
 # Colors (disabled automatically when output is not a terminal)
 if [[ -t 1 ]]; then

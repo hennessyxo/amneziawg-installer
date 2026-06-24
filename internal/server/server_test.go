@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/auth"
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
-	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
+	"github.com/hennessyxo/awg-suite/internal/auth"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/awgctl"
+	"github.com/hennessyxo/awg-suite/internal/lifecycle"
 )
 
 // postForm is a small helper for authenticated form POSTs.

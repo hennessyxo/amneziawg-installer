@@ -1,4 +1,4 @@
-module github.com/hennessyxo/amneziawg-installer
+module github.com/hennessyxo/awg-suite
 
 go 1.25.0
 

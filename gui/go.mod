@@ -1,9 +1,9 @@
-module github.com/hennessyxo/amneziawg-installer/gui
+module github.com/hennessyxo/awg-suite/gui
 
 go 1.25.0
 
 require (
-	github.com/hennessyxo/amneziawg-installer v0.0.0
+	github.com/hennessyxo/awg-suite v0.0.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/wailsapp/wails/v2 v2.10.1
 	github.com/zalando/go-keyring v0.2.8
@@ -44,4 +44,4 @@ require (
 // touches the root module's CI (which builds on Linux without GTK/WebKit).
 // Importing the shared internal/* packages is allowed because this module's
 // path is rooted under the parent module path.
-replace github.com/hennessyxo/amneziawg-installer => ../
+replace github.com/hennessyxo/awg-suite => ../

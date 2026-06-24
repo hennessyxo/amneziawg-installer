@@ -15,7 +15,7 @@ runs it non-interactively, then pulls back the client config, saves it as a
 
 ## Download
 
-Grab the binary for your OS from [Releases](https://github.com/hennessyxo/amneziawg-installer/releases):
+Grab the binary for your OS from [Releases](https://github.com/hennessyxo/awg-suite/releases):
 
 | Your computer | File |
 |---------------|------|

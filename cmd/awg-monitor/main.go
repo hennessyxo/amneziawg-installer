@@ -20,8 +20,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/ui"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/ui"
 )
 
 func main() {

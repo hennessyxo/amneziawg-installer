@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/deploy"
-	"github.com/hennessyxo/amneziawg-installer/internal/format"
-	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/deploy"
+	"github.com/hennessyxo/awg-suite/internal/format"
+	"github.com/hennessyxo/awg-suite/internal/lifecycle"
 )
 
 const awgIface = "awg0"

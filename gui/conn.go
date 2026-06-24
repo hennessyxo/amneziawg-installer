@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/deploy"
+	"github.com/hennessyxo/awg-suite/internal/deploy"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/auth"
+	"github.com/hennessyxo/awg-suite/internal/auth"
 )
 
 func TestAuth_RequiresBothListAndPassword(t *testing.T) {

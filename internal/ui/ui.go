@@ -10,8 +10,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/format"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/format"
 )
 
 const (

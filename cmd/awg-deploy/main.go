@@ -30,10 +30,10 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 	"golang.org/x/term"
 
-	amneziawg "github.com/hennessyxo/amneziawg-installer"
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/deploy"
-	"github.com/hennessyxo/amneziawg-installer/internal/ui"
+	amneziawg "github.com/hennessyxo/awg-suite"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/deploy"
+	"github.com/hennessyxo/awg-suite/internal/ui"
 )
 
 // stdin is a single shared reader so successive line prompts don't drop input.

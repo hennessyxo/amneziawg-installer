@@ -9,7 +9,7 @@ import (
 
 	"github.com/skip2/go-qrcode"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
+	"github.com/hennessyxo/awg-suite/internal/awgctl"
 )
 
 // VPN is the subset of the AmneziaWG controller the bot needs. awgctl.FileController

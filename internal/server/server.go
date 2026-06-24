@@ -18,14 +18,14 @@ import (
 
 	"github.com/skip2/go-qrcode"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/auth"
-	"github.com/hennessyxo/amneziawg-installer/internal/awg"
-	"github.com/hennessyxo/amneziawg-installer/internal/awgctl"
-	"github.com/hennessyxo/amneziawg-installer/internal/format"
-	"github.com/hennessyxo/amneziawg-installer/internal/lifecycle"
-	"github.com/hennessyxo/amneziawg-installer/internal/shaper"
-	"github.com/hennessyxo/amneziawg-installer/internal/sysstat"
-	"github.com/hennessyxo/amneziawg-installer/internal/web"
+	"github.com/hennessyxo/awg-suite/internal/auth"
+	"github.com/hennessyxo/awg-suite/internal/awg"
+	"github.com/hennessyxo/awg-suite/internal/awgctl"
+	"github.com/hennessyxo/awg-suite/internal/format"
+	"github.com/hennessyxo/awg-suite/internal/lifecycle"
+	"github.com/hennessyxo/awg-suite/internal/shaper"
+	"github.com/hennessyxo/awg-suite/internal/sysstat"
+	"github.com/hennessyxo/awg-suite/internal/web"
 )
 
 const (

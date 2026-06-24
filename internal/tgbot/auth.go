@@ -6,7 +6,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/hennessyxo/amneziawg-installer/internal/auth"
+	"github.com/hennessyxo/awg-suite/internal/auth"
 )
 
 // Auth gates who may use the bot. Access requires BOTH factors: the user's

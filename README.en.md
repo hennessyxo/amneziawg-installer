@@ -1,14 +1,15 @@
-# AmneziaWG Installer
+# AWG Suite
 
 [Русский](README.md) · **English**
 
-> Set up your own **AmneziaWG** VPN on a Linux server: with a desktop app, a
-> one-line command, or a script on the server. No Linux knowledge required.
+> A toolkit to set up and run your own **AmneziaWG** VPN on a Linux server: a
+> desktop app, a web panel, a Telegram bot, terminal monitoring, and a one-line
+> installer. No Linux knowledge required.
 
 ![shell](https://img.shields.io/badge/shell-bash-1f425f)
 ![go](https://img.shields.io/badge/Go-1.25%2B-00ADD8?logo=go)
 ![platform](https://img.shields.io/badge/platform-Ubuntu%20%7C%20Debian-orange)
-![ci](https://github.com/hennessyxo/amneziawg-installer/actions/workflows/ci.yml/badge.svg)
+![ci](https://github.com/hennessyxo/awg-suite/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
 AmneziaWG is a fork of **WireGuard** with built-in traffic obfuscation: it
@@ -40,8 +41,8 @@ nothing to choose.
 A native app for **Windows** and **macOS**, with no terminal at all.
 
 1. **Download AmneziaWG Manager** (direct download, always the latest release):
-   ### ⬇ [macOS](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-macos.zip) · [Windows](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-gui-windows-amd64.exe)
-   _(or browse [all files](https://github.com/hennessyxo/amneziawg-installer/releases/latest))_
+   ### ⬇ [macOS](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-gui-macos.zip) · [Windows](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-gui-windows-amd64.exe)
+   _(or browse [all files](https://github.com/hennessyxo/awg-suite/releases/latest))_
 2. Open it, enter your server **IP + password**, click **Install**.
 3. Add clients, show their **QR / config**, monitor live traffic, and install or
    open the web panel, all with buttons. A **Settings** tab shows server info
@@ -72,10 +73,10 @@ A single cross-platform binary `awg-deploy` that drives the server over SSH.
 
    | Your computer | Download |
    |---------------|----------|
-   | Windows | [`awg-deploy-windows-amd64.exe`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-windows-amd64.exe) |
-   | macOS, Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
-   | macOS, Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
-   | Linux | [`amd64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-amd64.tar.gz) / [`arm64`](https://github.com/hennessyxo/amneziawg-installer/releases/latest/download/awg-deploy-linux-arm64.tar.gz) |
+   | Windows | [`awg-deploy-windows-amd64.exe`](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-deploy-windows-amd64.exe) |
+   | macOS, Apple Silicon (M1–M5) | [`awg-deploy-darwin-arm64.tar.gz`](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-deploy-darwin-arm64.tar.gz) |
+   | macOS, Intel | [`awg-deploy-darwin-amd64.tar.gz`](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-deploy-darwin-amd64.tar.gz) |
+   | Linux | [`amd64`](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-deploy-linux-amd64.tar.gz) / [`arm64`](https://github.com/hennessyxo/awg-suite/releases/latest/download/awg-deploy-linux-arm64.tar.gz) |
 
 2. **Run it with no arguments**: it asks for your server IP and password,
    connects over SSH and runs the installer and management menu **on the
@@ -104,8 +105,8 @@ See [`docs/DEPLOY.md`](docs/DEPLOY.md).
 SSH into the server and run, as root:
 
 ```bash
-git clone https://github.com/hennessyxo/amneziawg-installer.git
-cd amneziawg-installer
+git clone https://github.com/hennessyxo/awg-suite.git
+cd awg-suite
 sudo bash amneziawg-install.sh        # add --lang en for English UI
 ```
 

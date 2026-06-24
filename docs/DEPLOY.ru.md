@@ -15,7 +15,7 @@
 
 ## Скачать
 
-Возьми бинарник под свою ОС в [Releases](https://github.com/hennessyxo/amneziawg-installer/releases):
+Возьми бинарник под свою ОС в [Releases](https://github.com/hennessyxo/awg-suite/releases):
 
 | Твой компьютер | Файл |
 |----------------|------|
