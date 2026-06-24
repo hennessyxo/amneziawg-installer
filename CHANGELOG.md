@@ -7,6 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-24
+
 ### Changed
 - Renamed the project to **AWG Suite** (GitHub repo and Go module path). The old
   `amneziawg-installer` URL redirects, so existing clones, links, and release
@@ -253,7 +255,8 @@ Defaults are unchanged, so a normal install is byte-identical to before.
 - `awg-monitor`: a terminal traffic dashboard.
 - Prebuilt Linux amd64/arm64 binaries.
 
-[Unreleased]: https://github.com/hennessyxo/awg-suite/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/hennessyxo/awg-suite/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/hennessyxo/awg-suite/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/hennessyxo/awg-suite/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/hennessyxo/awg-suite/compare/v0.18.0...v1.0.0
 [0.18.0]: https://github.com/hennessyxo/awg-suite/compare/v0.17.0...v0.18.0
