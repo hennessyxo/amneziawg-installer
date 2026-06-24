@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting guide
+    url: https://github.com/hennessyxo/awg-suite/blob/main/docs/TROUBLESHOOTING.md
+    about: Common setup problems (service won't start, no internet, DPI still blocks) and quick checks.
+  - name: Security report
+    url: https://github.com/hennessyxo/awg-suite/security/advisories/new
+    about: Report a vulnerability privately. Do not open a public issue for security problems.

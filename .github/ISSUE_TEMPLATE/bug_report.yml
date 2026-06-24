@@ -1,0 +1,68 @@
+name: Bug report
+description: Something is not working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do not include passwords, private keys, or
+        bot tokens. For security issues, use the Security tab instead (see SECURITY.md).
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part is affected?
+      options:
+        - Installer (amneziawg-install.sh)
+        - Web panel (awg-panel)
+        - Telegram bot (awg-bot)
+        - Deploy tool (awg-deploy)
+        - Desktop app (GUI)
+        - Terminal monitor (awg-monitor)
+        - Docs
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag or commit (the GUI shows it on the Settings tab).
+      placeholder: "v1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Server distro and your own OS where relevant.
+      placeholder: "Server: Ubuntu 24.04 (KVM). Client: macOS 15."
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Relevant output, with secrets removed. Useful commands:
+        `journalctl -u awg-quick@awg0 -n 50`, `systemctl status awg-panel`.
+      render: shell
+    validations:
+      required: false
