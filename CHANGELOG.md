@@ -7,6 +7,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- Manage per-client limits (speed, quota, expiry, and enable/disable) from the
+  desktop app, not just the web panel. Both are front-ends to the same always-on
+  enforcer daemon, so limits apply 24/7 regardless of which one set them. The
+  controls appear in the Clients tab only when the web panel is installed.
+
+### Changed
+- The lifecycle store is now safe for two processes at once (the panel daemon and
+  the `awg-panel client-*` CLI): every change runs under a file lock and re-reads
+  first, so neither clobbers the other. The enforcer reconciles speed caps every
+  cycle so out-of-band edits take effect promptly.
+
 ## [1.2.0] - 2026-06-24
 
 ### Changed
