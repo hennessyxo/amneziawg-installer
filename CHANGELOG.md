@@ -7,6 +7,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-25
+
 ### Added
 - Manage per-client limits (speed, quota, expiry, and enable/disable) from the
   desktop app, not just the web panel. Both are front-ends to the same always-on
@@ -267,7 +269,8 @@ Defaults are unchanged, so a normal install is byte-identical to before.
 - `awg-monitor`: a terminal traffic dashboard.
 - Prebuilt Linux amd64/arm64 binaries.
 
-[Unreleased]: https://github.com/hennessyxo/awg-suite/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/hennessyxo/awg-suite/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/hennessyxo/awg-suite/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/hennessyxo/awg-suite/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/hennessyxo/awg-suite/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/hennessyxo/awg-suite/compare/v0.18.0...v1.0.0
